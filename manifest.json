@@ -1,0 +1,32 @@
+{
+    "name":"ISP Stage Management",
+    "description": "Module for manage ISP Stage",
+    "version": "1.0.1",
+    "depends":[ 
+    ],
+    "restrict-tenant": [ 
+        "isp_saas_cd"
+    ],
+    "roles":[
+        {
+            "id": "isp_departement_officier",
+            "name": "Responsable de la recherche au département ISP",
+            "description": "L'utilisateur peut consulter la liste des facultés."
+        },
+        {
+            "id": "isp_user_management",
+            "name": "Gestion des utilisateurs de l'ISP",
+            "description": "L'utilisateur peut consulter la liste des facultés."
+        },
+        {
+            "id": "isp_user_stage_master",
+            "name": "Gestion des stages des étudiants",
+            "description": "L'utilisateur peut consulter la liste des facultés."
+        },
+        {
+            "id": "isp_user_student",
+            "name": "Etudiant à l'ISP Gombe",
+            "description": "L'utilisateur peut consulter la liste des facultés."
+        }
+    ]
+}

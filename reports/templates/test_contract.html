@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrat entre deux parties</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .contract {
+            max-width: 800px;
+            margin: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        .signature {
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 200px;
+            margin: 10px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="contract">
+        <h1>Contrat de Collaboration</h1>
+
+        <div class="section">
+            <h3>Détails des Parties</h3>
+            <p><strong>Partie 1 :</strong> {{part1}}, {{part1adress}}, Informations de contact : {{part1contacts}}</p>
+            <p><strong>Partie 2 :</strong> {{part2}}, {{part2adress}}, Informations de contact : {{part2contacts}}</p>
+        </div>
+
+        <div class="section">
+            <h3>Objet du Contrat</h3>
+            <p>Cet accord stipule que les deux parties collaboreront sur [insérer l'objet du contrat]. Les termes spécifiques sont énoncés ci-dessous.</p>
+        </div>
+
+        <div class="section">
+            <h3>Conditions et Obligations</h3>
+            <ul>
+                <li>Condition 1 : {{condition1}}</li>
+                <li>Condition 2 : {{condition2}}</li>
+                <li>Condition 3 : {{condition3}}</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>Durée et Résiliation</h3>
+            <p>Ce contrat est valable du {{startdate}} au [date de fin], sauf en cas de résiliation anticipée par accord mutuel ou pour non-respect des conditions.</p>
+        </div>
+
+        <div class="section">
+            <h3>Signatures</h3>
+            <div class="signatures">
+                <div class="signature">
+                    <p>Partie 1</p>
+                    <div class="signature-line"></div>
+                    <p>Nom : {{part1}}</p>
+                    <p>Date : {{date}}</p>
+                </div>
+
+                <div class="signature">
+                    <p>Partie 2</p>
+                    <div class="signature-line"></div>
+                    <p>Nom : {{part2}}</p>
+                    <p>Date : {{date}}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

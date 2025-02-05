@@ -1,0 +1,166 @@
+{{datas}}isp_stage.utils.stagemaster_student_datas{{enddatas}}
+<!DOCTYPE html>
+<hmtl lang="fr">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>{{title}}</title>
+        <style>
+            @page {
+                size: A4;
+                margin: 0;
+                /* No margin */
+                padding: 0;
+            }
+
+            .page {
+                page-break-after: always;
+                /* Force un saut de page après cet élément */
+            }
+
+            body {
+                size: A4;
+                margin: 0;
+                /* No margin */
+                padding: 0;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f9;
+                margin: 0;
+                padding: 0;
+            }
+
+            header {
+                background-color: #2d3e50;
+                color: white;
+                text-align: center;
+                padding: 10px;
+            }
+
+            header h1 {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 500;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 20px auto;
+                padding: 20px;
+                background-color: white;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                border-radius: 8px;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+                font-size: 14px;
+            }
+
+            table th,
+            table td {
+                padding: 5px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            table th {
+                background-color: #4CAF50;
+                color: white;
+            }
+
+            table tr:hover {
+                background-color: #f1f1f1;
+            }
+
+            .footer {
+                text-align: center;
+                padding: 10px;
+                background-color: #2d3e50;
+                color: white;
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                font-size: 14px;
+            }
+
+            .page-wrapper {
+                padding: 20px;
+            }
+
+            .info-header {
+                background-color: #f1f1f1;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                text-align: left;
+                font-size: 14px;
+            }
+
+            .info-header h2 {
+                margin: 0;
+                color: #2d3e50;
+            }
+
+            .stats {
+                font-size: 1.1em;
+                color: #333;
+            }
+
+            .stats p {
+                margin: 0px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <header>
+            <h1>Rapport des Étudiants en Stage</h1>
+        </header>
+        <div class="container">
+            <!-- Information sur le stage -->
+            <div class="info-header">
+                <h2 style="font-size: 14px;">Liste des Étudiants en Stage</h2>
+                <div class="stats">
+                    <!-- <p><strong>Section :</strong> {{section}}</p>
+                    <p><strong>Faculté :</strong> {{faculte}}</p> -->
+                    <p><strong>Type de stage :</strong> {{stage}}</p>
+                    <p><strong>Nombre total d'étudiants :</strong>{{count}}</p>
+                    <p><strong>Nombre d'étudiants hommes :</strong>{{count_m}}</p>
+                    <p><strong>Nombre d'étudiantes femmes :</strong>{{count_f}}</p>
+                    <p><strong>Maitre de Stage :</strong>{{stage_master}}</p>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <!-- <th>ID</th> -->
+                        <th>Nom</th>
+                        <th>Postnom</th>
+                        <th>Prénom</th>
+                        <th>Promotion</th>
+                        <th>Cote</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{for isp_stage.utils.student_stage as student}}
+                    <tr>
+                        <td>{{student.name}}</td>
+                        <td>{{student.last_name}}</td>
+                        <td>{{student.first_name}}</td>
+                        <td>{{student.promotion}}</td>
+                        <td>{{student.quote}}</td>
+                    </tr>
+                    {{endfor}}
+                </tbody>
+            </table>
+        </div>
+        <!-- <div class="footer">
+            <p>© 2024 Rapport des Étudiants - Tous droits réservés</p>
+        </div> -->
+    </body>
+</hmtl>
