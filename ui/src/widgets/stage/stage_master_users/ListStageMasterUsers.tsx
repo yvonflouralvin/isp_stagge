@@ -1,13 +1,11 @@
 'use client'
 import React from 'react'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Spinner } from "@nextui-org/react";
-import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter } from "@nextui-org/react"
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Spinner, Modal, ModalBody, ModalContent, ModalHeader, ModalFooter } from "@nextui-org/react";
 import { Button } from '@/components/ui/button'
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
 import { Input } from '@/components/ui/input';
-import PermissionComponent from '@/components/ui/PermissionComponent';
-import AddStageMaster from '../AddStageMaster';
+import PermissionComponent from '@/components/ui/PermissionComponent'; 
 import { PageProps } from '@/lib/shared/types/config';
 import { TrashIcon } from 'lucide-react';
 

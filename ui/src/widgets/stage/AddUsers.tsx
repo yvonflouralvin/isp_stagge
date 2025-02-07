@@ -1,10 +1,8 @@
 'use client'
 import React from 'react'
-import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner } from "@nextui-org/react"
+import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner, Select, SelectItem } from "@nextui-org/react"
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Promotion } from '../../types'
-import { Select, SelectItem } from "@nextui-org/react";
+import { Input } from '@/components/ui/input'  
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies'
 
@@ -119,8 +117,6 @@ export default function AddUsers(props: Props) {
                                     ))}
                                 </Select>
                             }
-
-                            {/* <Button onClick={()=>setIsOpen(false)}>Enregistrer</Button> */}
                         </div>
                     </ModalBody>
                     <ModalFooter>

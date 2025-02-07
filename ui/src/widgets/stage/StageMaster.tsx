@@ -1,8 +1,6 @@
 'use client'
 import React from 'react'
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react"
-import { Select, SelectItem } from "@nextui-org/react";
-// import Select from 'react-select'
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem } from "@nextui-org/react"
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies'
 import { Button } from '@/components/ui/button'
@@ -18,22 +16,6 @@ export default function StageMaster(props: Props) {
     const [isOpen, setIsOpen] = React.useState<boolean>(false)
     const [selectedOption, setSelectedOption] = React.useState<any>(null);
     const [options, setOptions] = React.useState([]);
-
-
-
-    // React.useEffect(() => {
-    //     setSelectedOption(null)
-    //     const exec = async () => {
-    //         try {
-    //             const datas = (await api(cookies).get(`/isp_stage/stage-master/`)).data
-    //             setOptions(datas.results.map((e: any) => ({ value: e.id, label: `${e.user?.name} ${e.user?.first_name} ${e.user?.last_name}` })))
-    //         } catch (e) {
-
-    //         }
-    //     }
-    //     exec()
-    // }, [isOpen])
-
 
     const onClose = () => {
         setIsOpen(false)
@@ -71,11 +53,11 @@ export default function StageMaster(props: Props) {
         }
     }
 
-    const handleSearch = async (e: any)=>{
+    const handleSearch = async (e: any) => {
         e.preventDefault();
         const search_value: any = document.getElementById("stagemastersearch");
-        if(search_value.value === "") return;
-        const datas: any = (await api(cookies).get(`/isp_stage/stage-master/?search=${search_value.value }`)).data;
+        if (search_value.value === "") return;
+        const datas: any = (await api(cookies).get(`/isp_stage/stage-master/?search=${search_value.value}`)).data;
         setOptions(datas.results.map((e: any) => ({ value: e.id, label: `${e.user?.name} ${e.user?.first_name} ${e.user?.last_name}` })))
     }
 

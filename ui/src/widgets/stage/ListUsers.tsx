@@ -11,14 +11,14 @@ export default function ListUsers(props: Props) {
 
   const [users, setUsers] = React.useState<any[]>([])
   const [total_pages, setTotal_pages] = React.useState(0);
-  const [count, setCount] = React.useState(0)
+  // const [count, setCount] = React.useState(0)
   const [current_page, setCurrentPage] = React.useState(1);
 
   const load = async ()=>{
     api(cookies).get(`/isp_stage/dept-recherche-officier/?page=${current_page}`)
       .then(result => {
         setUsers(result.data.results)
-        setCount(result.data.count)
+        // setCount(result.data.count)
         setTotal_pages(result.data.total_pages)
       })
   }
@@ -27,6 +27,7 @@ export default function ListUsers(props: Props) {
     load()
   }, [current_page])
 
+  
 
 
   return (
