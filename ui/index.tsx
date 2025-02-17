@@ -1,34 +1,53 @@
-import { AppConfig, PageProps } from '@/lib/shared/types/config';
+import { AppConfig, Menu, PageProps } from '@/lib/shared/types/config';
 import pages from './src/pages';
 import StageDetailsPage from './src/pages/StageDetailsPage';
 import api from '@/lib/network/api';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
+import { Student } from '/addons/uscitech_academy/ui/src/types';
 const config: AppConfig = {
     label: "Etudiants",
     showInMainMenu: true,
     icon: "https://www.flaticon.com/svg/static/icons/svg/2933/2933715.svg",
     dashboardLayouting: true,
     dashboardWidget: (props: PageProps) => { return <IspStageDashboardWidget /> },
-    menu: (props: PageProps) => {
+    menu: async (props: PageProps) => {
         if (props.user.permissions.find(perm => perm === "isp_user_student")) {
-            return [
-                {
-                    label: "Stages",
-                    subItems: [
-                        {
-                            label: "Pédagogique",
-                            link: "/apps/isp_stage/pedagogique"
-                        },
-                        {
-                            label: "Entreprise",
-                            link: "/apps/isp_stage/entreprise"
-                        }
-                    ],
-                    is_superuser: true
+            try {
+                const student: Student = (await api(await cookies()).get(`/uscitech_academy/students/me/`)).data
+                const tmp_menu: Menu[] =  [
+                    {
+                        label: "Stages",
+                        subItems: [
+                            {
+                                label: "Pédagogique",
+                                link: "/apps/isp_stage/pedagogique"
+                            },
+                            {
+                                label: "Entreprise",
+                                link: "/apps/isp_stage/entreprise"
+                            }
+                        ],
+                        is_superuser: true
+                    }
+                ]
+
+                if(student.promotion.libelle === "L3"){
+                    tmp_menu.push(
+                        { label: "Projet Tutoré", link:"/apps/isp_stage/projet-tutore" }
+                    )
                 }
-            ]
+                if(student.promotion.libelle === "L2"){
+                    tmp_menu.push(
+                        { label: "Memoire", link:"/apps/isp_stage/student-memoire" }
+                    )
+                }
+                return tmp_menu;
+            } catch (e) {
+                console.log(e)
+                return []
+            }
         }
         const menus = [
             {
@@ -52,7 +71,7 @@ const config: AppConfig = {
             },
             {
                 label: "Memoire&Projets",
-                permissions: ["isp_departement_officier"],
+                permissions: ["isp_departement_officier", "academy_is_teacher"],
                 is_superuser: true,
                 subItems: [
                     {
@@ -61,7 +80,7 @@ const config: AppConfig = {
                     },
                     {
                         label: "Memoires AS (L2)",
-                        link: "/apps/isp_stage/memoire-as",
+                        link: "/apps/isp_stage/students-memoires",
                     }
                 ]
             },
@@ -87,7 +106,7 @@ const config: AppConfig = {
         return menus
     },
     page: (props: PageProps) => {
-        if (props.params.app.length >=3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")
+        if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")
             return {
                 dashboardLayouting: true,
                 render: () => {
@@ -97,32 +116,32 @@ const config: AppConfig = {
         else if (props.params.app.length >= 3 && props.params.app[2] === "pedagogique" && props.user.permissions.find(perm => perm === "isp_user_student"))
             return {
                 dashboardLayouting: true,
-                render: async () => { 
-                        try {
-                            const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
-                            return await StageDetailsPage({
-                                ...props,
-                                params: {
-                                    ...props.params,
-                                    app: [
-                                        ...props.params.app,
-                                        stage.id
-                                    ]
-                                }
-                            })
-                        } catch (e) {
-                            return redirect('/dashboard');
-                        }
+                render: async () => {
+                    try {
+                        const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
+                        return await StageDetailsPage({
+                            ...props,
+                            params: {
+                                ...props.params,
+                                app: [
+                                    ...props.params.app,
+                                    stage.id
+                                ]
+                            }
+                        })
+                    } catch (e) {
+                        return redirect('/dashboard');
+                    }
                 }
             }
-        else if (props.params.app.length >= 3 && (props.params.app[3] === "list" ||  props.params.app[3] === "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
+        else if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
                     return await pages.StageListPage(props);
                 }
             }
-        else if (props.params.app.length >= 3 && (props.params.app[3] !== "list" &&  props.params.app[3] !== "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
+        else if (props.params.app.length >= 3 && (props.params.app[3] !== "list" && props.params.app[3] !== "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
@@ -141,6 +160,48 @@ const config: AppConfig = {
                 dashboardLayouting: true,
                 render: async () => {
                     return await pages.StageMasterUsers(props);
+                }
+            }
+        else if (props.params.app.length === 3 && props.params.app[2] === "projets-tutores")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.ProjetTutoresPage(props);
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "projets-tutores")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.ProjetTutoresFormPage(props);
+                }
+            }
+        else if (props.params.app.length === 3 && props.params.app[2] === "projet-tutore")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.StudentProjetTurote(props);
+                }
+            }
+        else if (props.params.app.length === 3 && props.params.app[2] === "students-memoires")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.StudentMemoireListPage(props);
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "students-memoires")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.StudentMemoireDetailPage(props);
+                }
+            }
+        else if (props.params.app.length === 3 && props.params.app[2] === "student-memoire")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.StudentMemoirePage(props);
                 }
             }
         else

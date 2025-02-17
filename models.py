@@ -2,7 +2,7 @@ from django.db import models
 from slugify import slugify
 import uuid
 from core.models import User
-from uscitech_academy.models import Student, GradeClasse
+from uscitech_academy.models import Student, GradeClasse, Teacher
 
 
 class DeptRechercheOfficier(models.Model):
@@ -43,3 +43,26 @@ class Stage(models.Model):
     quote = models.IntegerField(null=True, blank=True)
     quote_by = models.ForeignKey(StageMaster, on_delete=models.CASCADE, null=True, blank=True, related_name="quote_by")
     quote_status = models.CharField(choices=[('submitted', "Soumie"), ('draft', "Brouillon")], default='draft')
+
+
+class ProjetTutore(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    subject = models.TextField(null=False, blank=False)
+    head = models.ForeignKey(Student, null=False, related_name="head", on_delete=models.CASCADE)
+    member = models.ManyToManyField(Student, related_name="member" )
+    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL)
+
+
+class StudentMemoire(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    subject = models.TextField(null=False, blank=False)
+    student = models.ForeignKey(Student, null=False, related_name="student", on_delete=models.CASCADE) 
+    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL)
+
+class DepartmentSettings(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=False)
+    max_teacher_tutore_project_group = models.IntegerField(default=1, blank=True)
+    max_teacher_memoire = models.IntegerField(default=1, blank=True)
+    max_tutore_project_member_group = models.IntegerField(default=1, blank=True)

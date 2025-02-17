@@ -2,7 +2,8 @@ from .models import *
 from uscitech_academy.models import *
 from .serializers import *
 from uscitech_academy.serializers import *
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -20,6 +21,8 @@ from django.db.models import Q
 from core.utils import Paginator
 from uscitech_academy.models import Student, GradeClasse
 from uscitech_academy.serializers import GradeClasseSerializer
+from rest_framework.exceptions import MethodNotAllowed
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class PromotionL2(APIView):
@@ -214,6 +217,9 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         return Response("No stage master found !!", status=404)
 
+
+
+
 class StudentForStageAPIView(APIView):
 
     def post(self, request):
@@ -241,7 +247,11 @@ class StudentForStageAPIView(APIView):
 
         permission = Permission.objects.get(codename="isp_user_student")
         user.user_permissions.add(permission)
+        user.user_permissions.add(
+            Permission.objects.get(codename="academy_is_student")
+        )
         user.save()
+
 
         std.user = user 
         std.save()
@@ -393,3 +403,194 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
             grades = GradeClasse.objects.filter(id = dept[0].dept.id)
             return Response(GradeClasseSerializer(grades, many=True).data, status=200)
         return Response({}, status=404)
+
+
+class ProjetTutoreViewSet(viewsets.ModelViewSet):
+    queryset = ProjetTutore.objects.all()
+    serializer_class = ProjetTutoreSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["head__username", "head__first_name", "head__last_name", "head__first_name", "head__phone", "head__email"]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Superutilisateur voit tout
+        if user.is_superuser:
+            return ProjetTutore.objects.all()
+
+        # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
+        if user.has_perm('uscitech_acdemy.academy_is_teacher'):
+            teacher = Teacher.objects.filter(employee__user=user).first()
+            if teacher:
+                return ProjetTutore.objects.filter(teacher=teacher)
+
+        # Par défaut, retour vide
+        return ProjetTutore.objects.none()
+
+    @action(detail=False, methods=['get'])
+    def my_projects(self, request):
+        """Récupère les projets tutorés où l'utilisateur est soit 'head' soit 'member'"""
+        student = Student.objects.filter(user=request.user).first()
+        if not student:
+            return Response({"detail": "Aucun étudiant associé à cet utilisateur."}, status=404)
+
+        projets = ProjetTutore.objects.filter(models.Q(head=student) | models.Q(member=student)).distinct()
+        if len(projets) >= 1 :
+            serializer = self.get_serializer(projets[0])
+            return Response(serializer.data)
+        return Response({"detail": "Aucun projet associé à cet utilisateur."}, status=404)
+
+
+class StudentMemoireViewSet(viewsets.ModelViewSet):
+    queryset = StudentMemoire.objects.all()
+    serializer_class = StudentMemoireSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["student__username", "student__first_name", "student__last_name", "student__first_name", "student__phone", "student__email"]
+
+    @action(detail=False, methods=['get'])
+    def my_memoire(self, request):
+        """Récupère les projets tutorés où l'utilisateur est soit 'head' soit 'member'"""
+        student = Student.objects.filter(user=request.user).first()
+        if not student:
+            return Response({"detail": "Aucun étudiant associé à cet utilisateur."}, status=404)
+
+        projets = StudentMemoire.objects.filter(models.Q(student=student)).distinct()
+        if len(projets) >= 1 :
+            serializer = self.get_serializer(projets[0])
+            return Response(serializer.data)
+        return Response({"detail": "Aucun memoire associé à cet utilisateur."}, status=404)
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Superutilisateur voit tout
+        if user.is_superuser:
+            return StudentMemoire.objects.all()
+
+        # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
+        if user.has_perm('uscitech_acdemy.academy_is_teacher'):
+            teacher = Teacher.objects.filter(employee__user=user).first()
+            if teacher:
+                return StudentMemoire.objects.filter(teacher=teacher)
+
+        # Par défaut, retour vide
+        return StudentMemoire.objects.none()
+
+
+class DepartmentSettingsViewSet(viewsets.ModelViewSet):
+    queryset = DepartmentSettings.objects.all()
+    serializer_class = DepartmentSettingsSerializer
+    pagination_class = Paginator
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        user: User = request.user
+        if user.has_perm('isp_stage.isp_departement_officier') : 
+            department_officier = DeptRechercheOfficier.objects.filter(user = user)
+            if not department_officier.exists() :
+                return Response("Aucune donnée trouvé  -> department_officier", 404 )
+            else :
+                department_officier: DeptRechercheOfficier  = department_officier[0]
+                department_settings = DepartmentSettings.objects.filter(department = department_officier.dept )
+                if department_settings.exists() :
+                    department_settings = department_settings[0]
+                else :
+                    department_settings = DepartmentSettings.objects.create(
+                        department = department_officier.dept
+                    )
+                serializer = self.get_serializer(department_settings)
+                return Response(serializer.data)
+
+        if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student') :
+            student = Student.objects.filter(user = user)
+            if not student.exists() :
+                return Response("Aucune donnée trouvé -> student", 404 )
+            else : 
+                student: Student  = student[0]
+                department_settings = DepartmentSettings.objects.filter(department = student.promotion.grade )
+                if department_settings.exists() :
+                    department_settings = department_settings[0]
+                else :
+                    department_settings = DepartmentSettings.objects.create(
+                        department = student.promotion.grade
+                    )
+                serializer = self.get_serializer(department_settings)
+                return Response(serializer.data)
+        
+        return Response({
+            "message": "Aucune donnée trouvé -> all",
+            "user": UserSerializer(user).data
+        }, 404 )
+
+class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
+    queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["employee__fullname", "employee__user__name",  "employee__user__last_name",  "employee__user__first_name",  "employee__user__phone",  "employee__user__email"]
+
+    
+    def get_queryset(self):
+        user = self.request.user
+
+        # Vérification des permissions
+        if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student'):
+            try:
+                # Récupérer l'étudiant
+                student = Student.objects.get(user=user)
+            except ObjectDoesNotExist as e:
+                print(e)
+                return Teacher.objects.none()
+
+            # Récupérer les paramètres de département pour l'étudiant
+            department_settings, created = DepartmentSettings.objects.get_or_create(
+                department=student.promotion.grade
+            )
+
+            # Récupérer les projets tutorés pour le grade de l'étudiant
+            projets = ProjetTutore.objects.filter(head__promotion__grade=student.promotion.grade)
+            print(projets)
+
+            # Créer un dictionnaire pour regrouper les enseignants et compter leur nombre d'affectations
+            teacher_count = {}
+            for projet in projets:
+                if projet.teacher == None : 
+                    continue
+                teacher = projet.teacher
+                if teacher.id in teacher_count:
+                    teacher_count[teacher.id] += 1
+                else:
+                    teacher_count[teacher.id] = 1
+
+            limit = 1
+            if student.promotion.libelle == "L3" :
+                limit = department_settings.max_teacher_tutore_project_group
+            elif student.promotion.libelle == "L2" :
+                limit = department_settings.max_teacher_memoire
+
+            final_teachers = [
+                teacher for teacher, count in teacher_count.items()
+                if count >= limit
+            ]
+
+            # Retourner les enseignants filtrés
+            return Teacher.objects.exclude(id__in=final_teachers)
+
+        # Si l'utilisateur n'est pas un étudiant, renvoyer tous les enseignants
+        return Teacher.objects.none()
+
+    # Interdire toutes les autres méthodes HTTP en surchargeant les méthodes
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed('POST')
+
+    def update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PUT')
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed('PATCH')
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed('DELETE')
+

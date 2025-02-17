@@ -1,0 +1,60 @@
+'use client'
+import React from 'react';
+import { Pagination } from '@nextui-org/react'
+import { ProjetTutore } from '../../types' 
+import { SearchIcon } from 'lucide-react';
+import Link from 'next/link';
+import api from '@/lib/network/api';
+import cookies from '@/lib/shared/cookies';
+export default function ListProjetTutores() {
+
+    const [total_pages, setTotal_pages] = React.useState(0);
+    const [count, setCount] = React.useState(0);
+    const [results, setResults] = React.useState([]);
+    const [current_page, setCurrent_page] = React.useState(1);
+
+    const load = async ()=>{
+        const url = `/isp_stage/projets-tutores/?page=${current_page}`
+        try{
+            const tmp = await api(cookies).get(url);
+            setResults(tmp.data.results);
+            setCount(tmp.data.count);
+            setTotal_pages(tmp.data.total_pages)
+        }catch(e){
+
+        }
+    }
+    
+    React.useEffect(()=>{
+        load();
+    }, [current_page])
+
+    return <div>
+        <div className="flex items-center w-full bg-[rgba(0,0,0,0.03)]  px-[20px] py-[10px] rounded mb-[10px]">
+            <input placeholder='Search' className='outline-none border-0 text-[13px] bg-transparent text-gray-500 flex-1' />
+            <SearchIcon size="13px" className="cursor-pointer" />
+        </div>
+        <div>
+            <div className="flex gap-[2px] px-[20px] py-[10px] bg-[rgba(0,0,0,0.03)] font-light  my-[3px] rounded ">
+                <p className="w-[50%]">Sujet du groupe</p>
+                {/* <p className="w-[25%]">Professeur</p> */}
+                <p className="w-[25%]">Chef de groupe</p>
+            </div>
+            {
+                results.map((subject: ProjetTutore, index) => {
+                    return <Link href={`/apps/isp_stage/projets-tutores/${subject.id}`} key={subject.id} className="duration-300 flex gap-[2px] text-[13px] text-gray-500 px-[20px] py-[6px] my-[3px] cursor-pointer hover:bg-[0,0,0,0.02]">
+                        <p className="w-[50%]">{subject.subject}</p>
+                        {/* <p className="w-[25%]">{subject.teacher}</p> */}
+                        <p className="w-[25%]">{`${subject.head.user.name} ${subject.head.user.last_name} ${subject.head.user.first_name}`}</p>
+                    </Link>
+                })
+            }
+        </div>
+        {
+            total_pages > 1 && <div>
+            <Pagination total={total_pages} page={current_page} onChange={setCurrent_page} />
+        </div>
+        }
+        
+    </div>
+}

@@ -7,6 +7,10 @@ router = DefaultRouter()
 router.register(r'dept-recherche-officier', DeptRechercheOfficierViewSet)
 router.register(r'stage', StageViewSet)
 router.register(r'stage-master', StageMasterViewSet)
+router.register(r'projets-tutores', ProjetTutoreViewSet)
+router.register(r'students-memoires', StudentMemoireViewSet)
+router.register(r'department-settings', DepartmentSettingsViewSet)
+router.register(r'teacher-for-memoire-projet', StageSearchingTeacherViewSet)
 
 
 
@@ -17,5 +21,5 @@ urlpatterns = [
     path('student', StudentForStageAPIView.as_view(), name="student"),
     path('student/<stage>', StudentForStageAPIView.as_view(), name="student-stage"), 
     path('resumes', views.stages_resumes, name="staff-resumes")
-    # path('stage/get-by-user-id/', )
+    # path('stage/get-by-user-id/', ) /apps/{nom_addon}/urls
 ]

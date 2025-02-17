@@ -5,7 +5,8 @@
     "depends":[ 
     ],
     "restrict-tenant": [ 
-        "isp_saas_cd"
+        "isp_saas_cd",
+        "ispdev_saas_cd"
     ],
     "roles":[
         {
