@@ -11,7 +11,7 @@ const config: AppConfig = {
     showInMainMenu: true,
     icon: "https://www.flaticon.com/svg/static/icons/svg/2933/2933715.svg",
     dashboardLayouting: true,
-    dashboardWidget: (props: PageProps) => { return <IspStageDashboardWidget /> },
+    dashboardWidget: (props: PageProps) => { return <IspStageDashboardWidget {...props} /> },
     menu: async (props: PageProps) => {
         if (props.user.permissions.find(perm => perm === "isp_user_student")) {
             try {

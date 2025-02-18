@@ -25,7 +25,7 @@ class Stage(models.Model):
         ('pedagogique', 'Pédagogique'),
         ('entreprise', 'Entreprise')
     ]
-
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     stage = models.CharField(choices=STAGE_TYPES)

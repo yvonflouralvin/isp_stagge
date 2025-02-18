@@ -42,7 +42,7 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
             <div className='flex flex-col flex-1'>
                 <p className='text-gray-500 font-light m-0 text-[13px]'>Sujet du groupe</p>
                 {
-                    (props.for === "create" ) ?
+                    (props.for === "create") ?
                         <div className='border-b border-inherent'>
                             <input id="subject" ref={subject_input} name="subject" className='border-0 outline-none w-full bg-transparent text-[13px]' defaultValue={props.memoire !== undefined ? `${props.memoire?.subject}` : ``} />
                         </div>
@@ -53,16 +53,22 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
         </div>
         <div className="flex items-start mt-[15px]">
             <div className='flex flex-col flex-1'>
-
                 {
-                    (props.for === "create") ?
-                        <SearchSelected defaultValue={(props.memoire?.teacher !== undefined && props.memoire?.teacher !== null) ? `${props.memoire?.teacher?.employee?.fullname}` : ""} onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/uscitech_academy/teachers/' /> : <>
-                            <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
-                            {(props.memoire?.teacher !== undefined && props.memoire?.teacher !== null) ? <p className='font-semibold text-[20px] m-0'>{props.memoire?.teacher?.employee?.fullname}</p> :
-                                <p>--</p>
-                            }
-                        </>
+                    (props.memoire?.teacher !== undefined && props.memoire?.teacher !== null) ? <div>
+
+                        <p className='font-semibold text-[13px] m-0'>{props.memoire?.teacher?.employee?.fullname}</p>
+                    </div> : <>
+                        {
+                            (props.for === "create") ?
+                                <SearchSelected onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/uscitech_academy/teachers/' /> : <>
+                                    <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
+                                    <p>--</p>
+                                </>
+                        }
+
+                    </>
                 }
+
             </div>
         </div>
 

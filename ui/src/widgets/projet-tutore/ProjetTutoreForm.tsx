@@ -53,16 +53,26 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
         </div>
         <div className="flex items-start mt-[15px]">
             <div className='flex flex-col flex-1'>
-
                 {
-                    (props.for === "create" && props.projet?.head_id === props.student?.id) ?
-                        <SearchSelected defaultValue={(props.projet?.teacher !== undefined && props.projet?.teacher !== null) ? `${props.projet?.teacher?.employee?.fullname}` : ""} onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/teacher-for-memoire-projet/' /> : <>
-                            <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
-                            {(props.projet?.teacher !== undefined && props.projet?.teacher !== null) ? <p className='font-semibold text-[20px] m-0'>{props.projet?.teacher?.employee?.fullname}</p> :
-                                <p>--</p>
-                            }
-                        </>
+                    <>
+                        {
+                            (props.projet?.teacher !== undefined && props.projet?.teacher !== null) ? <div>
+                                <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
+                                <p className='font-semibold text-[13px] m-0 border-b border-inherent'>{props.projet?.teacher?.employee?.fullname}</p>
+                            </div> :
+                                <>
+                                    {
+                                        (props.for === "create" && props.projet?.head_id === props.student?.id) ?
+                                            <SearchSelected onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/teacher-for-memoire-projet/' /> : <>
+                                                <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
+                                                <p>--</p>
+                                            </>
+                                    }
+                                </>
+                        }
+                    </>
                 }
+
             </div>
         </div>
         <div className="mt-[15px]">

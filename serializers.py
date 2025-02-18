@@ -6,6 +6,7 @@ from uscitech_academy.models import Teacher
 from core.serializers import * 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
+import os
 
 
 class StageMasterSerializer(serializers.ModelSerializer):
@@ -54,7 +55,7 @@ class DeptRechercheOfficierSerializer(serializers.ModelSerializer):
             username = email,
             phone = phone if phone != "" else None,
             email = email,
-            password = make_password("DefaultPass123")
+            password = make_password(os.environ.get("DEFAULT_PASS", "1234"))
         )
 
         user.user_permissions.add(Permission.objects.get(codename="isp_departement_officier"))

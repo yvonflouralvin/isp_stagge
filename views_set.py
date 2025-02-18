@@ -224,46 +224,20 @@ class StudentForStageAPIView(APIView):
 
     def post(self, request):
 
-        user = User.objects.filter(username=request.data.get("facture"))
-        if user.exists():
+        stage = Stage.objects.filter(facture=request.data.get("facture"))
+        if stage.exists():
             return Response({"message": "Le numéro de facture existe déjà."}, status=400)
         
-        std = Student()
+        student = Student.objects.filter(id=request.data.get("student_id")).first()
         
-        std.promotion = Promotion.objects.get(id=request.data.get("promotion"))
-
-        user = User()
-        user.username = request.data.get("facture")
-        user.password = make_password(str(request.data.get("name")).lower())
-        #User()#.objects.create_user(username=request.data.get("phone"), password=make_password(request.data.get("phone")))
-        user.phone = request.data.get("phone")
-        user.first_name = request.data.get("first_name")
-        user.last_name = request.data.get("last_name")
-        user.name = request.data.get("name")
-        user.email = "unknow" #request.data.get('email')
-        user.sexe = request.data.get('sexe', 'm')
-
-        user.save()
-
-        permission = Permission.objects.get(codename="isp_user_student")
-        user.user_permissions.add(permission)
-        user.user_permissions.add(
-            Permission.objects.get(codename="academy_is_student")
-        )
-        user.save()
-
-
-        std.user = user 
-        std.save()
-
         stg = Stage()
         stg.stage = request.data.get("stage")
-        stg.student = std
+        stg.student = student
         stg.facture = request.data.get("facture")
         stg.save()
 
         return Response({
-            "student":StudentSerializer(std).data,
+            "student":StudentSerializer(student).data,
             "stage": StageSerializer(stg).data
         }, status=201)
 
@@ -426,7 +400,7 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
                 return ProjetTutore.objects.filter(teacher=teacher)
 
         # Par défaut, retour vide
-        return ProjetTutore.objects.none()
+        return ProjetTutore.objects.all()
 
     @action(detail=False, methods=['get'])
     def my_projects(self, request):
@@ -581,6 +555,34 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
         # Si l'utilisateur n'est pas un étudiant, renvoyer tous les enseignants
         return Teacher.objects.none()
 
+    @action(detail=False, methods=['get'])
+    def without_stage(self, request):
+        students_without_stage = Student.objects.all()
+        search_query = request.GET.get("search", None)
+        stage_type = request.GET.get("stage_type", None)
+
+        if search_query:
+            students_without_stage = students_without_stage.filter(
+                Q(user__username__icontains=search_query) |
+                Q(user__first_name__icontains=search_query) |
+                Q(user__last_name__icontains=search_query)
+            )
+        
+        if stage_type:
+            students_without_stage = students_without_stage.filter(
+                ~Q(stage__stage=stage_type)
+            )
+        
+        students_without_stage = students_without_stage.filter(~Q(stage__student__isnull=False))
+        
+        page = self.paginate_queryset(students_without_stage)
+        if page is not None:
+            serializer = StudentSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = StudentSerializer(students_without_stage, many=True)
+        return Response(serializer.data)
+    
     # Interdire toutes les autres méthodes HTTP en surchargeant les méthodes
     def create(self, request, *args, **kwargs):
         raise MethodNotAllowed('POST')
