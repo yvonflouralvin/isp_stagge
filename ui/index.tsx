@@ -16,7 +16,7 @@ const config: AppConfig = {
         if (props.user.permissions.find(perm => perm === "isp_user_student")) {
             try {
                 const student: Student = (await api(await cookies()).get(`/uscitech_academy/students/me/`)).data
-                const tmp_menu: Menu[] =  [
+                const tmp_menu: Menu[] = [
                     {
                         label: "Stages",
                         subItems: [
@@ -33,14 +33,14 @@ const config: AppConfig = {
                     }
                 ]
 
-                if(student.promotion.libelle === "L3"){
+                if (student.promotion.libelle === "L3") {
                     tmp_menu.push(
-                        { label: "Projet Tutoré", link:"/apps/isp_stage/projet-tutore" }
+                        { label: "Projet Tutoré", link: "/apps/isp_stage/projet-tutore" }
                     )
                 }
-                if(student.promotion.libelle === "L2"){
+                if (student.promotion.libelle === "L2") {
                     tmp_menu.push(
-                        { label: "Memoire", link:"/apps/isp_stage/student-memoire" }
+                        { label: "Memoire", link: "/apps/isp_stage/student-memoire" }
                     )
                 }
                 return tmp_menu;
@@ -98,6 +98,22 @@ const config: AppConfig = {
                         label: "Maitre de Stage",
                         link: "/apps/isp_stage/stage-masters",
                         permissions: ["isp_user_management"],
+                    }
+                ]
+            }, {
+                label: "Administrations",
+                permissions: [
+                    "uscitech_manager.view_faculties",
+                    "isp_departement_officier"
+                ],
+                subItems: [
+                    {
+                        label: "Etudiants",
+                        link: "/apps/uscitech_academy/students",
+                        permissions: [
+                            "uscitech_manager.view_faculties",
+                            "isp_departement_officier"
+                        ]
                     }
                 ]
             }
