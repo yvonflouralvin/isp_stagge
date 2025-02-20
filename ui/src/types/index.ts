@@ -50,3 +50,19 @@ export interface DepartmentSettings {
     max_teacher_memoire: number
     max_tutore_project_member_group: number
 }
+
+
+export interface DepartmentOfficier {
+    id: string
+    employee : Employee
+    dept: Grade
+    employee_id: string
+    dept_id: string
+}
+
+export interface StageMaster {
+    id: string
+    employee : Employee 
+    employee_id: string 
+    is_quote_submitted: boolean
+}

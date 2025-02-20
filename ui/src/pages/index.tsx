@@ -11,6 +11,13 @@ import ProjetTutoresFormPage from "./ProjetTutoresFormPage";
 import StudentMemoireListPage from "./StudentMemoireListPage";
 import StudentMemoirePage from "./StudentMemoirePage";
 import StudentMemoireDetailPage from "./StudentMemoireDetailPage";
+import DepartmentOfficierPageSSR from "./dept_officiers/DepartmentOfficierPageSSR";
+import DepartmentOfficierFormSSR from "./dept_officiers/DepartmentOfficierFormSSR";
+import StageMasterPageSSR from "./stage_masters/StageMasterPageSSR";
+import StageMasterFormSSR from "./stage_masters/StageMasterFormSSR";
+import StudentFormPage from "./student/StudentFormPage";
+import { StudentFormPageProps } from "/addons/uscitech_academy/ui/src/types";
+import StudentPage from "./student/StudentPage";
 
 
 export default {
@@ -26,5 +33,14 @@ export default {
 
     StudentMemoireListPage: (props: PageProps) => StudentMemoireListPage(props),
     StudentMemoireDetailPage : (props: PageProps) => StudentMemoireDetailPage(props),
-    StudentMemoirePage: (props: PageProps) => StudentMemoirePage(props)
+    StudentMemoirePage: (props: PageProps) => StudentMemoirePage(props),
+
+    DepartmentOfficierPageSSR : (props: PageProps) => DepartmentOfficierPageSSR(props),
+    DepartmentOfficierFormSSR : (props: PageProps) => DepartmentOfficierFormSSR(props),
+
+    StageMasterPageSSR : (props: PageProps) => StageMasterPageSSR(props),
+    StageMasterFormSSR : (props: PageProps) => StageMasterFormSSR(props),
+
+    StudentFormPage : (props: StudentFormPageProps) => StudentFormPage(props),
+    StudentPage: (props: PageProps) => StudentPage(props),
 }

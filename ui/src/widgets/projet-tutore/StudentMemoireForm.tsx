@@ -40,13 +40,13 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
     return <div className='border-t border-inherent mt-[15px] pt-[15px] h-full'>
         <div className="flex items-start">
             <div className='flex flex-col flex-1'>
-                <p className='text-gray-500 font-light m-0 text-[13px]'>Sujet du groupe</p>
+                <p className='text-gray-500 font-light m-0 text-[13px]'>Sujet du memoire</p>
                 {
                     (props.for === "create") ?
                         <div className='border-b border-inherent'>
                             <input id="subject" ref={subject_input} name="subject" className='border-0 outline-none w-full bg-transparent text-[13px]' defaultValue={props.memoire !== undefined ? `${props.memoire?.subject}` : ``} />
                         </div>
-                        : <p className='font-semibold text-[20px] m-0'>{props.memoire?.subject}</p>
+                        : <p className='font-semibold text-[14px] m-0'>{props.memoire?.subject}</p>
                 }
 
             </div>
@@ -55,8 +55,8 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
             <div className='flex flex-col flex-1'>
                 {
                     (props.memoire?.teacher !== undefined && props.memoire?.teacher !== null) ? <div>
-
-                        <p className='font-semibold text-[13px] m-0'>{props.memoire?.teacher?.employee?.fullname}</p>
+                        <p className='text-gray-400 text-[13px]'>Encadreur</p>
+                        <p className='text-[14px] m-0'>{props.memoire?.teacher?.employee?.fullname}</p>
                     </div> : <>
                         {
                             (props.for === "create") ?
@@ -68,8 +68,16 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
 
                     </>
                 }
-
             </div>
+            {
+                (props.memoire !== undefined && props.memoire.student.user.id !== props.user.id) && <div>
+                    <p className='text-gray-400 text-[13px]'>Informations sur l'étudiant</p>
+                    <p className='text-[14px] m-0'>Nom complet : {props.memoire?.student?.user?.name} {props.memoire?.student?.user?.last_name} {props.memoire?.student?.user?.first_name}</p>
+                    <p className='text-[14px] m-0'>Promotion : {props.memoire?.student?.promotion?.libelle} {props.memoire?.student?.promotion?.grade.libelle} </p>
+                    <p className='text-[14px] m-0'>Téléphone : {props.memoire?.student?.user?.phone}</p>
+                </div>
+            }
+
         </div>
 
         {

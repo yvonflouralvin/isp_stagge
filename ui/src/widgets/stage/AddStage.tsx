@@ -1,9 +1,7 @@
 'use client'
-import React, { useActionState } from 'react'
+import React from 'react'
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner } from "@nextui-org/react"
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectItem } from "@nextui-org/react";
+import { Button } from '@/components/ui/button' 
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies'
 import useEvent from '@/lib/hooks/useEvent'
@@ -91,7 +89,7 @@ export default function AddStage(props: Props) {
                             <p className='text-gray-400 text-[13px]'>Numéro de Facture</p>
                             <input type="text" className='duration-300 border-o focus:border-primary border-b w-full border-inherent outline-none text-[13px]' placeholder="" id="facture" name="facture" required />
                         </div>
-                        <SearchSelected extraparams={`&stage_type=${props.stage}`} onChange={(e: Promotion) => setSelectedStudent(e.id)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name} `)} index='id' url='/isp_stage/teacher-for-memoire-projet/without_stage/' />
+                        <SearchSelected extraparams={`&stage_type=${props.stage}`} onChange={(e: Student) => setSelectedStudent(e.id)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name} `)} index='id' url='/isp_stage/teacher-for-memoire-projet/without_stage/' />
                     </div>
                 </ModalBody>
                 <ModalFooter>

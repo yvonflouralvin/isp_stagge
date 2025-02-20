@@ -17,7 +17,7 @@ export default async function ProjetTutoresFormPage(props: PageProps) {
             const _tmp: Student = (await api(await cookies()).get(`/uscitech_academy/students/${_id}/`)).data
             members.push(_tmp);
         }
-        return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[20px]'>
+        return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
             <Breadcrumb links={[
                 {
                     label: "Projets Tutorés",

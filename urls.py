@@ -3,8 +3,15 @@ from . import views
 from .views_set import *
 from rest_framework.routers import DefaultRouter
 
-router = DefaultRouter() 
-router.register(r'dept-recherche-officier', DeptRechercheOfficierViewSet)
+# DeptRechercheOfficierPromotionsViewSet
+
+router = DefaultRouter()  
+
+router.register(r'dept-recherche-officier', DeptRechercheOfficierViewSet) 
+router.register(r'students', DeptRechercheOfficierStudentListsViewSet) 
+router.register(r'promotions', IspGombePromotionViewSet) 
+
+
 router.register(r'stage', StageViewSet)
 router.register(r'stage-master', StageMasterViewSet)
 router.register(r'projets-tutores', ProjetTutoreViewSet)

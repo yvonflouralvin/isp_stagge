@@ -3,19 +3,19 @@ from slugify import slugify
 import uuid
 from core.models import User
 from uscitech_academy.models import Student, GradeClasse, Teacher
+from hr.models import Employee
 
 
 class DeptRechercheOfficier(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=False)
     dept = models.ForeignKey(GradeClasse, on_delete=models.CASCADE)
 
 
 class StageMaster(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    is_quote_submitted = models.BooleanField(default=False)
-    # dept = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=True, blank=True)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE)
+    is_quote_submitted = models.BooleanField(default=False) 
     
 
 class Stage(models.Model):

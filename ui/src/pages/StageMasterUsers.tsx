@@ -8,7 +8,7 @@ export default async function StageMasterUsers(props: PageProps) {
     try {
        
         return <div>
-            <div className='bg-white rounded shadow p-[20px]'>
+            <div className='bg-white rounded shadow p-[5px] md:p-[20px]'>
                 <div className='flex items-center'>
                     <div className='flex-1'>
                         <h1>Maitres de Stage</h1>

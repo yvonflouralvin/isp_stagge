@@ -13,8 +13,10 @@ export default async function ProjetTutoresPage(props: PageProps) {
     var department_settings: DepartmentSettings | undefined = undefined;
     try {
         department_settings = ((await api(await cookies()).get(`/isp_stage/department-settings/me/`)).data)
-    } catch (e) { }
-    return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[20px]'>
+    } catch (e) { 
+        
+    }
+    return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {
                 label: "Projets Tutorés",

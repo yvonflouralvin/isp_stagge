@@ -100,22 +100,11 @@ const config: AppConfig = {
                         permissions: ["isp_user_management"],
                     }
                 ]
-            }, {
-                label: "Administrations",
-                permissions: [
-                    "uscitech_manager.view_faculties",
-                    "isp_departement_officier"
-                ],
-                subItems: [
-                    {
-                        label: "Etudiants",
-                        link: "/apps/uscitech_academy/students",
-                        permissions: [
-                            "uscitech_manager.view_faculties",
-                            "isp_departement_officier"
-                        ]
-                    }
-                ]
+            },
+            {
+                label: "Étudiants",
+                permissions: ["isp_departement_officier"],
+                link: "/apps/isp_stage/students"
             }
         ]
 
@@ -168,14 +157,28 @@ const config: AppConfig = {
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.DeptRechercheUsers(props);
+                    return await pages.DepartmentOfficierPageSSR(props);
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "dept_search_off")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.DepartmentOfficierFormSSR(props);
                 }
             }
         else if (props.params.app.length === 3 && props.params.app[2] === "stage-masters")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StageMasterUsers(props);
+                    return await pages.StageMasterPageSSR(props);
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "stage-masters")
+            return {
+                dashboardLayouting: true,
+                render: async () => {
+                    return await pages.StageMasterFormSSR(props);
                 }
             }
         else if (props.params.app.length === 3 && props.params.app[2] === "projets-tutores")
@@ -220,6 +223,27 @@ const config: AppConfig = {
                     return await pages.StudentMemoirePage(props);
                 }
             }
+        else if (props.params.app.length === 3 && props.params.app[2] === "students")
+            return {
+                dashboardLayouting: true,
+                render: () => {
+                    return pages.StudentPage(props)
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "students" && props.params.app[3] !== "create")
+            return {
+                dashboardLayouting: true,
+                render: () => {
+                    return pages.StudentFormPage({...props, for:"detail"})
+                }
+            }
+        else if (props.params.app.length === 4 && props.params.app[2] === "students" && props.params.app[3] === "create")
+            return {
+                dashboardLayouting: true,
+                render: () => {
+                    return pages.StudentFormPage({...props, for:"create"})
+                }
+            }
         else
             return {
                 dashboardLayouting: true,
@@ -227,6 +251,8 @@ const config: AppConfig = {
                     return await pages.NoActiveFeatures(props)
                 }
             }
+        
+
     },
 
 }

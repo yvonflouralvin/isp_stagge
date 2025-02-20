@@ -10,6 +10,7 @@ interface Props {
     department_settings? : DepartmentSettings
 }
 export default function ProjetTutoreOptions(props: Props) {
+ 
 
     const nbetudiants = React.useRef<any>()
     const nbgroups = React.useRef<any>()

@@ -1,28 +1,30 @@
-from .models import *
-from uscitech_academy.models import *
-from .serializers import *
-from uscitech_academy.serializers import *
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
-from django.shortcuts import get_object_or_404
-from rest_framework.permissions import AllowAny
-from rest_framework import filters
-from django.db.models import Q
+from django.shortcuts import get_object_or_404  
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
-from core.models import User
 
 from django.db.models import Q
 
-from core.utils import Paginator
-from uscitech_academy.models import Student, GradeClasse
-from uscitech_academy.serializers import GradeClasseSerializer
 from rest_framework.exceptions import MethodNotAllowed
 from django.core.exceptions import ObjectDoesNotExist
+
+from core.utils import Paginator
+ 
+from core.models import *
+from .models import *
+from uscitech_academy.models import *
+
+from .serializers import *
+from uscitech_academy.serializers import *
+
+from uscitech_academy.serializers import GradeClasseSerializer
+
+from rest_framework import status
 
 
 class PromotionL2(APIView):
@@ -116,61 +118,23 @@ class StageMasterViewSet(viewsets.ModelViewSet):
     queryset = StageMaster.objects.all()
     serializer_class = StageMasterSerializer
     pagination_class = Paginator
-    filter_backends = (filters.SearchFilter,)  # Ajout du filtre de recherche
-    search_fields = ['user__username', 'user__name', 'user__last_name', 'user__first_name', 'user__email']  # Champs recherchables
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend)  # Ajout du filtre de recherche
+    search_fields = ['employee_user__username', 'employee_user__name', 'employee_user__last_name', 'employee_user__first_name', 'employee_user__email']  # Champs recherchables
 
-    def create(self, request):
- 
+    def destroy(self, request, *args, **kwargs):
+        """Retirer la permission 'isp_user_stage_master' lors de la suppression d'un StageMaster"""
+        instance = self.get_object()  # Récupère l'instance à supprimer
+        user = instance.employee.user  # Assumant que Employee a une relation OneToOne avec User
 
-        if User.objects.filter(username = request.data.get("phone")).exists():
-            return Response({"message":"Numéro de téléphone déjà utilisés"}, status=400)
+        # Vérifier si la permission existe et retirer la permission de l'utilisateur
+        try:
+            permission = Permission.objects.get(codename="isp_user_stage_master")
+            user.user_permissions.remove(permission)
+        except Permission.DoesNotExist:
+            pass  # Si la permission n'existe pas, on ne fait rien
 
-        user = User()
-        user.username = request.data.get("phone")
-        user.name = request.data.get("name")
-        user.last_name = request.data.get("last_name")
-        user.first_name = request.data.get("first_name")
-        user.email = request.data.get("email")
-        user.password = make_password(request.data.get("phone"))
-        user.phone = request.data.get('phone')
-
-        user.save()
-
-        permission = Permission.objects.get(codename="isp_user_stage_master")
-        user.user_permissions.add(permission)
-        user.save()
-
-        stg_master = StageMaster()
-        stg_master.user = user
-        # stg_master.dept = dept_off[0].dept
-        stg_master.save()
-
-        return Response(StageMasterSerializer(stg_master).data)
-
-    def list(self, request, *args, **kwargs):
-        user: User = request.user
-        queryset = self.filter_queryset(self.get_queryset())
-
-        # Recherche appliquée grâce au `SearchFilter`
-        search_query = request.GET.get('search', None)  # Récupère le paramètre de recherche si présent
-        if search_query:
-            queryset = queryset.filter(
-                Q(user__username__icontains=search_query) | 
-                Q(user__last_name__icontains=search_query) |
-                Q(user__first_name__icontains=search_query) |
-                Q(user__name__icontains=search_query) |
-                Q(user__email__icontains=search_query) |
-                Q(user__phone__icontains=search_query)
-            )  # Exemple de recherche sur le username
-        
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
+        return super().destroy(request, *args, **kwargs)
+    
     @action(detail=False, url_path='student-depts')
     def get_my_students_dept(self, request):
 
@@ -252,7 +216,7 @@ class StudentForStageAPIView(APIView):
             return Response({"message": "Vous n'avez pas les droits pour accéder à cette page."}, status=403)
 
         # L'utilisateur est chef de departement à la recherche mais pas maitre de stage, mais n'a pas de département d'attache
-        dept_off = DeptRechercheOfficier.objects.filter(user__id=user.id)
+        dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
         if (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
             stages = None
         elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
@@ -316,46 +280,148 @@ class StudentForStageAPIView(APIView):
         # return Response({})
         return paginator.get_paginated_response(stage_serializer.data)
 
+class IspGombePromotionViewSet(viewsets.ModelViewSet):
+    queryset = Promotion.objects.all()
+    serializer_class = PromotionSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["libelle", "grade__libelle"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.has_perm("isp_stage.isp_departement_officier") : 
+            department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+            if not  department_officier.exists() :
+                return Promotion.objects.none() 
+            department_officier: DeptRechercheOfficier = department_officier[0]
+            return Promotion.objects.filter(grade__id = department_officier.dept.id)
+        return Promotion.objects.all()
+
+class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["user__username", "user__first_name", "user__last_name"]
+
+    def get_queryset(self):
+        """
+        Permet de filtrer les départements :
+        - Si `parent_department_id` est fourni, retourne les sous-départements du département donné.
+        - Sinon, retourne tous les départements.
+        """
+        user = self.request.user
+        if user.has_perm("isp_stage.isp_departement_officier") : 
+            department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+            if not  department_officier.exists() :
+                return Student.objects.none()
+            
+            department_officier: DeptRechercheOfficier = department_officier[0]
+            queryset = Student.objects.filter(promotion__grade__id = department_officier.dept.id)
+        
+            return queryset
+        
+        elif user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
+            student = Student.objects.filter(user=user)
+            if not student.exists() :
+                return Student.objects.none()
+            else :
+                student = student.first()
+                return Student.objects.filter(promotion__id = student.promotion.id)
+
+        else :
+            return Student.objects.all()
+    
+    
+    @action(detail=False, methods=['post'], url_path='bulk-upload')
+    def bulk_upload(self, request):
+        user = request.user
+        # promotion = Promotion.objects.filter(grade__id = )
+        promotion_id = request.data.get('promotion_id', None)
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'Aucun fichier fourni.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            df = pd.read_excel(file)
+            created_students = []
+            
+            for _, row in df.iterrows():
+                # full_name = f"{row['first_name']} {row['name']} {row['last_name']}".strip()
+                user, created_user = User.objects.get_or_create(
+                    username=row['email'],
+                    defaults={
+                        'name': row['name'],
+                        'first_name': row['first_name'],
+                        'last_name': row['last_name'],
+                        'phone': row.get('phone', ''),
+                        'sexe': 'm',  # Valeur par défaut, peut être ajustée si disponible,
+                        "password" : make_password(os.environ.get("DEFAULT_PASS", "1234")),
+                        "is_active" : True,
+                        "email" : row['email']
+                    }
+                )
+
+                if not created_user :
+                    user.first_name = row['first_name']
+                    user.last_name = row['last_name']
+                    user.name = row['name']
+                    user.email = row['email']
+                    user.is_active=True
+
+                    user.save()
+                
+                try:
+                    permission = Permission.objects.get(codename="isp_user_student")
+                    user.user_permissions.add(permission)
+                except: 
+                    pass
+                try:
+                    permission = Permission.objects.get(codename="academy_is_student")
+                    user.user_permissions.add(permission)
+                except:
+                    pass
+                
+                promotion = None
+                
+                if promotion_id :
+                    promotion = Promotion.objects.filter(id=promotion_id).first()
+                    
+                student, created = Student.objects.get_or_create(
+                    user=user,
+                    defaults={'promotion': promotion}
+                )
+                created_students.append(student.id)
+            
+            return Response({'message': 'Importation réussie.', 'students': created_students}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     queryset = DeptRechercheOfficier.objects.all()
     serializer_class = DeptRechercheOfficierSerializer
     pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["employee__user__username", "employee__user__first_name", "employee__user__last_name"]
 
-    # isp_departement_officier
+    def destroy(self, request, *args, **kwargs):
+        """Retirer la permission 'isp_departement_officier' lors de la suppression d'un DeptRechercheOfficier"""
+        instance = self.get_object()  # Récupère l'instance à supprimer
+        user = instance.employee.user  # Assumant que Employee a une relation OneToOne avec User
 
-    def create(self, request):
-        
-        user = User.objects.filter(username=request.data.get("phone"))
-        if user.exists():
-            return Response({"message": "Le numéro de téléphone existe déjà."}, status=400)
-        
-        user = User() 
-        user.password = make_password(request.data.get("phone"))
-        user.username = request.data.get("phone")
-        user.phone = request.data.get("phone")
-        user.first_name = request.data.get("first_name")
-        user.last_name = request.data.get("last_name")
-        user.email = request.data.get("email")
-        user.save()
+        # Vérifier si la permission existe et retirer la permission de l'utilisateur
+        try:
+            permission = Permission.objects.get(codename="isp_departement_officier")
+            user.user_permissions.remove(permission)
+        except Permission.DoesNotExist:
+            pass  # Si la permission n'existe pas, on ne fait rien
 
-        permission = Permission.objects.get(codename="isp_departement_officier")
-        user.user_permissions.add(permission)
-        user.save()
+        return super().destroy(request, *args, **kwargs)
 
-        dept_recherche_officier = DeptRechercheOfficier()
-        dept_recherche_officier.user = user
-        dept_recherche_officier.dept = GradeClasse.objects.get(id=request.data.get("dept"))
-        dept_recherche_officier.save()
-        
-        return Response(
-            { "dept_recherche_officier": DeptRechercheOfficierSerializer(dept_recherche_officier).data},
-            status=201,
-        )
 
     @action(detail=False, url_path='get_by_user_id/(?P<user_id>\d+)')
     def get_by_user_id(self, request, user_id):
-        dept = DeptRechercheOfficier.objects.filter(user_id=user_id)
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user_id)
         if dept.exists():
             return Response(DeptRechercheOfficierSerializer(dept[0]).data)
         return Response({}, status=404)
@@ -363,7 +429,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     @action(detail=False, url_path='get_by_user')
     def get_by_user(self, request):
 
-        dept = DeptRechercheOfficier.objects.filter(user_id=request.user.id)
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=request.user.id)
         if dept.exists():
             return Response(DeptRechercheOfficierSerializer(dept[0]).data)
         return Response({}, status=404)
@@ -372,7 +438,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     def get_my_students_dept(self, request):
 
         user: User = request.user 
-        dept = DeptRechercheOfficier.objects.filter(user_id=user.id)
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
         if dept.exists():
             grades = GradeClasse.objects.filter(id = dept[0].dept.id)
             return Response(GradeClasseSerializer(grades, many=True).data, status=200)
@@ -444,13 +510,19 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
             return StudentMemoire.objects.all()
 
         # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
-        if user.has_perm('uscitech_acdemy.academy_is_teacher'):
+        if user.has_perm('uscitech_academy.academy_is_teacher'):
             teacher = Teacher.objects.filter(employee__user=user).first()
             if teacher:
                 return StudentMemoire.objects.filter(teacher=teacher)
 
+        # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
+        if user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
+            student = Student.objects.filter(user=user).first()
+            if student:
+                return StudentMemoire.objects.filter(student=student)
+
         # Par défaut, retour vide
-        return StudentMemoire.objects.none()
+        return StudentMemoire.objects.all()
 
 
 class DepartmentSettingsViewSet(viewsets.ModelViewSet):
@@ -462,7 +534,7 @@ class DepartmentSettingsViewSet(viewsets.ModelViewSet):
     def me(self, request):
         user: User = request.user
         if user.has_perm('isp_stage.isp_departement_officier') : 
-            department_officier = DeptRechercheOfficier.objects.filter(user = user)
+            department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not department_officier.exists() :
                 return Response("Aucune donnée trouvé  -> department_officier", 404 )
             else :
@@ -574,6 +646,20 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
             )
         
         students_without_stage = students_without_stage.filter(~Q(stage__student__isnull=False))
+
+        user = request.user
+        if user.has_perm('isp_stage.isp_departement_officier') :
+            dept_officier = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
+            if not dept_officier.exists() :
+                return Response({}, 404)
+            dept_officier = dept_officier.first()
+            students_without_stage = students_without_stage.filter(promotion__grade__id = dept_officier.dept.id)
+
+        if stage_type == "pedagogique" : 
+            students_without_stage = students_without_stage.filter(promotion__libelle = "L3")
+
+        if stage_type == "impregnation" : 
+            students_without_stage = students_without_stage.filter(promotion__libelle = "L2")
         
         page = self.paginate_queryset(students_without_stage)
         if page is not None:

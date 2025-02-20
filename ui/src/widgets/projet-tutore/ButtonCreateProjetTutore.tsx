@@ -2,8 +2,7 @@
 import api from '@/lib/network/api';
 import cookies from '@/lib/shared/cookies';
 import { Spinner } from '@nextui-org/react';
-import React from 'react';
-import { ProjetTutoreFormPageProps } from '../../types';
+import React from 'react'; 
 import { PageProps } from '@/lib/shared/types/config';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 

@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { ProjetTutoreFormPageProps } from "../../types";
+import { ProjetTutore, ProjetTutoreFormPageProps } from "../../types";
 import SearchSelected from "@/components/ui/SearchSelected";
 import { Student, Teacher } from "/addons/uscitech_academy/ui/src/types";
 import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from '@nextui-org/react';
@@ -9,7 +9,7 @@ import api from '@/lib/network/api';
 
 
 export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
-    console.log(props.projet);
+    console.log(props.department_settings);
     const [memberIds, setMemberIds] = React.useState<Student[]>(props.members)
     const [isSaving, setIsSaving] = React.useState(false)
     const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.teacher_id && props.projet?.teacher_id !== null && props.projet?.teacher_id !== null) ? props.projet?.teacher_id : undefined)
@@ -30,7 +30,8 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 head_id: props.projet?.head_id
             }
             if (selectedTeacher !== undefined) datas["teacher_id"] = selectedTeacher
-            const result = await api(cookies).put(`/isp_stage/projets-tutores/${props.projet?.id}/`, datas);
+            const result: ProjetTutore = await api(cookies).put(`/isp_stage/projets-tutores/${props.projet?.id}/`, datas);
+        
 
         } catch (e) {
 
@@ -87,7 +88,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 }
             </div>
             {
-                (props.for === "create" && props.department_settings !== undefined && props.department_settings.max_tutore_project_member_group < memberIds.length) && <div className='mt-[15px]'>
+                (props.for === "create" && props.department_settings !== undefined && props.department_settings.max_tutore_project_member_group > memberIds.length) && <div className='mt-[15px]'>
                     <ButtonAddMember onChange={(e: Student) => {
                         if (memberIds.find(mid => mid.id === e.id)) return;
                         setMemberIds([
@@ -136,7 +137,7 @@ const ButtonAddMember = (
                     <p>Ajouter un membre</p>
                 </ModalHeader>
                 <ModalBody>
-                    <SearchSelected onChange={(e: Student) => setSeletedStudent(e)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name}`)} index='id' url='/uscitech_academy/students/' />
+                    <SearchSelected onChange={(e: Student) => setSeletedStudent(e)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name}`)} index='id' url='/isp_stage/students/' />
                     <div className='mt-[15px]'>
                         <button onClick={handleAdd} className='bg-[rgba(0,0,0,0.05)] text-[13px] py-[4px] px-[15px] rounded'>Ajouter</button>
                     </div>

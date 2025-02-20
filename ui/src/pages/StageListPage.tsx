@@ -53,7 +53,7 @@ export default async function StageListPage(props: PageProps) {
     }
 
     if (promotion === undefined && props.user.permissions.find(e => e === 'isp_departement_officier') && props.user.is_superuser === false) {
-        return <div className='bg-white rounded shadow p-[20px] items-center justify-center flex flex-col h-full'>
+        return <div className='bg-white rounded shadow p-[5px] md:p-[20px] items-center justify-center flex flex-col h-full'>
             <div className='flex flex-col items-center justify-center max-w-[400px] gap-[20px]'>
                 <ArchiveX />
                 <p>Aucune L3 trouvé {promotion ? `pour le département ${dept?.dept?.libelle}` : ""}</p>
@@ -62,7 +62,7 @@ export default async function StageListPage(props: PageProps) {
     }
 
     return <div>
-        <div className='bg-white rounded shadow p-[20px]'>
+        <div className='bg-white rounded shadow p-[5px] md:p-[20px]'>
             <div className='flex flex-row gap-[10px]'>
                 <div className='flex-1 text-[14px]'>
                     <h1 className='m-0'>Stage {stageInfos()?.label} {promotion ? `(${promotion.grade.libelle})` : ""} </h1>

@@ -1,21 +1,54 @@
 from rest_framework import serializers 
 
-from .models import *
-from uscitech_academy.serializers import StudentSerializer, GradeClasseSerializer, TeacherSerializer
-from uscitech_academy.models import Teacher
-from core.serializers import * 
+
+
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
 import os
 
+from core.serializers import UserSerializer
+from hr.serializers import EmployeeSerializer
+from uscitech_academy.serializers import *
+
+from .models import *
+from uscitech_academy.models import Teacher
+from hr.models import *
 
 class StageMasterSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    employee = EmployeeSerializer(read_only=True)
+    employee_id = serializers.PrimaryKeyRelatedField(
+        queryset = Employee.objects.all(), source="employee", required=True, allow_null=False
+    )
 
     class Meta: 
         model =  StageMaster
-        fields = ['id','user', 'is_quote_submitted']
-        # fields = ['id','dept', 'user']
+        fields = ['id','employee_id', 'employee', 'is_quote_submitted'] 
+
+    def validate_employee_id(self, value):
+        """Vérifie qu'un DeptRechercheOfficier n'existe pas déjà pour cet employee"""
+        if StageMaster.objects.filter(employee=value).exists():
+            raise serializers.ValidationError("Cet employé est déjà enregistré en tant que maitre de stage")
+        if DeptRechercheOfficier.objects.filter(employee=value).exists():
+            raise serializers.ValidationError("Cet employé est déjà enregistré en tant que responsable de recherche au département")
+        return value
+
+    def create(self, validated_data):
+        """Crée l'objet et attribue la permission `isp_departement_officier` à l'utilisateur associé"""
+        stage_master = StageMaster.objects.create(**validated_data)
+
+        # Récupérer l'utilisateur lié à l'employé
+        user = stage_master.employee.user  # Assumant que Employee a une relation OneToOne avec User
+
+        # Vérifier si la permission existe
+        try:
+            permission = Permission.objects.get(codename="isp_user_stage_master")
+        except Permission.DoesNotExist:
+            raise serializers.ValidationError("La permission 'isp_user_stage_master' n'existe pas.")
+
+        # Assigner la permission à l'utilisateur
+        user.user_permissions.add(permission)
+
+        return stage_master
 
 class StageSerializer(serializers.ModelSerializer):
     student = StudentSerializer()
@@ -31,69 +64,40 @@ class DeptRechercheOfficierSerializer(serializers.ModelSerializer):
     dept_id = serializers.PrimaryKeyRelatedField(
         queryset = GradeClasse.objects.all(), source="dept", required=True, allow_null=False
     )
-    user = UserSerializer(read_only=True)
-    fullname = serializers.CharField(required=True, write_only=True)
-    email = serializers.CharField(required=True, write_only=True)
-    phone = serializers.CharField(required=False, write_only=True)
-
+    employee = EmployeeSerializer(read_only=True)
+    employee_id = serializers.PrimaryKeyRelatedField(
+        queryset = Employee.objects.all(), source="employee", required=True, allow_null=False
+    )
 
     class Meta: 
         model = DeptRechercheOfficier
-        fields = ['id', 'user', 'dept', 'fullname', 'email', 'phone', 'dept_id']
+        fields = ['id', 'employee', 'employee_id', 'dept_id', 'dept']
+
+    def validate_employee_id(self, value):
+        """Vérifie qu'un DeptRechercheOfficier n'existe pas déjà pour cet employee"""
+        if DeptRechercheOfficier.objects.filter(employee=value).exists():
+            raise serializers.ValidationError("Cet employé a déjà un département assigné.")
+        if StageMaster.objects.filter(employee=value).exists():
+            raise serializers.ValidationError("Cet employé est déjà enregistré en tant que maitre de stage")
+        return value
 
     def create(self, validated_data):
-        fullname = validated_data.pop("fullname", None) 
-        email = validated_data.pop("email", None)
-        phone = validated_data.pop("phone", None)
+        """Crée l'objet et attribue la permission `isp_departement_officier` à l'utilisateur associé"""
+        dept_officier = DeptRechercheOfficier.objects.create(**validated_data)
 
-        fullname_splited = str(fullname).split(" ")
-        # Création d'un utilisateur s'il n'est pas fourni
-        user = User.objects.create( 
-            name = fullname_splited[0] ,
-            last_name = fullname_splited[1] if len(fullname_splited) >=2 else fullname_splited[0],
-            first_name = fullname_splited[2] if len(fullname_splited) >=3 else fullname_splited[0],
-            username = email,
-            phone = phone if phone != "" else None,
-            email = email,
-            password = make_password(os.environ.get("DEFAULT_PASS", "1234"))
-        )
+        # Récupérer l'utilisateur lié à l'employé
+        user = dept_officier.employee.user  # Assumant que Employee a une relation OneToOne avec User
 
-        user.user_permissions.add(Permission.objects.get(codename="isp_departement_officier"))
-        user.save()
+        # Vérifier si la permission existe
+        try:
+            permission = Permission.objects.get(codename="isp_departement_officier")
+        except Permission.DoesNotExist:
+            raise serializers.ValidationError("La permission 'isp_departement_officier' n'existe pas.")
 
-        # Création de l'employé avec l'utilisateur nouvellement créé
-        validated_data["user"] = user 
-        return super().create(validated_data)
-    
-    def update(self, instance, validated_data):
-        # Mise à jour de l'utilisateur associé 
+        # Assigner la permission à l'utilisateur
+        user.user_permissions.add(permission)
 
-        fullname = validated_data.pop("fullname", None) 
-        email = validated_data.pop("email", None)
-        phone = validated_data.pop("phone", None)
-
-        user = instance.user
-
-        if fullname :
-            fullname_splited = str(fullname).split(" ")
-            user.name = fullname_splited[0]
-            user.last_name = fullname_splited[1] if len(fullname_splited) >=2 else fullname_splited[0]
-            user.first_name = fullname_splited[2] if len(fullname_splited) >=3 else fullname_splited[0]
-
-        if email :
-            user.username = email
-            user.email = email
-        
-        if phone :
-            user.phone = phone if phone != "" else None
-
-        user.save()
-
-        validated_data["user"] = user 
-
-        return super().update(instance, validated_data)
-
-    
+        return dept_officier
 
 class ProjetTutoreSerializer(serializers.ModelSerializer):
     head = StudentSerializer(read_only=True)

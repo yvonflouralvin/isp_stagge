@@ -14,7 +14,7 @@ export default async function StudentMemoireListPage(props: PageProps) {
     try {
         department_settings = ((await api(await cookies()).get(`/isp_stage/department-settings/me/`)).data)
     } catch (e) { }
-    return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[20px]'>
+    return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {
                 label: "Projets Tutorés",
