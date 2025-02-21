@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { ArchiveX, ListIcon, SheetIcon } from 'lucide-react';
 import ListStageServerComponents from '../widgets/stage/ListStageServerComponents';
 import Link from 'next/link';
+import Breadcrumb from '@/components/ui/Breadcrumb';
 
 
 
@@ -13,11 +14,11 @@ export default async function StageListPage(props: PageProps) {
     const stage = props.params.app[2]
 
     var stagemaster = undefined
-      try{
+    try {
         stagemaster = (await api(await cookies()).get(`/isp_stage/stage-master/get-by-user/`)).data
-      }catch(e){
-    
-      }
+    } catch (e) {
+
+    }
 
 
     const stageInfos = () => {
@@ -31,9 +32,9 @@ export default async function StageListPage(props: PageProps) {
     }
 
     var filtering_promotions = []
-    if (props.user.permissions.find((p:string)=> p === "isp_departement_officier")){
+    if (props.user.permissions.find((p: string) => p === "isp_departement_officier")) {
         filtering_promotions = (await api(await cookies()).get(`/isp_stage/dept-recherche-officier/student-depts/?stage=${stage}`)).data
-    }else if (props.user.permissions.find((p:string)=> p === "isp_user_stage_master")){
+    } else if (props.user.permissions.find((p: string) => p === "isp_user_stage_master")) {
         filtering_promotions = (await api(await cookies()).get(`/isp_stage/stage-master/student-depts/?stage=${stage}`)).data
     }
 
@@ -61,36 +62,15 @@ export default async function StageListPage(props: PageProps) {
         </div>
     }
 
-    return <div>
-        <div className='bg-white rounded shadow p-[5px] md:p-[20px]'>
-            <div className='flex flex-row gap-[10px]'>
-                <div className='flex-1 text-[14px]'>
-                    <h1 className='m-0'>Stage {stageInfos()?.label} {promotion ? `(${promotion.grade.libelle})` : ""} </h1>
-                    <p className='font-bold text-[18px]'>
-                        {props.params.app[3] === "list" ? "Liste d'étudiants" : "Cotations d'étudiants"}
-                    </p>
-                </div>
-
-                
-                { props.user.permissions.find((pr:string) => pr === "isp_user_stage_master") && 
-                    <>
-                        {
-                            props.params.app[3] === "list" ? <Link href={`/apps/isp_stage/${stage}/cotations`} className="flex cursor-pointer items-center gap-1">
-                                <p className='text-[14px] text-gray-500 font-bold'>Cotations</p>
-                                <SheetIcon size={14} />
-                            </Link> : <Link href={`/apps/isp_stage/${stage}/list`} className="flex cursor-pointer items-center gap-1">
-                                <p className='text-[14px] text-gray-500 font-bold'>Listes</p>
-                                <ListIcon size={14} />
-                            </Link>
-                        }
-                    </>
-                }
-
-
-            </div>
-        </div>
-        <div className='mt-[5px]'>
-            <ListStageServerComponents stagemaster={stagemaster} filtering_promotions={filtering_promotions} {...props} type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
-        </div>
+    return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
+        <Breadcrumb links={[
+            {
+                label: `Stage ${stageInfos()?.label}`,
+                link: `/apps/isp_stage/${props.params.app[2]}/list`
+            }
+        ]} />
+         
+        <ListStageServerComponents stagemaster={stagemaster} filtering_promotions={filtering_promotions} {...props} type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
+        
     </div>
 }

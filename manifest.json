@@ -29,5 +29,12 @@
             "name": "Etudiant à l'ISP Gombe",
             "description": "L'utilisateur peut consulter la liste des facultés."
         }
+        ,
+        {
+            "id": "isp_directeur_travaux",
+            "name": "Directeur de Travaux ",
+            "description": "L'utilisateur est un directeur de travaux à l'ISP"
+        }
+        
     ]
 }

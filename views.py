@@ -14,6 +14,7 @@ from .serializers import *
 def stages_resumes(request):
     stages = Stage.objects.all().exclude(student = None).exclude(student__user = None)
     
+    
     user: User = request.user
     if user == None :
         return Response({
@@ -27,11 +28,11 @@ def stages_resumes(request):
     if user.is_superuser : 
         stages = Stage.objects.all().exclude(student = None).exclude(student__user = None)
     elif not user.is_superuser and user.has_perm('isp_stage.isp_departement_officier'):
-        dept_off = DeptRechercheOfficier.objects.filter(user__id=user.id)
+        dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
         if dept_off.exists() :
             stages = Stage.objects.filter(student__promotion__grade__id=dept_off[0].dept.id)
     elif not user.is_superuser and not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master'):
-        stages = Stage.objects.filter(stagemaster__user__id = user.id)
+        stages = Stage.objects.filter(stagemaster__employee__user__id = user.id)
     else :
         return Response({
             "students": 0,

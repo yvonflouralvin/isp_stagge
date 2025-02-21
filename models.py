@@ -18,6 +18,21 @@ class StageMaster(models.Model):
     is_quote_submitted = models.BooleanField(default=False) 
     
 
+class DirecteurTravaux(models.Model):
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    direction_type = category = models.CharField(choices=[
+        ('projet-tutore', 'Projet Tutoré'),
+        ('memoire', 'Mémoire'),
+        ('stage', 'Stage')
+    ], null=False)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=False)
+    department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=False)
+    category = models.CharField(choices=[
+        ('interne', 'Du Département'),
+        ('externe', 'Pas du Département'),
+    ], null=False)
+
 class Stage(models.Model):
 
     STAGE_TYPES = [
@@ -51,18 +66,22 @@ class ProjetTutore(models.Model):
     subject = models.TextField(null=False, blank=False)
     head = models.ForeignKey(Student, null=False, related_name="head", on_delete=models.CASCADE)
     member = models.ManyToManyField(Student, related_name="member" )
-    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL)
+    director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
 
 
 class StudentMemoire(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.TextField(null=False, blank=False)
     student = models.ForeignKey(Student, null=False, related_name="student", on_delete=models.CASCADE) 
-    teacher = models.ForeignKey(Teacher, null=True, blank=True, on_delete=models.SET_NULL)
+    director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
 
 class DepartmentSettings(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=False)
-    max_teacher_tutore_project_group = models.IntegerField(default=1, blank=True)
-    max_teacher_memoire = models.IntegerField(default=1, blank=True)
+    max_teacher_tutore_project_group = models.IntegerField(default=1, blank=True) # Nombre de groupe par directeur internet
+    max_teacher_externe_tutore_project_group = models.IntegerField(default=1, blank=True) # Nombre de groupe par directeur externe
+    max_teacher_memoire = models.IntegerField(default=1, blank=True) # Nombre de memoire du département
+    max_teacher_externe_memoire = models.IntegerField(default=1, blank=True) # Nombre de memoire du département
     max_tutore_project_member_group = models.IntegerField(default=1, blank=True)
+
+

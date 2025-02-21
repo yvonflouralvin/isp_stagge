@@ -12,9 +12,9 @@ import { PageProps } from '@/lib/shared/types/config'
 export type ProjetTutore =  {
     id: string
     subject: string
-    teacher?: Teacher
+    director?: DirecteurTravaux
     head_id: string
-    teacher_id: string
+    director_id: string
     head: Student
     member: string[]
 }
@@ -22,9 +22,9 @@ export type ProjetTutore =  {
 export interface StudentMemoire {
     id: string
     subject: string
-    teacher?: Teacher
+    director?: DirecteurTravaux
     student: Student
-    teacher_id: string
+    director_id: string
     student_id: string
 }
 
@@ -49,6 +49,8 @@ export interface DepartmentSettings {
     max_teacher_tutore_project_group: number
     max_teacher_memoire: number
     max_tutore_project_member_group: number
+    max_teacher_externe_tutore_project_group: number
+    max_teacher_externe_memoire: number
 }
 
 
@@ -66,3 +68,14 @@ export interface StageMaster {
     employee_id: string 
     is_quote_submitted: boolean
 }
+
+export interface DirecteurTravaux {
+    id: string
+    employee : Employee 
+    employee_id: string 
+    department: Grade
+    department_id : string
+    direction_type: string
+    category: string
+}
+

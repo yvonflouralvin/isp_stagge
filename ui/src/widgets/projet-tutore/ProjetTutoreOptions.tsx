@@ -14,6 +14,7 @@ export default function ProjetTutoreOptions(props: Props) {
 
     const nbetudiants = React.useRef<any>()
     const nbgroups = React.useRef<any>()
+    const nbgroups_externe = React.useRef<any>()
 
     const [department_settings, setDepartment_settings] = React.useState<DepartmentSettings|undefined>(props.department_settings)
     const [isOpen, setIsOpen] = React.useState(false)
@@ -28,8 +29,8 @@ export default function ProjetTutoreOptions(props: Props) {
             const result = (await api(cookies).put(`/isp_stage/department-settings/${department_settings?.id}/`, {
                 department_id: department_settings?.department_id, 
                 max_teacher_tutore_project_group: nbgroups.current.value,
-                max_tutore_project_member_group: nbetudiants.current.value
-                
+                max_tutore_project_member_group: nbetudiants.current.value,
+                max_teacher_externe_tutore_project_group: nbgroups_externe.current.value
             })).data;
             setDepartment_settings(result);
             setIsUpdating(false);
@@ -55,9 +56,14 @@ export default function ProjetTutoreOptions(props: Props) {
                             {isUpdating === true && <input className='border-0 outline-none w-full bg-transparent text-[13px]' ref={nbetudiants} id="nbetudiants" defaultValue={department_settings ? `${department_settings.max_tutore_project_member_group}` : ""} placeholder="Nombre d'étudiants par encadreur" type='number' />}
                         </div>
                         <div className='mt-[10px]'>
-                            <p className='font-light text-gray-500 text-[13px]'>Nombre de groupe par encadreur</p>
+                            <p className='font-light text-gray-500 text-[13px]'>Nombre de groupe par directeur du département</p>
                             {isUpdating === false && <p className='font-bold'>{department_settings ? `${department_settings.max_teacher_tutore_project_group}` : ""}</p>}
-                            {isUpdating === true && <input className='border-0 outline-none w-full bg-transparent text-[13px]' ref={nbgroups} id="nbgroups" defaultValue={department_settings ? `${department_settings.max_teacher_tutore_project_group}` : ""} placeholder='Nombre de groupe par encadreur' type='number' />}
+                            {isUpdating === true && <input className='border-0 outline-none w-full bg-transparent text-[13px]' ref={nbgroups} id="nbgroups" defaultValue={department_settings ? `${department_settings.max_teacher_tutore_project_group}` : ""} placeholder='Nombre de groupe par directeur du département' type='number' />}
+                        </div>
+                        <div className='mt-[10px]'>
+                            <p className='font-light text-gray-500 text-[13px]'>Nombre de groupe par directeur externe</p>
+                            {isUpdating === false && <p className='font-bold'>{department_settings ? `${department_settings.max_teacher_externe_tutore_project_group}` : ""}</p>}
+                            {isUpdating === true && <input className='border-0 outline-none w-full bg-transparent text-[13px]' ref={nbgroups_externe} id="nbgroups" defaultValue={department_settings ? `${department_settings.max_teacher_externe_tutore_project_group}` : ""} placeholder='Nombre de groupe par directeur externe' type='number' />}
                         </div>
                         <div className='flex mt-[10px] justify-end'>
                             {isUpdating === false && <button onClick={() => setIsUpdating(true)} className='duration-300 hover:bg-[rgba(0,0,0,0.1)] text-gray-500 hover:text-gray-700 bg-[rgba(0,0,0,0.02)] px-[20px] py-[4px] rounded cursor-pointer'>Editer</button>}

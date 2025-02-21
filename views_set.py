@@ -140,7 +140,7 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         user: User = request.user
         stage = request.GET.get("stage")
-        stages = Stage.objects.filter(stagemaster__user__id__in =  [user.id], stage=stage)
+        stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
 
         grades = GradeClasse.objects.filter(id__in = [
             _stage.student.promotion.grade.id for _stage in stages
@@ -153,9 +153,9 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         user: User = request.user
         stage = request.GET.get("stage")
-        stages = Stage.objects.filter(stagemaster__user__id__in =  [user.id], stage=stage)
+        stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
 
-        stagemaster = StageMaster.objects.first(user__id = user.id)
+        stagemaster = StageMaster.objects.first(emploeyee__user__id = user.id)
         stagemaster.is_quote_submitted = True
         stagemaster.save()
 
@@ -175,7 +175,7 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         user: User = request.user
 
-        stagemaster = StageMaster.objects.filter(user__id = user.id)
+        stagemaster = StageMaster.objects.filter(employee__user__id = user.id)
         if stagemaster.exists() :
             return Response(StageMasterSerializer(stagemaster[0]).data)
 
@@ -222,7 +222,7 @@ class StudentForStageAPIView(APIView):
         elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
             stages = Stage.objects.filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage)
         elif (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
-            stages = Stage.objects.filter(stagemaster__user__id__in =  [user.id], stage=stage)
+            stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
         elif user.is_superuser ==  True:
             stages = Stage.objects.filter(stage=stage)
         else :
@@ -419,6 +419,9 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
+    
+
+
     @action(detail=False, url_path='get_by_user_id/(?P<user_id>\d+)')
     def get_by_user_id(self, request, user_id):
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user_id)
@@ -428,6 +431,14 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, url_path='get_by_user')
     def get_by_user(self, request):
+
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=request.user.id)
+        if dept.exists():
+            return Response(DeptRechercheOfficierSerializer(dept[0]).data)
+        return Response({}, status=404)
+
+    @action(detail=False,methods=['get'])
+    def me(self, request):
 
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=request.user.id)
         if dept.exists():
@@ -459,11 +470,17 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return ProjetTutore.objects.all()
 
-        # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
-        if user.has_perm('uscitech_acdemy.academy_is_teacher'):
-            teacher = Teacher.objects.filter(employee__user=user).first()
-            if teacher:
-                return ProjetTutore.objects.filter(teacher=teacher)
+        # Vérifier si l'utilisateur est un directeur 
+        if user.has_perm('isp_stage.isp_directeur_travaux'):
+            director = DirecteurTravaux.objects.filter(employee__user=user).first()
+            if director:
+                return ProjetTutore.objects.filter(director__id=director.id)
+
+        # Vérifier si l'utilisateur est un directeur 
+        if user.has_perm('isp_stage.isp_departement_officier'):
+            departmentOfficier = DeptRechercheOfficier.objects.filter(employee__user=user).first() 
+            if departmentOfficier :
+                return ProjetTutore.objects.filter(head__promotion__grade__id=departmentOfficier.dept.id)
 
         # Par défaut, retour vide
         return ProjetTutore.objects.all()
@@ -682,3 +699,112 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         raise MethodNotAllowed('DELETE')
 
+
+
+
+class DirecteurTravauxViewSet(viewsets.ModelViewSet):
+    queryset = DirecteurTravaux.objects.all()
+    serializer_class = DirecteurTravauxSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = ["employee__fullname", "employee__user__name",  "employee__user__last_name",  "employee__user__first_name",  "employee__user__phone",  "employee__user__email"]
+
+    def perform_create(self, serializer):
+        """Ajouter la permission isp_directeur_travaux à l'utilisateur lors de la création."""
+        directeur_travaux = serializer.save()
+        user = directeur_travaux.employee.user  # Récupérer l'utilisateur
+
+        permission = Permission.objects.get(codename="isp_directeur_travaux")
+        user.user_permissions.add(permission)  # Ajouter la permission
+        user.save()
+
+    def perform_destroy(self, instance):
+        """Retirer la permission isp_directeur_travaux de l'utilisateur lors de la suppression."""
+        user = instance.employee.user  # Récupérer l'utilisateur
+
+        permission = Permission.objects.get(codename="isp_directeur_travaux")
+        user.user_permissions.remove(permission)  # Retirer la permission
+        user.save()
+
+        instance.delete()
+
+    def get_queryset(self):
+
+        user = self.request.user
+        queryset = DirecteurTravaux.objects.all()
+
+        # Filtrage supplémentaire basé sur un paramètre GET
+        direction_type = self.request.query_params.get('direction_type', None)
+        if direction_type :
+            queryset = queryset.filter(direction_type=direction_type)
+
+        if user.has_perm('isp_stage.isp_departement_officier') :
+            departmentOfficier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+            if not departmentOfficier.exists() : 
+                return DirecteurTravaux.objects.none()
+            departmentOfficier = departmentOfficier.first()
+            queryset = queryset.filter(department__id = departmentOfficier.dept.id)
+        
+        if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student'):
+            student = Student.objects.filter(user__id = user.id)
+            if not student.exists():
+                return DirecteurTravaux.objects.none()
+            student = student.first()
+            queryset = queryset.filter(department__id = student.promotion.grade.id)
+
+            # Récupérer les paramètres de département pour l'étudiant
+            department_settings, created = DepartmentSettings.objects.get_or_create(
+                department=student.promotion.grade
+            )
+
+            projets = ProjetTutore.objects.filter(director__id__in = [director.id for director in queryset ])
+            director_count = {}
+            for projet in projets:
+                if projet.director == None :
+                    continue
+                director = projet.director
+                if director.id in director_count:
+                    director_count[director.id]['counts'] = director_count[director.id]['counts'] + 1
+                else:
+                    director_count[director.id] = {
+                        "director": director,
+                        "counts": 1
+                    }
+
+            final_directors = []
+            for director in director_count :
+                if director['director'].category == "externe" and director['counts'] >= department_settings.max_teacher_externe_tutore_project_group :
+                    final_directors.append(director['director'])
+                elif director['director'].category == "interne" and director['counts'] >= department_settings.max_teacher_tutore_project_group :
+                    final_directors.append(director['director'])
+
+            queryset = queryset.exclude(id__in = [final_director.id for final_director in final_directors])
+
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+
+        user = self.request.user
+        # if user.has_perm('isp_stage.isp_directeur_travaux'):
+        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id)
+        if directeursTraveaux.exists() : 
+            return Response( DirecteurTravauxSerializer(directeursTraveaux, many=True).data )
+        return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404)
+
+    @action(detail=False, methods=['get'])
+    def resumes(self, request):
+        user = self.request.user
+        # if user.has_perm('isp_stage.isp_directeur_travaux'):
+        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id)
+        if not directeursTraveaux.exists() : 
+            return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404)
+        # departementsSettings  = DepartmentSettings.objects.filter(department__id = [director.department.id for director in directeursTraveaux ])
+        details = []
+        for directeursTravail in directeursTraveaux :
+            departementsSettings, created  = DepartmentSettings.objects.get_or_create(department__id = directeursTravail.department.id, defaults={
+                "department" : directeursTravail.department
+            })
+            details[directeursTravail.id] = {}
+            details[directeursTravail.id]["settings"] = departementsSettings
+            

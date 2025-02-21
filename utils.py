@@ -12,7 +12,7 @@ def user_get_stages(user: User, stage: str,  db_name: str = None):
         return []
 
     # L'utilisateur est chef de departement à la recherche mais pas maitre de stage, mais n'a pas de département d'attache
-    dept_off =  DeptRechercheOfficier.objects.using(db_name).filter(user__id=user.id) if db_name == None else DeptRechercheOfficier.objects.using(db_name).filter(user__id=user.id)
+    dept_off =  DeptRechercheOfficier.objects.using(db_name).filter(employee__user__id=user.id) if db_name == None else DeptRechercheOfficier.objects.using(db_name).filter(employee__user__id=user.id)
     if (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
         # print("Nous sommes dans le print -2")
         pass
@@ -20,7 +20,7 @@ def user_get_stages(user: User, stage: str,  db_name: str = None):
         # print("Nous sommes dans le print -3")
         stages = Stage.objects.using(db_name).filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage) if db_name == None else  Stage.objects.using(db_name).filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage)
     elif (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
-        stages = Stage.objects.using(db_name).filter(stagemaster__user__id__in = [user.id], stage=stage) if db_name == None else Stage.objects.using(db_name).filter(stagemaster__user__id__in = [user.id], stage=stage)
+        stages = Stage.objects.using(db_name).filter(stagemaster__employee__user__id__in = [user.id], stage=stage) if db_name == None else Stage.objects.using(db_name).filter(stagemaster__employee__user__id__in = [user.id], stage=stage)
         # print("Nous sommes dans le print -3")
     elif user.is_superuser ==  True:
         stages = Stage.objects.using(db_name).filter(stage=stage) if db_name == None else Stage.objects.using(db_name).filter(stage=stage)
@@ -74,8 +74,8 @@ def stagemaster_student_datas(task: ReportTask, db_name: str):
 
     promotion = None
     # Préparation et recuppération de la promotion au cas ou l'utisateur est maitre ou chef de departement
-    stagemaster = StageMaster.objects.using(db_name).filter(user__id__in =[user.id])
-    dept_research_off = DeptRechercheOfficier.objects.using(db_name).filter(user__id=user.id)
+    stagemaster = StageMaster.objects.using(db_name).filter(employee__user__id__in =[user.id])
+    dept_research_off = DeptRechercheOfficier.objects.using(db_name).filter(employee__user__id=user.id)
     print(f"Stage Master Len : {len(stagemaster)}")
     print(f"Dept Researcher Off Len : {len(dept_research_off)}")
     if stagemaster.exists() :

@@ -23,23 +23,7 @@ export default async function ProjetTutoresPage(props: PageProps) {
                 link: "/apps/isp_stage/projets-tutores"
             }
         ]} />
-        <div className='border-t border-inherent mt-[15px] pt-[15px] h-full'>
-            <div className="flex items-start">
-                <div className='flex flex-col flex-1'>
-                    <p className='font-semibold text-[20px] m-0'>Projets Tutorés</p>
-                    {/* <p className='text-gray-500 font-light m-0 text-[13px]'>27 inscripts</p> */}
-                </div>
-                {
-                    props.user.permissions.find(perm => perm === "isp_departement_officier") && <div>
-                        <ProjetTutoreOptions department_settings={department_settings} />
-                    </div>
-                }
 
-            </div>
-            <div className="mt-[10px]">
-                <ListProjetTutores />
-            </div>
+                <ListProjetTutores {...props} />
         </div>
-
-    </div>
 }

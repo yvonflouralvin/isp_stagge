@@ -1,12 +1,13 @@
 'use client'
 import React from 'react'
 import { Modal, ModalBody, ModalContent, ModalHeader, ModalFooter, Spinner } from "@nextui-org/react"
-import { Button } from '@/components/ui/button' 
+import { Button } from '@/components/ui/button'
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies'
 import useEvent from '@/lib/hooks/useEvent'
 import { Promotion, Student } from '/addons/uscitech_academy/ui/src/types'
 import SearchSelected from "@/components/ui/SearchSelected";
+import { PlusIcon } from 'lucide-react'
 
 interface Props {
     promotions: Promotion[],
@@ -72,7 +73,10 @@ export default function AddStage(props: Props) {
     }
 
     return <>
-        <Button onClick={() => setIsOpen(true)}>Nouveau</Button>
+        <div>
+            <button className='duration-300 flex items-center gap-[2px] text-[13px] text-white font-bold cursor-pointer rounded py-[5px] px-[15px] bg-primary/80 hover:bg-primary' onClick={() => setIsOpen(true)}><PlusIcon size={"12px"} color='white' /> Nouveau</button>
+
+        </div>
         <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size='2xl'>
             <ModalContent>
                 {/* <form action={createStage}> */}

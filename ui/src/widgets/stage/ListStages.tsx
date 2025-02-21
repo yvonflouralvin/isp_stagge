@@ -1,12 +1,11 @@
 'use client'
 import React from 'react'
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Spinner, Input } from "@nextui-org/react";
+import { Pagination, Spinner } from "@nextui-org/react";
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
-import { SearchIcon, SendHorizonalIcon, SendIcon, TableIcon, UploadIcon } from 'lucide-react';
+import { ListIcon, SearchIcon, SheetIcon, TableIcon } from 'lucide-react';
 import useEvent from '@/lib/hooks/useEvent';
 import FilterStages from '../FilterStages';
-import { useSearchParams } from 'next/navigation';
 import PermissionComponent from '@/components/ui/PermissionComponent';
 import AddStage from './AddStage';
 import PrintReport from './PrintReport';
@@ -14,6 +13,7 @@ import { PageProps } from '@/lib/shared/types/config';
 import ListStageForDeptResearcher from './list_stage/ListStageForDeptResearcher';
 import ListStageForStageMaster from './list_stage/ListStageForStageMaster';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface Props extends PageProps {
   stage: string,
@@ -26,8 +26,8 @@ interface Props extends PageProps {
 }
 export default function ListStages(props: Props) {
 
-  
-  const [selectedFilter, setSelectedFilter] = React.useState<{cotation:string, assignation: string, dept: string}>({
+
+  const [selectedFilter, setSelectedFilter] = React.useState<{ cotation: string, assignation: string, dept: string }>({
     cotation: "all",
     assignation: "all",
     dept: "all"
@@ -90,35 +90,37 @@ export default function ListStages(props: Props) {
     }
   }, [`new-stage-added-${props.stage}`])
 
-  const onSubmitQuotes = async ()=>{
-    try{
+  const onSubmitQuotes = async () => {
+    try {
       await api(cookies).get(`/isp_stage/stage-master/submit-quotes/`)
       window.location.reload()
-    }catch(e){
+    } catch (e) {
 
     }
   }
 
+  const stageInfos = () => {
+    const stageTypes = [
+      { id: 'impregnation', label: "Imprégnation", promotion: "/isp_stage/promotions-l2" },
+      { id: 'pedagogique', label: 'Pédagogique', promotion: "/isp_stage/promotions-l3" },
+      { id: 'entreprise', label: 'Entreprise', promotion: "/isp_stage/promotions-l3" }
+    ]
+
+    return stageTypes.find(st => st.id === props.params.app[2])
+  }
+
   return (
-    <div className='bg-white shadow rounded p-[0px] pb-[20px]'>
-      <div className='px-[20px] pt-[20px] flex items-center gap-[7px]'>
-        <div className='flex flex-1 items-center p-[10px] bg-[rgba(0,0,0,0.07)] rounded'>
-          <input className="border-0 flex-1 px-[20px] text-[14px] outline-none bg-transparent" id="search-student" placeholder='Recherche' onKeyUp={e => {
-            if (e.keyCode === 13) handleSearch()
-          }} />
-          <div>
-            <SearchIcon className='cursor-pointer' size={"14px"} onClick={handleSearch} />
+    <>
+      <div className='bg-white border-t border-inherent mt-[15px] pt-[15px]'>
+        <div className='flex flex-row gap-[10px]'>
+
+          <div className='flex-1 text-[14px]'>
+            <h1 className='m-0'>Stage {stageInfos()?.label} {props.promotion ? `(${props.promotion.grade.libelle})` : ""} </h1>
+            <p className='font-bold text-[18px]'>
+              {props.params.app[3] === "list" ? "Liste d'étudiants" : "Cotations d'étudiants"}
+            </p>
           </div>
-        </div>
-        <FilterStages {...props} selectedFilter={selectedFilter} onChange={setSelectedFilter} />
-        <div className='flex gap-[5px]'>
-          <PermissionComponent
-            user={props.user}
-            children={<PrintReport report={
-              `${props.user.permissions.find((p: string) => p === "isp_user_stage_master") ? "stagemaster_students" : ""}${props.user.permissions.find((p: string) => p === "isp_departement_officier") ? "dept_chief_stage_students" : ""}`
-            } datas={{ stage: props.stage }} />}
-            permissions={["isp_user_stage_master", "isp_departement_officier"]}
-          />
+
           <>
             {
               props.params.app.length >= 4 && props.params.app[3] === "list" && <>{
@@ -127,35 +129,79 @@ export default function ListStages(props: Props) {
             }
 
           </>
-        </div>
-        {
-          props.params.app[3] === "cotations" && <div>
-            { 
-              props.stagemaster.is_quote_submitted === false &&
-              <>
-                <Button onClick={onSubmitQuotes}>Soumettre <TableIcon color='white' size={13} /></Button>
-              </>
-            }
-          </div>
-        }
-      </div>
-      {
-        isLoadingDatas ? <div className='flex flex-col items-center justify-center min-h-[400px]'>
-          <Spinner />
-          <p>Chargement...</p>
-        </div> : <>
-          {
-            props.user.permissions.find((p: string) => p === "isp_departement_officier") ? <>
-              <ListStageForDeptResearcher {...props} onClickItem={props.onClickItem} stages={stages} />
-            </> : <>
-              <ListStageForStageMaster {...props} onClickItem={props.onClickItem} stages={stages} />
+
+          {props.user.permissions.find((pr: string) => pr === "isp_user_stage_master") &&
+            <>
+              {
+                props.params.app[3] === "list" ? <Link href={`/apps/isp_stage/${props.stage}/cotations`} className="flex cursor-pointer items-center gap-1">
+                  <p className='text-[14px] text-gray-500 font-bold'>Cotations</p>
+                  <SheetIcon size={14} />
+                </Link> : <Link href={`/apps/isp_stage/${props.stage}/list`} className="flex cursor-pointer items-center gap-1">
+                  <p className='text-[14px] text-gray-500 font-bold'>Listes</p>
+                  <ListIcon size={14} />
+                </Link>
+              }
             </>
           }
-        </>
-      }
-      <div className="px-[20px] flex items-center gap-[10px]">
-        {total_pages > 1 && <Pagination initialPage={1} total={total_pages} page={page} defaultValue={1} onChange={e => setPage(e)} />}- <p className="text-[12px] font-bold">{count} Enregistrement</p>
+
+
+        </div>
       </div>
-    </div>
+      <div className='mt-[5px]'>
+
+        <div className='bg-white rounded p-[0px] pb-[20px]'>
+          <div className='px-[20px] pt-[20px] flex items-center gap-[7px]'>
+            <div className='flex flex-1 items-center p-[10px] bg-[rgba(0,0,0,0.07)] rounded'>
+              <input className="border-0 flex-1 px-[20px] text-[14px] outline-none bg-transparent" id="search-student" placeholder='Recherche' onKeyUp={e => {
+                if (e.keyCode === 13) handleSearch()
+              }} />
+              <div>
+                <SearchIcon className='cursor-pointer' size={"14px"} onClick={handleSearch} />
+              </div>
+            </div>
+            <FilterStages {...props} selectedFilter={selectedFilter} onChange={setSelectedFilter} />
+            <div className='flex gap-[5px]'>
+              <PermissionComponent
+                user={props.user}
+                children={<PrintReport report={
+                  `${props.user.permissions.find((p: string) => p === "isp_user_stage_master") ? "stagemaster_students" : ""}${props.user.permissions.find((p: string) => p === "isp_departement_officier") ? "dept_chief_stage_students" : ""}`
+                } datas={{ stage: props.stage }} />}
+                permissions={["isp_user_stage_master", "isp_departement_officier"]}
+              />
+
+            </div>
+            {
+              (props.params.app[3] === "cotations" && props.stagemaster !== undefined) && <div>
+                {
+                  props.stagemaster.is_quote_submitted === false &&
+                  <>
+                    <Button onClick={onSubmitQuotes}>Soumettre <TableIcon color='white' size={13} /></Button>
+                  </>
+                }
+              </div>
+            }
+          </div>
+          {
+            isLoadingDatas ? <div className='flex flex-col items-center justify-center min-h-[400px]'>
+              <Spinner />
+              <p>Chargement...</p>
+            </div> : <>
+              {
+                props.user.permissions.find((p: string) => p === "isp_departement_officier") ? <>
+                  <ListStageForDeptResearcher {...props} onClickItem={props.onClickItem} stages={stages} />
+                </> : <>
+                  <ListStageForStageMaster {...props} onClickItem={props.onClickItem} stages={stages} />
+                </>
+              }
+            </>
+          }
+          <div className="px-[20px] flex items-center gap-[10px]">
+            {total_pages > 1 && <Pagination initialPage={1} total={total_pages} page={page} defaultValue={1} onChange={e => setPage(e)} />}- <p className="text-[12px] font-bold">{count} Enregistrement</p>
+          </div>
+        </div>
+
+      </div>
+    </>
+
   );
 }

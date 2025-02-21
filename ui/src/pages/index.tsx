@@ -18,6 +18,8 @@ import StageMasterFormSSR from "./stage_masters/StageMasterFormSSR";
 import StudentFormPage from "./student/StudentFormPage";
 import { StudentFormPageProps } from "/addons/uscitech_academy/ui/src/types";
 import StudentPage from "./student/StudentPage";
+import DirecteursPageSSR from "./directeurs/DirecteursPageSSR";
+import DirecteursFormSSR from "./directeurs/DirecteursFormSSR";
 
 
 export default {
@@ -37,6 +39,9 @@ export default {
 
     DepartmentOfficierPageSSR : (props: PageProps) => DepartmentOfficierPageSSR(props),
     DepartmentOfficierFormSSR : (props: PageProps) => DepartmentOfficierFormSSR(props),
+
+    DirecteurTravauxPageSSR : (props: PageProps) => DirecteursPageSSR(props),
+    DirecteurTravauxFormSSR : (props: PageProps) => DirecteursFormSSR(props),
 
     StageMasterPageSSR : (props: PageProps) => StageMasterPageSSR(props),
     StageMasterFormSSR : (props: PageProps) => StageMasterFormSSR(props),

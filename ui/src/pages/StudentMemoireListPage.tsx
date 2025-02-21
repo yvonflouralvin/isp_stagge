@@ -1,7 +1,7 @@
 import React from 'react';
 import { PageProps } from "@/lib/shared/types/config";
-import Breadcrumb from '@/components/ui/Breadcrumb' 
-import ListProjetTutores from '../widgets/projet-tutore/ListProjetTutores'; 
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import ListProjetTutores from '../widgets/projet-tutore/ListProjetTutores';
 import StudentMemoireOptions from '../widgets/projet-tutore/StudentMemoireOptions';
 import ListStudentMemoires from '../widgets/projet-tutore/ListStudentMemoires';
 import { DepartmentSettings } from '../types';
@@ -21,21 +21,8 @@ export default async function StudentMemoireListPage(props: PageProps) {
                 link: "/apps/isp_stage/projets-tutores"
             }
         ]} />
-        <div className='border-t border-inherent mt-[15px] pt-[15px] h-full'>
-            <div className="flex items-start">
-                <div className='flex flex-col flex-1'>
-                    <p className='font-semibold text-[20px] m-0'>Mémoires</p> 
-                </div>
-                { props.user.permissions.find(perm => perm === "isp_departement_officier") &&
-                <div>
-                    <StudentMemoireOptions department_settings={department_settings} />
-                </div>
-}
-            </div>
-            <div className="mt-[10px]">
+       
                 <ListStudentMemoires />
             </div>
-        </div>
-
-    </div>
+         
 }

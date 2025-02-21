@@ -92,8 +92,7 @@
                 padding: 20px;
             }
 
-            .info-header {
-                background-color: #f1f1f1;
+            .info-header { 
                 padding: 15px;
                 border-radius: 8px;
                 margin-bottom: 20px;
@@ -118,17 +117,12 @@
     </head>
 
     <body>
-        <header>
-            <h1>Rapport des Étudiants en Stage</h1>
-        </header>
         <div class="container">
             <!-- Information sur le stage -->
             <div class="info-header">
-                <h2 style="font-size: 14px;">Liste des Étudiants en Stage</h2>
+                <p style="font-size: 20px;">Étudiants en Stage</p>
 
-                <div class="stats">
-                    <p><strong>Section :</strong> {{section}}</p>
-                    <p><strong>Faculté :</strong> {{faculte}}</p>
+                <div class="stats"> 
                     <p><strong>Type de stage :</strong> {{stage}}</p>
                     <p><strong>Nombre total d'étudiants :</strong>{{count}}</p>
                     <p><strong>Nombre d'étudiants hommes :</strong>{{count_m}}</p>
@@ -157,9 +151,6 @@
                     {{endfor}}
                 </tbody>
             </table>
-        </div>
-        <div class="footer">
-            <p>© 2024 Rapport des Étudiants - Tous droits réservés</p>
         </div>
     </body>
 </hmtl>

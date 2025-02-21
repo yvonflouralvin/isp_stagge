@@ -99,33 +99,50 @@ class DeptRechercheOfficierSerializer(serializers.ModelSerializer):
 
         return dept_officier
 
+class DirecteurTravauxSerializer(serializers.ModelSerializer):
+
+    employee = EmployeeSerializer(read_only = True)
+    employee_id =  serializers.PrimaryKeyRelatedField(
+        queryset = Employee.objects.all(), source="employee", required=True, allow_null=False
+    )
+    department = GradeClasseSerializer(read_only=True)
+    department_id =  serializers.PrimaryKeyRelatedField(
+        queryset = GradeClasse.objects.all(), source="department", required=True, allow_null=False
+    )
+
+    class Meta :
+        model = DirecteurTravaux
+        fields = [
+            'id', 'direction_type', 'category', 'employee', 'employee_id', 'department', 'department_id'
+        ]
+
 class ProjetTutoreSerializer(serializers.ModelSerializer):
     head = StudentSerializer(read_only=True)
-    teacher = TeacherSerializer(read_only=True)
+    director = DirecteurTravauxSerializer(read_only=True)
     head_id = serializers.PrimaryKeyRelatedField(
         queryset = Student.objects.all(), source="head", required=True, allow_null=False
     )
-    teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset = Teacher.objects.all(), source="teacher", required=False, allow_null=False
+    director_id = serializers.PrimaryKeyRelatedField(
+        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=False
     )
     class Meta :
         model = ProjetTutore
-        fields = ['id', 'subject', 'head_id', 'head', 'member', 'teacher', 'teacher_id']
+        fields = ['id', 'subject', 'head_id', 'head', 'member', 'director', 'director_id']
     
 
 
 class StudentMemoireSerializer(serializers.ModelSerializer):
     student = StudentSerializer(read_only=True)
-    teacher = TeacherSerializer(read_only=True)
+    director = DirecteurTravauxSerializer(read_only=True)
     student_id = serializers.PrimaryKeyRelatedField(
         queryset = Student.objects.all(), source="student", required=True, allow_null=False
     )
-    teacher_id = serializers.PrimaryKeyRelatedField(
-        queryset = Teacher.objects.all(), source="teacher", required=False, allow_null=False
+    director_id = serializers.PrimaryKeyRelatedField(
+        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=False
     )
     class Meta :
         model = StudentMemoire
-        fields = ['id', 'subject', 'student_id', 'student', 'teacher', 'teacher_id']
+        fields = ['id', 'subject', 'student_id', 'student', 'director', 'director_id']
     
 
 class DepartmentSettingsSerializer(serializers.ModelSerializer):
@@ -133,9 +150,13 @@ class DepartmentSettingsSerializer(serializers.ModelSerializer):
     department_id = serializers.PrimaryKeyRelatedField(
         queryset = GradeClasse.objects.all(), source="department", required=True, allow_null=False
     )
-    max_teacher_tutore_project_group = serializers.IntegerField(required = False)
+    max_teacher_tutore_project_group = serializers.IntegerField(required = False) #max_teacher__externe_memoire
+    max_teacher_externe_tutore_project_group = serializers.IntegerField(required = False) #max_teacher__externe_memoire
+    max_teacher_externe_memoire = serializers.IntegerField(required = False) #max_teacher__externe_memoire
     max_teacher_memoire = serializers.IntegerField(required = False)
     max_tutore_project_member_group = serializers.IntegerField(required = False)
     class Meta :
         model = DepartmentSettings
-        fields = ['id', 'department', 'department_id', 'max_teacher_tutore_project_group', 'max_teacher_memoire', 'max_tutore_project_member_group']
+        fields = ['id', 'department', 'department_id', 'max_teacher_tutore_project_group', 'max_teacher_memoire', 'max_tutore_project_member_group', 'max_teacher_externe_tutore_project_group', 'max_teacher_externe_memoire']
+
+

@@ -12,7 +12,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
     console.log(props.department_settings);
     const [memberIds, setMemberIds] = React.useState<Student[]>(props.members)
     const [isSaving, setIsSaving] = React.useState(false)
-    const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.teacher_id && props.projet?.teacher_id !== null && props.projet?.teacher_id !== null) ? props.projet?.teacher_id : undefined)
+    const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.director_id && props.projet?.director_id !== null && props.projet?.director_id !== null) ? props.projet?.director_id : undefined)
 
 
     const subject_input = React.useRef<any>()
@@ -29,7 +29,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 member: memberIds.map(mids => (mids.id)),
                 head_id: props.projet?.head_id
             }
-            if (selectedTeacher !== undefined) datas["teacher_id"] = selectedTeacher
+            if (selectedTeacher !== undefined) datas["director_id"] = selectedTeacher
             const result: ProjetTutore = await api(cookies).put(`/isp_stage/projets-tutores/${props.projet?.id}/`, datas);
         
 
@@ -57,15 +57,15 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 {
                     <>
                         {
-                            (props.projet?.teacher !== undefined && props.projet?.teacher !== null) ? <div>
+                            (props.projet?.director !== undefined && props.projet?.director !== null) ? <div>
                                 <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
-                                <p className='font-semibold text-[13px] m-0 border-b border-inherent'>{props.projet?.teacher?.employee?.fullname}</p>
+                                <p className='font-semibold text-[13px] m-0 border-b border-inherent'>{props.projet?.director?.employee?.fullname}</p>
                             </div> :
                                 <>
                                     {
                                         (props.for === "create" && props.projet?.head_id === props.student?.id) ?
-                                            <SearchSelected onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/teacher-for-memoire-projet/' /> : <>
-                                                <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
+                                            <SearchSelected extraparams='&direction_type=projet-tutore' onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Directeur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
+                                                <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
                                                 <p>--</p>
                                             </>
                                     }

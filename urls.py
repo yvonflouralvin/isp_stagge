@@ -18,6 +18,7 @@ router.register(r'projets-tutores', ProjetTutoreViewSet)
 router.register(r'students-memoires', StudentMemoireViewSet)
 router.register(r'department-settings', DepartmentSettingsViewSet)
 router.register(r'teacher-for-memoire-projet', StageSearchingTeacherViewSet)
+router.register(r'directeur-travaux', DirecteurTravauxViewSet)
 
 
 

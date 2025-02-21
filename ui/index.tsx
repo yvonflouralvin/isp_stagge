@@ -71,7 +71,7 @@ const config: AppConfig = {
             },
             {
                 label: "Memoire&Projets",
-                permissions: ["isp_departement_officier", "academy_is_teacher"],
+                permissions: ["isp_departement_officier", "academy_is_teacher", "isp_directeur_travaux"],
                 is_superuser: true,
                 subItems: [
                     {
@@ -105,6 +105,21 @@ const config: AppConfig = {
                 label: "Étudiants",
                 permissions: ["isp_departement_officier"],
                 link: "/apps/isp_stage/students"
+            },
+            {
+                label: "Directeurs",
+                // link: "/apps/isp_stage/directeur-travaux/projet-tutore/",
+                permissions: ["isp_departement_officier"],
+                subItems: [
+                    {
+                        label: "Projets Tutorés",
+                        link: "/apps/isp_stage/directeur-travaux/projet-tutore/",
+                    },
+                    {
+                        label: "Memoires",
+                        link: "/apps/isp_stage/directeur-travaux/memoire/",
+                    }
+                ]
             }
         ]
 
@@ -242,6 +257,21 @@ const config: AppConfig = {
                 dashboardLayouting: true,
                 render: () => {
                     return pages.StudentFormPage({...props, for:"create"})
+                }
+            }
+
+        else if (props.params.app.length === 4 && props.params.app[2] === "directeur-travaux")
+            return {
+                dashboardLayouting: true,
+                render: () => {
+                    return pages.DirecteurTravauxPageSSR({...props})
+                }
+            }
+        else if (props.params.app.length === 5 && props.params.app[2] === "directeur-travaux")
+            return {
+                dashboardLayouting: true,
+                render: () => {
+                    return pages.DirecteurTravauxFormSSR({...props})
                 }
             }
         else

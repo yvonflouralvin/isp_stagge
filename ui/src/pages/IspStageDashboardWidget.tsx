@@ -3,11 +3,12 @@ import { PageProps } from '@/lib/shared/types/config';
 import { cookies } from 'next/headers';
 
 export default async function IspStageDashboardWidget(props: PageProps) {
+    console.log(props.user)
     if (props.user?.permissions?.find(perm => (
         perm === "isp_departement_officier" ||
         perm === "isp_user_stage_master" ||
         perm === "academy_is_teacher"
-    )))
+    )) || props.user.is_superuser === true)
         try {
             const resumes = (await api(await cookies()).get(`/isp_stage/resumes`)).data
             console.log(resumes)
@@ -40,7 +41,7 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                 </div>
             </div>
         } catch (e) {
-
+            console.log(e)
         }
 
     return <></>
