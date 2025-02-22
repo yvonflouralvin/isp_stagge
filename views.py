@@ -8,12 +8,13 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from .models import * 
 from .serializers import *
+from uscitech_academy.models import Student
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def stages_resumes(request):
     stages = Stage.objects.all().exclude(student = None).exclude(student__user = None)
-    
+    students = Student.objects.all().exclude(user = None)
     
     user: User = request.user
     if user == None :
@@ -31,8 +32,10 @@ def stages_resumes(request):
         dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
         if dept_off.exists() :
             stages = Stage.objects.filter(student__promotion__grade__id=dept_off[0].dept.id)
+            students = students.filter(promotion__grade__id=dept_off[0].dept.id)
     elif not user.is_superuser and not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master'):
         stages = Stage.objects.filter(stagemaster__employee__user__id = user.id)
+        students = students.filter(id__in = [stage.student.id for stage in stages])
     else :
         return Response({
             "students": 0,
@@ -43,7 +46,7 @@ def stages_resumes(request):
         })
 
     return Response({
-        "students": len(stages),
+        "students": len(students),
         "impregnations": len(stages.filter(stage="impregnation")) ,
         "pedagogiques": len(stages.filter(stage="pedagogique")),
         "affected": len(stages.exclude(stagemaster=None))

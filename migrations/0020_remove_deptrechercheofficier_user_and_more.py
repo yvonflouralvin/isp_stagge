@@ -12,24 +12,24 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # migrations.RemoveField(
-        #     model_name='deptrechercheofficier',
-        #     name='user',
-        # ),
-        # migrations.RemoveField(
-        #     model_name='stagemaster',
-        #     name='user',
-        # ),
-        # migrations.AddField(
-        #     model_name='deptrechercheofficier',
-        #     name='employee',
-        #     field=models.OneToOneField(default='dedf88c3-d884-43bb-8e01-f2d928394ab1', on_delete=django.db.models.deletion.CASCADE, to='hr.employee'),
-        #     preserve_default=False,
-        # ),
-        # migrations.AddField(
-        #     model_name='stagemaster',
-        #     name='employee',
-        #     field=models.OneToOneField(default='dedf88c3-d884-43bb-8e01-f2d928394ab1', on_delete=django.db.models.deletion.CASCADE, to='hr.employee'),
-        #     preserve_default=False,
-        # ),
+        migrations.RemoveField(
+            model_name='deptrechercheofficier',
+            name='user',
+        ),
+        migrations.RemoveField(
+            model_name='stagemaster',
+            name='user',
+        ),
+        migrations.AddField(
+            model_name='deptrechercheofficier',
+            name='employee',
+            field=models.OneToOneField(default='dedf88c3-d884-43bb-8e01-f2d928394ab1', on_delete=django.db.models.deletion.CASCADE, to='hr.employee'),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='stagemaster',
+            name='employee',
+            field=models.OneToOneField(default='dedf88c3-d884-43bb-8e01-f2d928394ab1', on_delete=django.db.models.deletion.CASCADE, to='hr.employee'),
+            preserve_default=False,
+        ),
     ]

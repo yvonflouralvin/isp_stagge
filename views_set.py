@@ -14,6 +14,7 @@ from rest_framework.exceptions import MethodNotAllowed
 from django.core.exceptions import ObjectDoesNotExist
 
 from core.utils import Paginator
+import pandas as pd
  
 from core.models import *
 from .models import *
@@ -119,7 +120,7 @@ class StageMasterViewSet(viewsets.ModelViewSet):
     serializer_class = StageMasterSerializer
     pagination_class = Paginator
     filter_backends = (filters.SearchFilter, DjangoFilterBackend)  # Ajout du filtre de recherche
-    search_fields = ['employee_user__username', 'employee_user__name', 'employee_user__last_name', 'employee_user__first_name', 'employee_user__email']  # Champs recherchables
+    search_fields = ['employee__user__username', 'employee__user__name', 'employee__user__last_name', 'employee__user__first_name', 'employee__user__email']  # Champs recherchables
 
     def destroy(self, request, *args, **kwargs):
         """Retirer la permission 'isp_user_stage_master' lors de la suppression d'un StageMaster"""
