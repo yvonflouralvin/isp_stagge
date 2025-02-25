@@ -27,6 +27,7 @@ from uscitech_academy.serializers import GradeClasseSerializer
 
 from rest_framework import status
 import pandas as pd
+from slugify import slugify
 
 
 class PromotionL2(APIView):
@@ -364,7 +365,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
     serializer_class = StudentSerializer
     pagination_class = Paginator
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
-    search_fields = ["user__username", "user__first_name", "user__last_name"]
+    search_fields = ["user__username", "user__first_name", "user__last_name", "user__name"]
 
     def get_queryset(self):
         """
@@ -372,6 +373,8 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         - Si `parent_department_id` est fourni, retourne les sous-départements du département donné.
         - Sinon, retourne tous les départements.
         """
+        students_for = self.request.query_params.get('for', None)
+
         user = self.request.user
         if user.has_perm("isp_stage.isp_departement_officier") : 
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
@@ -387,9 +390,24 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
             student = Student.objects.filter(user=user)
             if not student.exists() :
                 return Student.objects.none()
-            else :
-                student = student.first()
-                return Student.objects.filter(promotion__id = student.promotion.id)
+
+            student = student.first()
+            
+            queryset = Student.objects.filter(promotion__id=student.promotion.id)
+
+            # Filtrage en fonction de "memoire"
+            if students_for == "memoire":
+                student_memoires = StudentMemoire.objects.filter(student__promotion__id=student.promotion.id)
+                queryset = queryset.exclude(id__in=[student_memoire.student.id for student_memoire in student_memoires])
+
+            # Filtrage en fonction de "projet-tutore"
+            elif students_for == "projet-tutore":
+                projet_tutores = ProjetTutore.objects.filter(head__promotion__id=student.promotion.id)
+                excluded_members = [member.id for projet_tutore in projet_tutores for member in projet_tutore.member.all()]
+                excluded_heads = [projet_tutore.head.id for projet_tutore in projet_tutores]
+                queryset = queryset.exclude(id__in=excluded_members).exclude(id__in=excluded_heads)
+            
+            return queryset
 
         else :
             return Student.objects.all()
@@ -527,25 +545,25 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-
+        queryset = ProjetTutore.objects.all()
         # Superutilisateur voit tout
         if user.is_superuser:
-            return ProjetTutore.objects.all()
+            return queryset
 
         # Vérifier si l'utilisateur est un directeur 
         if user.has_perm('isp_stage.isp_directeur_travaux'):
-            director = DirecteurTravaux.objects.filter(employee__user=user).first()
+            director = DirecteurTravaux.objects.filter(employee__user=user, direction_type="projet-tutore").first()
             if director:
-                return ProjetTutore.objects.filter(director__id=director.id)
+                return queryset.filter(director__id=director.id)
 
         # Vérifier si l'utilisateur est un directeur 
         if user.has_perm('isp_stage.isp_departement_officier'):
             departmentOfficier = DeptRechercheOfficier.objects.filter(employee__user=user).first() 
             if departmentOfficier :
-                return ProjetTutore.objects.filter(head__promotion__grade__id=departmentOfficier.dept.id)
+                return queryset.filter(head__promotion__grade__id=departmentOfficier.dept.id)
 
         # Par défaut, retour vide
-        return ProjetTutore.objects.all()
+        return queryset.all()
 
     @action(detail=False, methods=['get'])
     def my_projects(self, request):
@@ -566,7 +584,7 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
     serializer_class = StudentMemoireSerializer
     pagination_class = Paginator
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
-    search_fields = ["student__username", "student__first_name", "student__last_name", "student__first_name", "student__phone", "student__email"]
+    search_fields = ["student__user__username", "student__user__first_name", "student__user__last_name", "student__user__name", "student__user__phone", "student__user__email"]
 
     @action(detail=False, methods=['get'])
     def my_memoire(self, request):
@@ -583,25 +601,28 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-
+        queryset = StudentMemoire.objects.all()
         # Superutilisateur voit tout
         if user.is_superuser:
-            return StudentMemoire.objects.all()
+            return queryset
 
         # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
-        if user.has_perm('uscitech_academy.academy_is_teacher'):
-            teacher = Teacher.objects.filter(employee__user=user).first()
-            if teacher:
-                return StudentMemoire.objects.filter(teacher=teacher)
+        if user.has_perm('isp_stage.isp_directeur_travaux'):
+            director = DirecteurTravaux.objects.filter(employee__user=user, direction_type="memoire")
+            if director.exists() :
+                queryset = queryset.exclude(director = None)
+                queryset = queryset.filter(director__in = director) 
+            else :
+                return StudentMemoire.objects.none()
 
         # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
             student = Student.objects.filter(user=user).first()
             if student:
-                return StudentMemoire.objects.filter(student=student)
+                queryset = queryset.filter(student=student)
 
         # Par défaut, retour vide
-        return StudentMemoire.objects.all()
+        return queryset
 
 
 class DepartmentSettingsViewSet(viewsets.ModelViewSet):
@@ -781,14 +802,25 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
         user.save()
 
     def perform_destroy(self, instance):
-        """Retirer la permission isp_directeur_travaux de l'utilisateur lors de la suppression."""
-        user = instance.employee.user  # Récupérer l'utilisateur
+        # Supprimer le directeur du département
+        employee = instance.employee
+        super().perform_destroy(instance)
 
-        permission = Permission.objects.get(codename="isp_directeur_travaux")
-        user.user_permissions.remove(permission)  # Retirer la permission
-        user.save()
-
-        instance.delete()
+        # Vérifier si l'employé a encore des directeurs
+        if not DirecteurTravaux.objects.filter(employee=employee).exists():
+            # Si l'employé n'a plus de directeur, retirer la permission
+            user = employee.user
+            permission = Permission.objects.get(codename='isp_directeur_travaux')
+            if permission in user.user_permissions.all():
+                user.user_permissions.remove(permission)
+                # Vous pouvez ajouter un message pour confirmer
+                print(f"Permission 'isp_directeur_travaux' retirée de l'utilisateur {user.username}")
+        
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Appeler la méthode `perform_destroy` pour gérer la logique de suppression et de mise à jour des permissions
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
 
@@ -799,7 +831,7 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
         direction_type = self.request.query_params.get('direction_type', None)
         if direction_type :
             queryset = queryset.filter(direction_type=direction_type)
-
+            
         if user.has_perm('isp_stage.isp_departement_officier') :
             departmentOfficier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not departmentOfficier.exists() : 
@@ -834,11 +866,11 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
                     }
 
             final_directors = []
-            for director in director_count :
-                if director['director'].category == "externe" and director['counts'] >= department_settings.max_teacher_externe_tutore_project_group :
-                    final_directors.append(director['director'])
-                elif director['director'].category == "interne" and director['counts'] >= department_settings.max_teacher_tutore_project_group :
-                    final_directors.append(director['director'])
+            for director_id, director_info in director_count.items():
+                if director_info['director'].category == "externe" and director_info['counts'] >= department_settings.max_teacher_externe_tutore_project_group:
+                    final_directors.append(director_info['director'])
+                elif director_info['director'].category == "interne" and director_info['counts'] >= department_settings.max_teacher_tutore_project_group:
+                    final_directors.append(director_info['director'])
 
             queryset = queryset.exclude(id__in = [final_director.id for final_director in final_directors])
 
@@ -857,16 +889,59 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def resumes(self, request):
         user = self.request.user
-        # if user.has_perm('isp_stage.isp_directeur_travaux'):
-        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id)
-        if not directeursTraveaux.exists() : 
-            return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404)
-        # departementsSettings  = DepartmentSettings.objects.filter(department__id = [director.department.id for director in directeursTraveaux ])
-        details = []
-        for directeursTravail in directeursTraveaux :
-            departementsSettings, created  = DepartmentSettings.objects.get_or_create(department__id = directeursTravail.department.id, defaults={
-                "department" : directeursTravail.department
-            })
-            details[directeursTravail.id] = {}
-            details[directeursTravail.id]["settings"] = departementsSettings
+        
+        # Fetching all associated "Directeurs de Travaux" for the current user
+        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id=user.id)
+        
+        if not directeursTraveaux.exists():
+            return Response("Aucun enregistrement de directeur de travaux trouvé pour vous", status=404)
+        
+        details = {}
+
+        # Organizing the data by department ID
+        for directeursTravail in directeursTraveaux:
+            dept_id = str(directeursTravail.department.id)
             
+            # Fetch DepartmentSettings for the current department
+            dept_settings = DepartmentSettings.objects.filter(department=directeursTravail.department).first()
+            
+            # Calculate the used quota for ProjetTutore and StudentMemoire, split by category (interne, externe)
+            used_tutore_projects_interne = ProjetTutore.objects.filter(director=directeursTravail, director__category='interne').count()
+            used_tutore_projects_externe = ProjetTutore.objects.filter(director=directeursTravail, director__category='externe').count()
+            
+            used_memoire_projects_interne = StudentMemoire.objects.filter(director=directeursTravail, director__category='interne').count()
+            used_memoire_projects_externe = StudentMemoire.objects.filter(director=directeursTravail, director__category='externe').count()
+
+            # Prepare the quota data
+            quota_data = {
+                'max_tutore_projects_interne': dept_settings.max_teacher_tutore_project_group if dept_settings else 0,
+                'max_externe_tutore_projects': dept_settings.max_teacher_externe_tutore_project_group if dept_settings else 0,
+                'max_memoire_projects_interne': dept_settings.max_teacher_memoire if dept_settings else 0,
+                'max_externe_memoire_projects': dept_settings.max_teacher_externe_memoire if dept_settings else 0,
+            }
+
+            # Prepare the used data, split by category
+            used_data = {
+                'used_tutore_projects_interne': used_tutore_projects_interne,
+                'used_tutore_projects_externe': used_tutore_projects_externe,
+                'used_memoire_projects_interne': used_memoire_projects_interne,
+                'used_memoire_projects_externe': used_memoire_projects_externe
+            }
+            
+            # Check if department already exists in the details dictionary
+            if dept_id not in details:
+                details[dept_id] = {
+                    "department": GradeClasseSerializer(directeursTravail.department).data,
+                    "quota": quota_data,
+                    "used": used_data,
+                    "directeurs": [DirecteurTravauxSerializer(directeursTravail).data]
+                }
+            else:
+                # Check if the director is already in the list for that department
+                if directeursTravail.id not in [d['id'] for d in details[dept_id]['directeurs']]:
+                    details[dept_id]['directeurs'].append(DirecteurTravauxSerializer(directeursTravail).data)
+        
+        # Convert dictionary to list for response
+        response_data = list(details.values())
+        
+        return Response(response_data, status=200)

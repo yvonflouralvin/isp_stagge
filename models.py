@@ -26,12 +26,18 @@ class DirecteurTravaux(models.Model):
         ('memoire', 'Mémoire'),
         ('stage', 'Stage')
     ], null=False)
-    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=False)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, null=False)
     department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=False)
     category = models.CharField(choices=[
         ('interne', 'Du Département'),
         ('externe', 'Pas du Département'),
     ], null=False)
+
+    # Définir la contrainte d'unicité
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['department', 'direction_type', 'employee'], name='unique_director_for_dept_and_direction_type')
+        ]
 
 class Stage(models.Model):
 
