@@ -137,7 +137,7 @@ const ButtonAddMember = (
                     <p>Ajouter un membre</p>
                 </ModalHeader>
                 <ModalBody>
-                    <SearchSelected onChange={(e: Student) => setSeletedStudent(e)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name}`)} index='id' url='/isp_stage/students/' />
+                    <SearchSelected onChange={(e: Student) => setSeletedStudent(e)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name}`)} index='id' url='/isp_stage/students/' extraparams='&for=projet-tutore' />
                     <div className='mt-[15px]'>
                         <button onClick={handleAdd} className='bg-[rgba(0,0,0,0.05)] text-[13px] py-[4px] px-[15px] rounded'>Ajouter</button>
                     </div>

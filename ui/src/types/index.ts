@@ -75,7 +75,25 @@ export interface DirecteurTravaux {
     employee_id: string 
     department: Grade
     department_id : string
-    direction_type: string
-    category: string
+    direction_type: "projet-tutore" | "memoire" | "stage"
+    category: "interne" | "externe"
 }
 
+
+
+export interface DirecteurTravauxResumes {
+    department: Grade
+    quota: {
+        max_tutore_projects_interne: number
+        max_externe_tutore_projects: number
+        max_memoire_projects_interne: number
+        max_externe_memoire_projects: number
+    }
+    used: {
+        used_tutore_projects_interne: number
+        used_tutore_projects_externe: number
+        used_memoire_projects_interne: number
+        used_memoire_projects_externe: number
+    }
+    directeurs: DirecteurTravaux[]
+}

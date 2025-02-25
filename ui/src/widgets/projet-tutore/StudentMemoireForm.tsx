@@ -12,7 +12,7 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
     // console.log(props.projet);
     // const [memberIds, setMemberIds] = React.useState<Student[]>(props.members)
     const [isSaving, setIsSaving] = React.useState(false)
-    const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.memoire?.teacher_id && props.memoire?.teacher_id !== null && props.memoire?.teacher_id !== null) ? props.memoire?.teacher_id : undefined)
+    const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.memoire?.director_id && props.memoire?.director_id !== null && props.memoire?.director_id !== null) ? props.memoire?.director_id : undefined)
 
 
     const subject_input = React.useRef<any>()
@@ -29,7 +29,7 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
                 // member: memberIds.map(mids => (mids.id)),
                 student_id: props.memoire?.student_id
             }
-            if (selectedTeacher !== undefined) datas["teacher_id"] = selectedTeacher
+            if (selectedTeacher !== undefined) datas["director_id"] = selectedTeacher
             const result = await api(cookies).put(`/isp_stage/students-memoires/${props.memoire?.id}/`, datas);
 
         } catch (e) {
@@ -46,40 +46,38 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
                         <div className='border-b border-inherent'>
                             <input id="subject" ref={subject_input} name="subject" className='border-0 outline-none w-full bg-transparent text-[13px]' defaultValue={props.memoire !== undefined ? `${props.memoire?.subject}` : ``} />
                         </div>
-                        : <p className='font-semibold text-[14px] m-0'>{props.memoire?.subject}</p>
+                        : <p className='font-semibold text-[20px] m-0'>{props.memoire?.subject}</p>
                 }
 
             </div>
         </div>
         <div className="flex items-start mt-[15px]">
-            <div className='flex flex-col flex-1'>
+            <div className='flex flex-col'>
                 {
-                    (props.memoire?.teacher !== undefined && props.memoire?.teacher !== null) ? <div>
-                        <p className='text-gray-400 text-[13px]'>Encadreur</p>
-                        <p className='text-[14px] m-0'>{props.memoire?.teacher?.employee?.fullname}</p>
+                    (props.memoire?.director !== undefined && props.memoire?.director !== null) ? <div>
+                        <p className='text-gray-400 text-[13px]'>Directeur</p>
+                        <p className='text-[14px] m-0'>{props.memoire?.director?.employee?.fullname}</p>
                     </div> : <>
                         {
                             (props.for === "create") ?
-                                <SearchSelected onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Encadreur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/uscitech_academy/teachers/' /> : <>
-                                    <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
+                                <SearchSelected extraparams='&direction_type=memoire' onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Directeur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
+                                    <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
                                     <p>--</p>
                                 </>
                         }
 
                     </>
                 }
+                {
+                    (props.memoire !== undefined && props.memoire.student.user.id !== props.user.id) && <div className='mt-[15px]'>
+                        <p className='text-gray-400 text-[13px]'>Informations sur l'étudiant</p>
+                        <p className='text-[14px] m-0'>Nom complet : {props.memoire?.student?.user?.name} {props.memoire?.student?.user?.last_name} {props.memoire?.student?.user?.first_name}</p>
+                        <p className='text-[14px] m-0'>Promotion : {props.memoire?.student?.promotion?.libelle} {props.memoire?.student?.promotion?.grade.libelle} </p>
+                        <p className='text-[14px] m-0'>Téléphone : {props.memoire?.student?.user?.phone}</p>
+                    </div>
+                }
             </div>
-            {
-                (props.memoire !== undefined && props.memoire.student.user.id !== props.user.id) && <div>
-                    <p className='text-gray-400 text-[13px]'>Informations sur l'étudiant</p>
-                    <p className='text-[14px] m-0'>Nom complet : {props.memoire?.student?.user?.name} {props.memoire?.student?.user?.last_name} {props.memoire?.student?.user?.first_name}</p>
-                    <p className='text-[14px] m-0'>Promotion : {props.memoire?.student?.promotion?.libelle} {props.memoire?.student?.promotion?.grade.libelle} </p>
-                    <p className='text-[14px] m-0'>Téléphone : {props.memoire?.student?.user?.phone}</p>
-                </div>
-            }
-
         </div>
-
         {
             props.for === "create" && <div className='mt-[15px] border-t border-inherent flex w-full justify-end'>
                 {

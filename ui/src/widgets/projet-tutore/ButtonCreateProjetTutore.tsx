@@ -8,6 +8,7 @@ import { Student } from '/addons/uscitech_academy/ui/src/types';
 
 interface StudentProjetTutoreProps extends PageProps {
     student?: Student
+    redirect?: string
 }
 export default function ButtonCreateProjetTutore(props: StudentProjetTutoreProps) {
     const [isCreating, setIsCreating] = React.useState(false)
@@ -22,7 +23,8 @@ export default function ButtonCreateProjetTutore(props: StudentProjetTutoreProps
                 ],
                 head_id: props.student.id
             })
-            window.location.reload()
+            if(props.redirect === undefined)window.location.reload()
+            else window.location.href = props.redirect
         } catch (e) {
 
         }
