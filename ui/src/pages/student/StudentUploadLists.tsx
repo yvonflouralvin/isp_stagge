@@ -74,7 +74,7 @@ export default function StudentUploadLists(props: PageProps) {
 
                     <div className='my-[10px] border border-inherent p-[10px] rounded'>
                         <p className='font-semibold text-[13px]'>Inscrutions : </p>
-                        <p className='text-gray-400 text-[13px]'>Le fichier Excel a importer doit contenir 5 colonnes : <span className='font-semibold'>name</span>, <span  className='font-semibold'>last_name</span>, <span  className='font-semibold'>fist_name</span>, <span  className='font-semibold'>phone</span>, <span  className='font-semibold'>email</span> </p>
+                        <p className='text-gray-400 text-[13px]'>Le fichier Excel a importer doit contenir 5 colonnes : <span className='font-semibold'>name</span>, <span  className='font-semibold'>last_name</span>, <span  className='font-semibold'>first_name</span>, <span  className='font-semibold'>phone</span>, <span  className='font-semibold'>email</span> </p>
                     </div>
                     <div className='mt-[15px] flex justify-end'>
                         {
