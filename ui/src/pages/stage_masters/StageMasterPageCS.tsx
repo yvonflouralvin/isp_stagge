@@ -8,6 +8,7 @@ import cookies from '@/lib/shared/cookies';
 import useEvent from '@/lib/hooks/useEvent';
 import { Pagination, Spinner } from '@nextui-org/react';
 import { StageMaster } from '../../types';
+import StageMasterUploadLists from './StageMasterUploadLists';
 
 
 
@@ -54,11 +55,12 @@ export default function StageMasterPageCS(props: PageProps) {
                     <p className='font-semibold text-[20px] m-0'>Maitres de Stage</p>
                     <p className='text-gray-500 font-light m-0 text-[13px]'>{counts} maitres</p>
                 </div>
-                <div>
+                <div className='flex items-center gap-[10px]'>
                     <Link href="/apps/isp_stage/stage-masters/create" className='duration-300 flex items-center gap-[2px] text-[13px] text-white font-bold cursor-pointer rounded py-[5px] px-[15px] bg-primary/80 hover:bg-primary'>
                         <PlusIcon size={"12px"} color='white' />
                         <p>Nouveau</p>
                     </Link>
+                    <StageMasterUploadLists {...props} />
                 </div>
             </div>
             <div className="mt-[10px]">
