@@ -25,6 +25,7 @@ from uscitech_academy.serializers import *
 from uscitech_academy.serializers import GradeClasseSerializer
 
 from rest_framework import status
+import pandas as pd
 
 
 class PromotionL2(APIView):
@@ -181,6 +182,66 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         return Response("No stage master found !!", status=404)
 
+    
+    @action(detail=False, methods=['post'], url_path='bulk-upload')
+    def bulk_upload(self, request):
+        user = request.user
+        # promotion = Promotion.objects.filter(grade__id = )
+        promotion_id = request.data.get('promotion_id', None)
+        file = request.FILES.get('file')
+        if not file:
+            return Response({'error': 'Aucun fichier fourni.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            df = pd.read_excel(file)
+            created_stagemasters = []
+            
+            for _, row in df.iterrows():
+                # full_name = f"{row['first_name']} {row['name']} {row['last_name']}".strip()
+                user, created_user = User.objects.get_or_create(
+                    username=row['email'],
+                    defaults={
+                        'name': row['name'],
+                        'first_name': row['first_name'],
+                        'last_name': row['last_name'],
+                        'phone': row.get('phone', ''),
+                        'sexe': 'm',  # Valeur par défaut, peut être ajustée si disponible,
+                        "password" : make_password(os.environ.get("DEFAULT_PASS", "1234")),
+                        "is_active" : True,
+                        "email" : row['email']
+                    }
+                )
+
+                if not created_user :
+                    user.first_name = row['first_name']
+                    user.last_name = row['last_name']
+                    user.name = row['name']
+                    user.email = row['email']
+                    user.is_active=True
+
+                    user.save()
+                
+                try:
+                    permission = Permission.objects.get(codename="isp_user_stage_master")
+                    user.user_permissions.add(permission)
+                except: 
+                    pass
+
+                employee, created_employee = Employee.objects.get_or_create(user__id = user.id, defaults={
+                    "fullname" : f'{user.name} {user.last_name} {user.first_name}',
+                    "user": user
+                })
+
+                stage_master, created_stagemaster = StageMaster.objects.get_or_create(employee__id = employee.id, defaults={
+                    "employee": employee
+                })
+                
+               
+                created_stagemasters.append(stage_master.id)
+            
+            return Response({'message': 'Importation réussie.', 'stage_masters': created_stagemasters}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
