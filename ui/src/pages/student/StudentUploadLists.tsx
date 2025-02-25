@@ -71,7 +71,10 @@ export default function StudentUploadLists(props: PageProps) {
                         <input type='file' ref={inputFile} />
                     </div>
                     <SearchSelected onChange={(e: Promotion) => setSelectedPromotion(e.id)} label='Promotion' render={(e: any) => (`${e.libelle} ${e.grade.libelle}`)} index='id' url='/isp_stage/promotions/' />
-                
+                    <div className='my-[10px] border border-inherent p-[10px] rounded'>
+                        <p className='font-semibold text-[13px]'>Inscrutions : </p>
+                        <p className='text-gray-400 text-[13px]'>Le fichier Excel a importer doit contenir 5 colonnes : <span className='font-semibold'>name</span>, <span  className='font-semibold'>last_name</span>, <span  className='font-semibold'>first_name</span>, <span  className='font-semibold'>phone</span>, <span  className='font-semibold'>email</span> </p>
+                    </div>
                     <div className='mt-[15px] flex justify-end'>
                         {
                             isSaving === false ? <button onClick={uploadStudents} className='rounded text-white py-[4px] px-[15px] bg-primary text-[13px]'>Importer</button> : 
