@@ -1,6 +1,7 @@
 import { PageProps } from "@/lib/shared/types/config";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Spinner, Input } from "@nextui-org/react";
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@nextui-org/react";
 import QuoteField from "./QuoteField";
+import { StageMaster } from "../../../types";
 
 interface Props extends PageProps {
     stages: any[]
@@ -21,9 +22,9 @@ export default function ListStageForDeptResearcher(props: Props) {
                 {
                     props.stages.map(stage => {
                         var stage_master = ``
-                        stage.stagemaster.map((sm:any)=>{
+                        stage.stagemaster.map((sm:StageMaster)=>{
                             if(stage_master !== ``) stage_master = `, `
-                            stage_master = `${sm.user?.last_name} ${sm.user?.first_name}`
+                            stage_master = `${sm.employee?.fullname}`
                         })
                         return (
                             <TableRow className='duration-300 hover:bg-[rgba(0,0,0,0.03)]' aria-labelledby={`${stage.id}`} aria-label={`${stage.id}`} key={stage.id} onClick={() => {
