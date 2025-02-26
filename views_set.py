@@ -156,7 +156,8 @@ class StageMasterViewSet(viewsets.ModelViewSet):
 
         user: User = request.user
         stage = request.GET.get("stage")
-        stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
+        stagemasters = StageMaster.objects.filter(employee__user__id = user.id)
+        stages = Stage.objects.filter(stagemaster__in =  stagemasters, stage=stage)
 
         stagemaster = StageMaster.objects.first(employee__user__id = user.id)
         stagemaster.is_quote_submitted = True
