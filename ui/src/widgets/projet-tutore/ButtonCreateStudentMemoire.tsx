@@ -9,6 +9,7 @@ import { Student } from '/addons/uscitech_academy/ui/src/types';
 
 interface StudentProjetTutoreProps extends PageProps {
     student?: Student
+    redirect?: string
 }
 export default function ButtonCreateStudentMemoire(props: StudentProjetTutoreProps) {
     const [isCreating, setIsCreating] = React.useState(false)
@@ -20,7 +21,8 @@ export default function ButtonCreateStudentMemoire(props: StudentProjetTutorePro
                 subject: "Sujet à définir...",
                 student_id: props.student.id
             })
-            window.location.reload()
+            if (props.redirect) window.location.href = props.redirect 
+            else window.location.reload()
         } catch (e) {
 
         }

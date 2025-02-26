@@ -16,22 +16,18 @@ const config: AppConfig = {
         if (props.user.permissions.find(perm => perm === "isp_user_student")) {
             try {
                 const student: Student = (await api(await cookies()).get(`/uscitech_academy/students/me/`)).data
-                const tmp_menu: Menu[] = [
-                    {
-                        label: "Stages",
-                        subItems: [
-                            {
-                                label: "Pédagogique",
-                                link: "/apps/isp_stage/pedagogique"
-                            },
-                            {
-                                label: "Entreprise",
-                                link: "/apps/isp_stage/entreprise"
-                            }
-                        ],
-                        is_superuser: true
-                    }
-                ]
+                const tmp_menu: Menu[] = []
+                if (student.promotion.libelle === "L3") {
+                    tmp_menu.push({
+                        label: "Stage Pédagogique",
+                        link: "/apps/isp_stage/pedagogique"
+                    })
+                }
+
+                tmp_menu.push({
+                    label: "Stage Entreprise",
+                    link: "/apps/isp_stage/entreprise"
+                })
 
                 if (student.promotion.libelle === "L3") {
                     tmp_menu.push(

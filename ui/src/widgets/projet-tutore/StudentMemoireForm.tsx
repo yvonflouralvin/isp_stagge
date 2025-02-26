@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { ProjetTutoreFormPageProps, StudentMemoireFormPageProps } from "../../types";
+import { DirecteurTravaux, ProjetTutoreFormPageProps, StudentMemoireFormPageProps } from "../../types";
 import SearchSelected from "@/components/ui/SearchSelected";
 import { Student, StudentFormPageProps, Teacher } from "/addons/uscitech_academy/ui/src/types";
 import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from '@nextui-org/react';
@@ -52,7 +52,7 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
             </div>
         </div>
         <div className="flex items-start mt-[15px]">
-            <div className='flex flex-col'>
+            <div className='flex flex-col flex-1'>
                 {
                     (props.memoire?.director !== undefined && props.memoire?.director !== null) ? <div>
                         <p className='text-gray-400 text-[13px]'>Directeur</p>
@@ -60,7 +60,7 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
                     </div> : <>
                         {
                             (props.for === "create") ?
-                                <SearchSelected extraparams='&direction_type=memoire' onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Directeur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
+                                <SearchSelected extraparams='&direction_type=memoire' onChange={(e: DirecteurTravaux) => setSelectedTeacher(e.id)} label='Directeur' render={(e: DirecteurTravaux) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
                                     <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
                                     <p>--</p>
                                 </>
