@@ -37,7 +37,7 @@ export default function QuoteField(props: Props) {
     if (props.stage.quote_status === "draft")
         return <div className="flex items-center gap-1">
             {
-                (props.params.app[3] === "cotations" && ((props.stage.quote_by?.user?.id === props.user.id && props.stage.quote_by) || (props.stage.quote_by === null || props.stage.quote_by === undefined))) ? <>
+                (props.params.app[3] === "cotations" && ((props.stage.quote_by?.employee.user?.id === props.user.id && props.stage.quote_by) || (props.stage.quote_by === null || props.stage.quote_by === undefined))) ? <>
                     <input value={`${quote === "" ? "" : `${quote}`}`} onChange={(e: any) => setQuote(e.target.value)} placeholder="Cote de l'étudiant" type='number' max={20} min={0} className='outline-none border-1 border-inherent py-[2px] px-[10px]' />
                 </> : <>
                     {
