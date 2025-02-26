@@ -1,11 +1,12 @@
 import api from '@/lib/network/api';
 import { PageProps } from '@/lib/shared/types/config';
 import { cookies } from 'next/headers';
-import { DirecteurTravauxResumes, ProjetTutore } from '../types';
+import { DirecteurTravauxResumes, ProjetTutore, StudentMemoire } from '../types';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import ButtonCreateProjetTutore from '../widgets/projet-tutore/ButtonCreateProjetTutore';
+import ButtonCreateStudentMemoire from '../widgets/projet-tutore/ButtonCreateStudentMemoire';
 
 export default async function IspStageDashboardWidget(props: PageProps) {
 
@@ -107,24 +108,26 @@ export default async function IspStageDashboardWidget(props: PageProps) {
             </div>)
 
             try {
-                if (student.promotion.libelle === "L3") {
+                if (student.promotion.libelle === "L3" || student.promotion.libelle === "L2") {
                     const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
                     // stage.stagemaster
                     dashboardWidget.push(<div className='p-[10px] md:p-[20px] border-b border-inherent'>
-                        <p className='text-[13px] text-gray-400'>Informations du Stage Pédagogique</p>
+                        <p className='text-[13px] text-gray-400'>Informations du Stage { student.promotion.libelle === "L3" ? "Pédagogique" : `${student.promotion.libelle === "L2" ? "d'Impregnation" : ""}`}</p>
                         <p className='mt-[10px] text-[13px]'>Maitre de Stage</p>
                         {
                             (stage.stagemaster.length > 0) ? <p>{stage.stagemaster[0].user?.name} {stage.stagemaster[0].user?.last_name} {stage.stagemaster[0].user?.first_name} - Tel : {stage.stagemaster[0].user?.phone}</p>
                                 : <p>Pas encore affecté</p>
                         }
                         <div className='flex'>
-                            <p><Link href={"/apps/isp_stage/pedagogique"} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p>
+                            {
+                                student.promotion.libelle === "L3" && <p><Link href={ student.promotion.libelle === "L3" ? "/apps/isp_stage/pedagogique" : `${student.promotion.libelle === "L2" ? "/apps/isp_stage/impregnation" : ""}`} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p>
+                            }
                         </div>
                     </div>)
                 }
             } catch (e) { }
             if (student.promotion.libelle === "L3") {
-                 
+
                 try {
 
                     const projet_tutore: ProjetTutore = (await api(await cookies()).get(`/isp_stage/projets-tutores/my_projects/`)).data
@@ -151,6 +154,29 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                             </div>
                         </div>
                     )
+                }
+            }
+
+            if (student.promotion.libelle === "L2") {
+                try {
+                    const student_memoire: StudentMemoire = (await api(await cookies()).get(`/isp_stage/students-memoires/my_memoire/`)).data
+                    dashboardWidget.push(<div className='p-[10px] md:p-[20px] border-b border-inherent'>
+                        <p className='text-[13px] text-gray-400'>Informations du Mémoire</p>
+                        <p className='mt-[10px] text-[13px]'>Sujet </p>
+                        <p className='text-[16px]'>{student_memoire.subject}</p>
+                        <p className='mt-[10px] text-[13px]'>Directeur</p>
+                        <p className='text-[16px]'>{student_memoire.director !== undefined  ? student_memoire.director?.employee.fullname : "Pas encore choisi"}</p>
+                        <div className='flex'>
+                            <p><Link href={"/apps/isp_stage/student-memoire"} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p>
+                        </div>
+                    </div>)
+                } catch (e) {
+                    dashboardWidget.push(<div className='p-[10px] md:p-[20px] border-b border-inherent'>
+                        <p>Vous n'avez pas encore crée votre mémoire</p>
+                        <div className="mt-[10px] ml-[10px] text-[13px]">
+                            <p>Vous pouvez créeer un nouveau groupe : <ButtonCreateStudentMemoire redirect='/apps/isp_stage/student-memoire' {...props} student={student} /></p>
+                        </div>
+                    </div>)
                 }
             }
 
