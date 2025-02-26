@@ -99,7 +99,7 @@ class StageViewSet(viewsets.ModelViewSet):
         
         if request.data.get("quote") is not None :
             if stage.quote_by == None :
-                stage_master = StageMaster.objects.get(user__id=request.user.id)
+                stage_master = StageMaster.objects.get(employee__user__id=request.user.id)
                 stage.quote_by = stage_master
             stage.quote = request.data.get("quote")
 
@@ -158,7 +158,7 @@ class StageMasterViewSet(viewsets.ModelViewSet):
         stage = request.GET.get("stage")
         stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
 
-        stagemaster = StageMaster.objects.first(emploeyee__user__id = user.id)
+        stagemaster = StageMaster.objects.first(employee__user__id = user.id)
         stagemaster.is_quote_submitted = True
         stagemaster.save()
 
