@@ -130,13 +130,16 @@ def admin_reports(request):
     directors_reports = {}
     
     directors = DirecteurTravaux.objects.all()
-    if request.user.has_perm('isp_stage.isp_departement_officier') :
-        dept_officier = DeptRechercheOfficier.objects.filter(employee__user=request.user)
+    user: User = request.user
+    if user.has_perm('isp_stage.isp_departement_officier') :
+        dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user)
         if dept_officier.exists() :
             dept_officier = dept_officier.first()
             directors = directors.filter(department = dept_officier.dept)
         else :
-            directors = []
+            directors = DirecteurTravaux.objects.all()
+    else :
+        directors = DirecteurTravaux.objects.all()
     
     for director in directors:
         employee_id = director.employee.id
