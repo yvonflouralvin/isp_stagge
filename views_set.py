@@ -844,22 +844,27 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             if not student.exists():
                 return DirecteurTravaux.objects.none()
             student = student.first()
-            queryset = queryset.filter(department__id = student.promotion.grade.id)
+            queryset = queryset.filter(department = student.promotion.grade)
 
             # Récupérer les paramètres de département pour l'étudiant
             department_settings, created = DepartmentSettings.objects.get_or_create(
                 department=student.promotion.grade
             )
 
-            projets = ProjetTutore.objects.filter(director__id__in = [director.id for director in queryset ])
+            useds =  [] 
+            
+            if direction_type == "projet-tutore":
+                useds = ProjetTutore.objects.filter(director__in = queryset)
+            if direction_type == "memoire":
+                useds = StudentMemoire.objects.filter(director__in = queryset)
             director_count = {}
-            for projet in projets:
+            for projet in useds:
                 if projet.director == None :
                     continue
                 director = projet.director
                 if director.id in director_count:
                     director_count[director.id]['counts'] = director_count[director.id]['counts'] + 1
-                else:
+                else:   
                     director_count[director.id] = {
                         "director": director,
                         "counts": 1
@@ -867,12 +872,17 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
 
             final_directors = []
             for director_id, director_info in director_count.items():
-                if director_info['director'].category == "externe" and director_info['counts'] >= department_settings.max_teacher_externe_tutore_project_group:
-                    final_directors.append(director_info['director'])
-                elif director_info['director'].category == "interne" and director_info['counts'] >= department_settings.max_teacher_tutore_project_group:
-                    final_directors.append(director_info['director'])
+                director = director_info['director']
+                counts = director_info['counts']
+                
+                if (director.category == "externe" and counts >= department_settings.max_teacher_externe_tutore_project_group and director.direction_type == "projet-tutore") or \
+                (director.category == "interne" and counts >= department_settings.max_teacher_tutore_project_group and director.direction_type == "projet-tutore") or \
+                (director.category == "externe" and counts >= department_settings.max_teacher_externe_memoire and director.direction_type == "memoire") or \
+                (director.category == "interne" and counts >= department_settings.max_teacher_memoire and director.direction_type == "memoire"):
+                    final_directors.append(director.id)
 
-            queryset = queryset.exclude(id__in = [final_director.id for final_director in final_directors])
+            # Exclusion des directeurs dont les ID sont dans final_directors
+            queryset = queryset.exclude(id__in=final_directors)
 
         return queryset
 
