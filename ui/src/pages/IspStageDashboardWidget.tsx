@@ -120,7 +120,7 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                         }
                         <div className='flex'>
                             {
-                                student.promotion.libelle === "L3" && <p><Link href={ student.promotion.libelle === "L3" ? "/apps/isp_stage/pedagogique" : `${student.promotion.libelle === "L2" ? "/apps/isp_stage/impregnation" : ""}`} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p>
+                               ( student.promotion.libelle === "L3") ?  <p><Link href={ student.promotion.libelle === "L3" ? "/apps/isp_stage/pedagogique" : `${student.promotion.libelle === "L2" ? "/apps/isp_stage/impregnation" : ""}`} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p> : <></>
                             }
                         </div>
                     </div>)

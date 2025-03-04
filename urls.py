@@ -28,6 +28,7 @@ urlpatterns = [
     path('promotions-l3', PromotionL3.as_view(), name="promotions-l3"),
     path('student', StudentForStageAPIView.as_view(), name="student"),
     path('student/<stage>', StudentForStageAPIView.as_view(), name="student-stage"), 
-    path('resumes', views.stages_resumes, name="staff-resumes")
+    path('resumes', views.stages_resumes, name="staff-resumes"),
+    path('admin-resumes', views.admin_reports, name='admin-resumes')
     # path('stage/get-by-user-id/', ) /apps/{nom_addon}/urls
 ]

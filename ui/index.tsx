@@ -6,12 +6,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
+import Reports from './src/pages/reports/Reports'; 
 const config: AppConfig = {
     label: "Etudiants",
     showInMainMenu: true,
     icon: "https://www.flaticon.com/svg/static/icons/svg/2933/2933715.svg",
     dashboardLayouting: true,
-    dashboardWidget: (props: PageProps) => { return <IspStageDashboardWidget {...props} /> },
+    dashboardWidget: async (props: PageProps) => { return <IspStageDashboardWidget {...props} /> },
     menu: async (props: PageProps) => {
         if (props.user.permissions.find(perm => perm === "isp_user_student")) {
             try {
@@ -116,12 +117,23 @@ const config: AppConfig = {
                         link: "/apps/isp_stage/directeur-travaux/memoire/",
                     }
                 ]
+            },{
+                label:"Rapports",
+                link:"/apps/isp_stage/reports",
+                is_superuser: true,
+                permissions: ['isp_departement_officier']
             }
         ]
 
         return menus
     },
     page: (props: PageProps) => {
+        if(props.params.app.length === 3 && props.params.app[2] === "reports") return {
+            dashboardLayouting: true,
+            render: ()=>{
+                return <Reports {...props}/>
+            }
+        }
         if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")
             return {
                 dashboardLayouting: true,
