@@ -123,7 +123,7 @@ class ProjetTutoreSerializer(serializers.ModelSerializer):
         queryset = Student.objects.all(), source="head", required=True, allow_null=False
     )
     director_id = serializers.PrimaryKeyRelatedField(
-        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=False
+        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=True
     )
     class Meta :
         model = ProjetTutore
@@ -138,7 +138,7 @@ class StudentMemoireSerializer(serializers.ModelSerializer):
         queryset = Student.objects.all(), source="student", required=True, allow_null=False
     )
     director_id = serializers.PrimaryKeyRelatedField(
-        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=False
+        queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=True
     )
     class Meta :
         model = StudentMemoire

@@ -6,6 +6,7 @@ import { Student, Teacher } from "/addons/uscitech_academy/ui/src/types";
 import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from '@nextui-org/react';
 import cookies from '@/lib/shared/cookies';
 import api from '@/lib/network/api';
+import ConfirmDialogPopup from '@/components/ui/ConfirmDialogPopup';
 
 
 export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
@@ -31,7 +32,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
             }
             if (selectedTeacher !== undefined) datas["director_id"] = selectedTeacher
             const result: ProjetTutore = await api(cookies).put(`/isp_stage/projets-tutores/${props.projet?.id}/`, datas);
-        
+
 
         } catch (e) {
 
@@ -57,14 +58,47 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 {
                     <>
                         {
-                            (props.projet?.director !== undefined && props.projet?.director !== null) ? <div>
-                                <p className='text-gray-500 font-light m-0 text-[13px]'>Encadreur</p>
-                                <p className='font-semibold text-[13px] m-0 border-b border-inherent'>{props.projet?.director?.employee?.fullname}</p>
-                            </div> :
+                            (props.projet?.director !== undefined && props.projet?.director !== null) ? <div className='flex items-start gap-[10px]'>
+                                <div className='flex-1'>
+                                    <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
+                                    <p className='font-semibold text-[13px] m-0 border-b border-inherent'>{selectedTeacher ? props.projet?.director?.employee.fullname : "--"}</p>
+                                </div>
+                                {
+                                    (selectedTeacher !== undefined) && <>
+                                        {
+                                            props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
+                                                {
+                                                    isSaving === true ? <Spinner /> : <ConfirmDialogPopup onConfirm={async () => {
+                                                        setIsSaving(true)
+                                                        try {
+                                                            const datas: any = {
+                                                                subject: props.projet?.subject,
+                                                                member: memberIds.map(mids => (mids.id)),
+                                                                head_id: props.projet?.head_id,
+                                                                director_id: null
+                                                            }
+                                                            const result: ProjetTutore = await api(cookies).put(`/isp_stage/projets-tutores/${props.projet?.id}/`, datas);
+                                                            setSelectedTeacher(undefined)
+                                                        } catch (e) {
+                                                            console.error(e)
+                                                        }
+                                                        setIsSaving(false)
+                                                    }} label='Retirer' title='Retirer le directeur'>
+                                                        <div>
+                                                            Vous êtes sur le point de retirer le directeur de ce étudiant
+                                                        </div>
+                                                    </ConfirmDialogPopup>
+                                                }
+                                            </>
+                                        }
+                                    </>
+                                }
+                            </div>
+                                :
                                 <>
                                     {
                                         (props.for === "create" && props.projet?.head_id === props.student?.id) ?
-                                            <SearchSelected extraparams='&direction_type=projet-tutore' onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Directeur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
+                                            <SearchSelected selectedFirstDefault={false} extraparams='&direction_type=projet-tutore' onChange={(e: Teacher) => setSelectedTeacher(e.id)} label='Directeur' render={(e: Teacher) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
                                                 <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
                                                 <p>--</p>
                                             </>
