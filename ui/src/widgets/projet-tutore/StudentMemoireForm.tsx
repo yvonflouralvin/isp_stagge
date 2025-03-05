@@ -1,11 +1,11 @@
 'use client'
 import React from 'react'
-import { DirecteurTravaux, ProjetTutoreFormPageProps, StudentMemoireFormPageProps } from "../../types";
+import { DirecteurTravaux, StudentMemoireFormPageProps } from "../../types";
 import SearchSelected from "@/components/ui/SearchSelected";
-import { Student, StudentFormPageProps, Teacher } from "/addons/uscitech_academy/ui/src/types";
-import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from '@nextui-org/react';
+import { Spinner } from '@nextui-org/react';
 import cookies from '@/lib/shared/cookies';
 import api from '@/lib/network/api';
+import ConfirmDialogPopup from '@/components/ui/ConfirmDialogPopup';
 
 
 export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
@@ -54,13 +54,45 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
         <div className="flex items-start mt-[15px]">
             <div className='flex flex-col flex-1'>
                 {
-                    (props.memoire?.director !== undefined && props.memoire?.director !== null) ? <div>
-                        <p className='text-gray-400 text-[13px]'>Directeur</p>
-                        <p className='text-[14px] m-0'>{props.memoire?.director?.employee?.fullname}</p>
+                    (props.memoire?.director !== undefined && props.memoire?.director !== null) ? <div className='flex items-start'>
+                        <div className='flex-1'>
+                            <p className='text-gray-400 text-[13px]'>Directeur</p>
+                            <p className='text-[14px] m-0'>{selectedTeacher ? props.memoire?.director?.employee.fullname : "---"}</p>
+                        </div>
+                        {
+                            (selectedTeacher !== undefined) && <>
+                                {
+                                    props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
+                                        {
+                                            isSaving === true ? <Spinner /> : <ConfirmDialogPopup onConfirm={async () => {
+                                                setIsSaving(true)
+                                                try {
+                                                    const datas: any = {
+                                                        subject: props.memoire?.subject,
+                                                        student_id: props.memoire?.student_id,
+                                                        director_id: null
+                                                    }
+                                                    const result = await api(cookies).put(`/isp_stage/students-memoires/${props.memoire?.id}/`, datas);
+                                                    setSelectedTeacher(undefined)
+                                                } catch (e) {
+                                                    console.error(e)
+                                                }
+                                                setIsSaving(false)
+                                            }} label='Retirer' title='Retirer le directeur'>
+                                                <div>
+                                                    Vous êtes sur le point de retirer le directeur de ce étudiant
+                                                </div>
+                                            </ConfirmDialogPopup>
+                                        }
+                                    </>
+                                }
+                            </>
+                        }
+
                     </div> : <>
                         {
                             (props.for === "create") ?
-                                <SearchSelected extraparams='&direction_type=memoire' onChange={(e: DirecteurTravaux) => setSelectedTeacher(e.id)} label='Directeur' render={(e: DirecteurTravaux) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
+                                <SearchSelected selectedFirstDefault={false} extraparams='&direction_type=memoire' onChange={(e: DirecteurTravaux) => setSelectedTeacher(e.id)} label='Directeur' render={(e: DirecteurTravaux) => (`${e.employee.fullname}`)} index='id' url='/isp_stage/directeur-travaux/' /> : <>
                                     <p className='text-gray-500 font-light m-0 text-[13px]'>Directeur</p>
                                     <p>--</p>
                                 </>
@@ -87,3 +119,4 @@ export default function StudentMemoireForm(props: StudentMemoireFormPageProps) {
         }
     </div>
 }
+
