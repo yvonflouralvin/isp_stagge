@@ -35,7 +35,7 @@ const config: AppConfig = {
                         { label: "Projet Tutoré", link: "/apps/isp_stage/projet-tutore" }
                     )
                 }
-                if (student.promotion.libelle === "L2") {
+                if (student.promotion.libelle === "L2 (AS)") {
                     tmp_menu.push(
                         { label: "Memoire", link: "/apps/isp_stage/student-memoire" }
                     )

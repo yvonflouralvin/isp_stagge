@@ -108,11 +108,11 @@ export default async function IspStageDashboardWidget(props: PageProps) {
             </div>)
 
             try {
-                if (student.promotion.libelle === "L3" || student.promotion.libelle === "L2") {
+                if (student.promotion.libelle === "L3 (LMD)" || student.promotion.libelle === "L2 (LMD)") {
                     const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
                     // stage.stagemaster
                     dashboardWidget.push(<div className='p-[10px] md:p-[20px] border-b border-inherent'>
-                        <p className='text-[13px] text-gray-400'>Informations du Stage { student.promotion.libelle === "L3" ? "Pédagogique" : `${student.promotion.libelle === "L2" ? "d'Impregnation" : ""}`}</p>
+                        <p className='text-[13px] text-gray-400'>Informations du Stage { student.promotion.libelle === "L3 (LMD)" ? "Pédagogique" : `${student.promotion.libelle === "L2 (LMD)" ? "d'Impregnation" : ""}`}</p>
                         <p className='mt-[10px] text-[13px]'>Maitre de Stage</p>
                         {
                             (stage.stagemaster.length > 0) ? <p>{stage.stagemaster[0].user?.name} {stage.stagemaster[0].user?.last_name} {stage.stagemaster[0].user?.first_name} - Tel : {stage.stagemaster[0].user?.phone}</p>
@@ -120,7 +120,7 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                         }
                         <div className='flex'>
                             {
-                               ( student.promotion.libelle === "L3") ?  <p><Link href={ student.promotion.libelle === "L3" ? "/apps/isp_stage/pedagogique" : `${student.promotion.libelle === "L2" ? "/apps/isp_stage/impregnation" : ""}`} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p> : <></>
+                               ( student.promotion.libelle === "L3 (LMD)") ?  <p><Link href={ student.promotion.libelle === "L3 (LMD)" ? "/apps/isp_stage/pedagogique" : `${student.promotion.libelle === "L2 (LMD)" ? "/apps/isp_stage/impregnation" : ""}`} className='mt-[5px] flex items-center text-[13px]  duration-300 text-primary gap-[5px] py-[2px]'>Voir les détails <ArrowRight size={"13px"} color='blue' /></Link></p> : <></>
                             }
                         </div>
                     </div>)
@@ -157,7 +157,7 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                 }
             }
 
-            if (student.promotion.libelle === "L2") {
+            if (student.promotion.libelle === "L2 (AS)") {
                 try {
                     const student_memoire: StudentMemoire = (await api(await cookies()).get(`/isp_stage/students-memoires/my_memoire/`)).data
                     dashboardWidget.push(<div className='p-[10px] md:p-[20px] border-b border-inherent'>

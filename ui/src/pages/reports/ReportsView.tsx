@@ -71,8 +71,8 @@ export default function ReportsView(props: Props) {
                                             <p className='w-full  sm:w-[70%] sm:text-[13px] text-[14px] text-black sm:text-gray-500'>{dept.department}</p>
                                             <div className='flex sm:flex-row flex-col items-start w-full sm:w-[30%]'>
                                                 <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L1 (</span> {dept.promotions.find((pro: any) => pro.promotion === "L1") ? dept.promotions.find((pro: any) => pro.promotion === "L1").student_count : 0})</p>
-                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L2 (</span> {dept.promotions.find((pro: any) => pro.promotion === "L2") ? dept.promotions.find((pro: any) => pro.promotion === "L2").student_count : 0})</p>
-                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L3 (</span>{dept.promotions.find((pro: any) => pro.promotion === "L3") ? dept.promotions.find((pro: any) => pro.promotion === "L3") .student_count : 0})</p> 
+                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L2 (</span> {dept.promotions.find((pro: any) => pro.promotion === "L2 (LMD)") ? dept.promotions.find((pro: any) => pro.promotion === "L2 (LMD)").student_count : 0})</p>
+                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L3 (</span>{dept.promotions.find((pro: any) => pro.promotion === "L3 (LMD)") ? dept.promotions.find((pro: any) => pro.promotion === "L3 (LMD)") .student_count : 0})</p> 
                                             </div>
                                         </div>
                                     })

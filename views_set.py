@@ -32,13 +32,13 @@ from slugify import slugify
 
 class PromotionL2(APIView):
     def get(self, request):
-        queryset = Promotion.objects.filter(libelle="L2")
+        queryset = Promotion.objects.filter(libelle="L2 (LMD)")
         datas = PromotionSerializer(queryset, many=True)
         return Response(datas.data)
 
 class PromotionL3(APIView):
     def get(self, request):
-        queryset = Promotion.objects.filter(libelle="L3")
+        queryset = Promotion.objects.filter(libelle="L3 (LMD)")
         datas = PromotionSerializer(queryset, many=True)
         return Response(datas.data)
 
@@ -428,51 +428,56 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
             created_students = []
             
             for _, row in df.iterrows():
-                # full_name = f"{row['first_name']} {row['name']} {row['last_name']}".strip()
-                user, created_user = User.objects.get_or_create(
-                    username=row['email'],
-                    defaults={
-                        'name': row['name'],
-                        'first_name': row['first_name'],
-                        'last_name': row['last_name'],
-                        'phone': row.get('phone', ''),
-                        'sexe': 'm',  # Valeur par défaut, peut être ajustée si disponible,
-                        "password" : make_password(os.environ.get("DEFAULT_PASS", "1234")),
-                        "is_active" : True,
-                        "email" : row['email']
-                    }
-                )
-
-                if not created_user :
-                    user.first_name = row['first_name']
-                    user.last_name = row['last_name']
-                    user.name = row['name']
-                    user.email = row['email']
-                    user.is_active=True
-
-                    user.save()
-                
                 try:
-                    permission = Permission.objects.get(codename="isp_user_student")
-                    user.user_permissions.add(permission)
-                except: 
-                    pass
-                try:
-                    permission = Permission.objects.get(codename="academy_is_student")
-                    user.user_permissions.add(permission)
+                    # full_name = f"{row['first_name']} {row['name']} {row['last_name']}".strip()
+                    user, created_user = User.objects.get_or_create(
+                        username=row['email'],
+                        defaults={
+                            'name': row['name'],
+                            'first_name': row['first_name'],
+                            'last_name': row['last_name'],
+                            'phone': row.get('phone', ''),
+                            'sexe': 'm',  # Valeur par défaut, peut être ajustée si disponible,
+                            "password" : make_password(os.environ.get("DEFAULT_PASS", "1234")),
+                            "is_active" : True,
+                            "email" : row['email']
+                        }
+                    )
+
+                    if not created_user :
+                        user.first_name = row['first_name']
+                        user.last_name = row['last_name']
+                        user.name = row['name']
+                        user.email = row['email']
+                        user.is_active=True
+
+                        user.save()
+                    
+                    try:
+                        permission = Permission.objects.get(codename="isp_user_student")
+                        user.user_permissions.add(permission)
+                    except: 
+                        pass
+                    try:
+                        permission = Permission.objects.get(codename="academy_is_student")
+                        user.user_permissions.add(permission)
+                    except:
+                        pass
+                    
+                    promotion = None
+                    
+                    if promotion_id :
+                        promotion = Promotion.objects.filter(id=promotion_id).first()
+                        
+                    student, created = Student.objects.get_or_create(
+                        user=user,
+                        defaults={'promotion': promotion}
+                    )
+
+                    created_students.append(student.id)
+
                 except:
                     pass
-                
-                promotion = None
-                
-                if promotion_id :
-                    promotion = Promotion.objects.filter(id=promotion_id).first()
-                    
-                student, created = Student.objects.get_or_create(
-                    user=user,
-                    defaults={'promotion': promotion}
-                )
-                created_students.append(student.id)
             
             return Response({'message': 'Importation réussie.', 'students': created_students}, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -757,10 +762,10 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
             students_without_stage = students_without_stage.filter(promotion__grade__id = dept_officier.dept.id)
 
         if stage_type == "pedagogique" : 
-            students_without_stage = students_without_stage.filter(promotion__libelle = "L3")
+            students_without_stage = students_without_stage.filter(promotion__libelle = "L3 (LMD)")
 
         if stage_type == "impregnation" : 
-            students_without_stage = students_without_stage.filter(promotion__libelle = "L2")
+            students_without_stage = students_without_stage.filter(promotion__libelle = "L2 (LMD)")
         
         page = self.paginate_queryset(students_without_stage)
         if page is not None:
