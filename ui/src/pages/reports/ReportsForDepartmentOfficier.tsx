@@ -6,6 +6,7 @@ import {
     AccordionItem
 } from '@nextui-org/react'
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import Link from 'next/link';
 interface Props {
     reports: any
 }
@@ -37,13 +38,13 @@ export default function ReportsForDepartmentOfficier(props: Props) {
                         <div className='flex flex-col items-start w-full divide-y-1 divide-y-gray-400'>
                             {
                                 props.reports.directors.directors.map((director: any, index: number) => {
-                                    return <div key={index + 1} className='duration-300 hover:bg-primary/10 w-full flex flex-col sm:flex-row items-center py-[4px] px-[15px]'>
+                                    return <Link href={`/apps/isp_stage/reports/director/${director.employee_id}`} key={index + 1} className='duration-300 hover:bg-primary/10 w-full flex flex-col sm:flex-row items-center py-[4px] px-[15px]'>
                                         <p className='w-full sm:w-[70%] sm:text-[13px] text-[14px] text-black sm:text-gray-500'>{director.employee}</p>
                                         <div className='flex  sm:flex-row flex-col items-start w-full sm:w-[30%]'>
                                             <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>Projets :</span>{director.projets_tutores}</p>
                                             <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>Mémoire :</span>{director.memoires}</p>
                                         </div>
-                                    </div>
+                                    </Link>
                                 })
                             }
                         </div>

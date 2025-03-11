@@ -374,7 +374,8 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         - Sinon, retourne tous les départements.
         """
         students_for = self.request.query_params.get('for', None)
-
+        filter_promotion = self.request.query_params.get('filter_promotion', None)
+        
         user = self.request.user
         if user.has_perm("isp_stage.isp_departement_officier") : 
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
@@ -383,7 +384,8 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
             
             department_officier: DeptRechercheOfficier = department_officier[0]
             queryset = Student.objects.filter(promotion__grade__id = department_officier.dept.id)
-        
+            if filter_promotion != None :
+                queryset = queryset.filter(promotion__libelle = filter_promotion)
             return queryset
         
         elif user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
@@ -407,11 +409,25 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
                 excluded_heads = [projet_tutore.head.id for projet_tutore in projet_tutores]
                 queryset = queryset.exclude(id__in=excluded_members).exclude(id__in=excluded_heads)
             
+            if filter_promotion != None :
+                queryset = queryset.filter(promotion__libelle = filter_promotion)
             return queryset
 
         else :
-            return Student.objects.all()
+            queryset =  Student.objects.all()
+            if filter_promotion != None :
+                queryset = queryset.filter(promotion__libelle = filter_promotion)
+            return queryset
     
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        queryset = self.get_queryset()
+        return Response({
+            "count": len(queryset),
+            "l2as": len(queryset.filter(promotion__libelle = "L2 (AS)")),
+            "l2lmd": len(queryset.filter(promotion__libelle = "L2 (LMD)")),
+            "l3lmd": len(queryset.filter(promotion__libelle = "L3 (LMD)"))
+        })
     
     @action(detail=False, methods=['post'], url_path='bulk-upload')
     def bulk_upload(self, request):

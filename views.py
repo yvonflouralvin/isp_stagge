@@ -144,6 +144,7 @@ def admin_reports(request):
         if employee_id not in directors_reports:
             directors_reports[employee_id] = {
                 "employee": director.employee.fullname,
+                "employee_id": director.employee.id,
                 "grade_count": 0,
                 "projets_tutores": 0,
                 "memoires": 0
@@ -174,3 +175,33 @@ def admin_reports(request):
             "directors": list(directors_reports.values())
         }
     })
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def department_resumes_for_director(request, employee):
+    user: User = request.user
+    dept_officier = None
+    director = None
+    if user.has_perm('isp_stage.isp_departement_officier') :
+        dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user)
+        if dept_officier.exists() :
+            dept_officier = dept_officier.first()
+            directors = DirecteurTravaux.objects.filter(department = dept_officier.dept, employee__id = employee)
+            if directors.exists():
+                reports = {
+                    "director": EmployeeSerializer(directors.first().employee).data,
+                    "department": GradeClasseSerializer(directors.first().department).data,
+                    "memoires": [],
+                    "projects": []
+                }
+                for director in directors :
+                    if director.direction_type == "memoire" : 
+                        reports['memoires'] = StudentMemoireSerializer(StudentMemoire.objects.filter(director=director), many=True).data
+                    elif director.direction_type == "projet-tutore" : 
+                        reports['projects'] = ProjetTutoreSerializer(ProjetTutore.objects.filter(director=director), many=True).data
+                return Response(reports, 200)
+            return Response("No director informations found for this employee", 404)
+        return Response("You are not Department chief", 404)
+    return Response("You don't have right of  Department chief", 404)

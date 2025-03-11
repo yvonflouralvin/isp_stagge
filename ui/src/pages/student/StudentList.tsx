@@ -11,8 +11,11 @@ import { Student } from '/addons/uscitech_academy/ui/src/types';
 import StudentUploadLists from './StudentUploadLists';
 import { PageProps } from '@/lib/shared/types/config';
 
-
-export default function StudentList(props: PageProps) {
+interface Props extends PageProps {
+    filter_promotion?: string
+    page_size?: number
+}
+export default function StudentList(props: Props) {
 
     const [total_pages, setTotal_pages] = React.useState(0);
     const [count, setCount] = React.useState(0);
@@ -20,10 +23,8 @@ export default function StudentList(props: PageProps) {
     const [current_page, setCurrent_page] = React.useState(1);
     const [isSearching, setIsSearching] = React.useState(false)
 
-
-
     const load = async (page: number, search?: string) => {
-        const url = `/isp_stage/students/?page=${page}${search !== undefined ? `&search=${search}` : ""}`
+        const url = `/isp_stage/students/?page=${page}${search !== undefined ? `&search=${search}` : ""}${props.filter_promotion !== undefined ? `&filter_promotion=${props.filter_promotion}`: ""}${props.page_size !== undefined ? `&page_size=${props.page_size}`: ""}`
         try {
             const tmp = await api(cookies).get(url);
             setResults(tmp.data.results);
@@ -50,21 +51,8 @@ export default function StudentList(props: PageProps) {
     }, [current_page])
 
 
-    return <div className='border-t border-inherent mt-[15px] pt-[15px] h-full'>
-        <div className="flex items-start">
-            <div className='flex flex-col flex-1'>
-                <p className='font-semibold text-[20px] m-0'>Étudiants</p>
-                <p className='text-gray-500 font-light m-0 text-[13px]'>{count} enregistrement{count > 1 ? "s" : ""}</p>
-            </div>
-            <div className="flex gap-[5px] items-center">
-                <Link href="/apps/isp_stage/students/create" className='duration-300 flex items-center gap-[2px] text-[13px] text-white font-bold cursor-pointer rounded py-[5px] px-[15px] bg-primary/80 hover:bg-primary'>
-                    <PlusIcon size={"12px"} color='white' />
-                    <p>Nouveau</p>
-                </Link>
-                <StudentUploadLists {...props} />
-            </div>
-        </div>
-        <div className="mt-[10px]">
+    return <div className='h-full w-fll'>
+        <div className="w-full h-full">
             <div>
                 <div className="flex items-center w-full bg-[rgba(0,0,0,0.03)]  px-[20px] py-[10px] rounded mb-[10px]">
                     <input id="search-input" onKeyUp={e => { if (e.key === "Enter") handleSearch() }} placeholder='Search' className='outline-none border-0 text-[13px] bg-transparent text-gray-500 flex-1' />
