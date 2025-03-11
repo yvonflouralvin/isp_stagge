@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Reports from './src/pages/reports/Reports'; 
+import DirectorReportView from './src/pages/reports/director/DirectorReportView';
 const config: AppConfig = {
     label: "Etudiants",
     showInMainMenu: true,
@@ -117,7 +118,8 @@ const config: AppConfig = {
                         link: "/apps/isp_stage/directeur-travaux/memoire/",
                     }
                 ]
-            },{
+            },
+            {
                 label:"Rapports",
                 link:"/apps/isp_stage/reports",
                 is_superuser: true,
@@ -132,6 +134,12 @@ const config: AppConfig = {
             dashboardLayouting: true,
             render: ()=>{
                 return <Reports {...props}/>
+            }
+        }
+        if(props.params.app.length === 5 && props.params.app[2] === "reports" && props.params.app[3] === "director") return {
+            dashboardLayouting: true,
+            render: ()=>{
+                return <DirectorReportView {...props}/>
             }
         }
         if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")

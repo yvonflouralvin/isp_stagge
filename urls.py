@@ -29,6 +29,7 @@ urlpatterns = [
     path('student', StudentForStageAPIView.as_view(), name="student"),
     path('student/<stage>', StudentForStageAPIView.as_view(), name="student-stage"), 
     path('resumes', views.stages_resumes, name="staff-resumes"),
-    path('admin-resumes', views.admin_reports, name='admin-resumes')
+    path('admin-resumes', views.admin_reports, name='admin-resumes'),
+    path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director')
     # path('stage/get-by-user-id/', ) /apps/{nom_addon}/urls
 ]
