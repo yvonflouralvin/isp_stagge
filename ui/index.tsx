@@ -142,6 +142,12 @@ const config: AppConfig = {
                 return <DirectorReportView {...props}/>
             }
         }
+        if(props.params.app.length === 6 && props.params.app[2] === "reports" && props.params.app[3] === "director" && props.params.app[5] === "print") return {
+            dashboardLayouting: false,
+            render: ()=>{
+                return <DirectorReportView for='print' {...props}/>
+            }
+        }
         if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")
             return {
                 dashboardLayouting: true,
