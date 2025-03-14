@@ -126,7 +126,7 @@ export default async function IspStageDashboardWidget(props: PageProps) {
                     </div>)
                 }
             } catch (e) { }
-            if (student.promotion.libelle === "L3") {
+            if (student.promotion.libelle === "L3 (LMD)") {
 
                 try {
 

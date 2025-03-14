@@ -19,7 +19,7 @@ const config: AppConfig = {
             try {
                 const student: Student = (await api(await cookies()).get(`/uscitech_academy/students/me/`)).data
                 const tmp_menu: Menu[] = []
-                if (student.promotion.libelle === "L3") {
+                if (student.promotion.libelle === "L3 (LMD)") {
                     tmp_menu.push({
                         label: "Stage Pédagogique",
                         link: "/apps/isp_stage/pedagogique"
@@ -31,7 +31,7 @@ const config: AppConfig = {
                     link: "/apps/isp_stage/entreprise"
                 })
 
-                if (student.promotion.libelle === "L3") {
+                if (student.promotion.libelle === "L3 (LMD)") {
                     tmp_menu.push(
                         { label: "Projet Tutoré", link: "/apps/isp_stage/projet-tutore" }
                     )

@@ -732,9 +732,9 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
                     teacher_count[teacher.id] = 1
 
             limit = 1
-            if student.promotion.libelle == "L3" :
+            if student.promotion.libelle == "L3 (LMD)" :
                 limit = department_settings.max_teacher_tutore_project_group
-            elif student.promotion.libelle == "L2" :
+            elif student.promotion.libelle == "L2 (AS)" :
                 limit = department_settings.max_teacher_memoire
 
             final_teachers = [
