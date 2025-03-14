@@ -4,21 +4,22 @@ import uuid
 from core.models import User
 from uscitech_academy.models import Student, GradeClasse, Teacher
 from hr.models import Employee
+from core.models import CoreBaseModel
 
 
-class DeptRechercheOfficier(models.Model):
+class DeptRechercheOfficier(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=False)
     dept = models.ForeignKey(GradeClasse, on_delete=models.CASCADE)
 
 
-class StageMaster(models.Model):
+class StageMaster(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.OneToOneField(Employee, on_delete=models.CASCADE)
     is_quote_submitted = models.BooleanField(default=False) 
     
 
-class DirecteurTravaux(models.Model):
+class DirecteurTravaux(CoreBaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     direction_type = category = models.CharField(choices=[
@@ -39,7 +40,7 @@ class DirecteurTravaux(models.Model):
             models.UniqueConstraint(fields=['department', 'direction_type', 'employee'], name='unique_director_for_dept_and_direction_type')
         ]
 
-class Stage(models.Model):
+class Stage(CoreBaseModel):
 
     STAGE_TYPES = [
         ('impregnation', "Imprégnation"),
@@ -66,7 +67,7 @@ class Stage(models.Model):
     quote_status = models.CharField(choices=[('submitted', "Soumie"), ('draft', "Brouillon")], default='draft')
 
 
-class ProjetTutore(models.Model):
+class ProjetTutore(CoreBaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.TextField(null=False, blank=False)
@@ -75,13 +76,13 @@ class ProjetTutore(models.Model):
     director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
 
 
-class StudentMemoire(models.Model):
+class StudentMemoire(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.TextField(null=False, blank=False)
     student = models.ForeignKey(Student, null=False, related_name="student", on_delete=models.CASCADE) 
     director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
 
-class DepartmentSettings(models.Model):
+class DepartmentSettings(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, null=False)
     max_teacher_tutore_project_group = models.IntegerField(default=1, blank=True) # Nombre de groupe par directeur internet
