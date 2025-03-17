@@ -556,6 +556,15 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
             return Response(GradeClasseSerializer(grades, many=True).data, status=200)
         return Response({}, status=404)
 
+    @action(detail=False, methods=['get'])
+    def promotions(self, request):
+        user: User = request.user 
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
+        if dept.exists():
+            promotions = Promotion.objects.filter(grade = dept[0].dept).order_by('libelle')
+            return Response(PromotionSerializer(promotions, many=True).data, status=200)
+        return Response({}, status=404)
+
 
 class ProjetTutoreViewSet(viewsets.ModelViewSet):
     queryset = ProjetTutore.objects.all()

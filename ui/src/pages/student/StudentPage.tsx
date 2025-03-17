@@ -3,11 +3,13 @@ import Breadcrumb from '@/components/ui/Breadcrumb';
 import StudentLists from "./StudentLists";
 import api from "@/lib/network/api";
 import { cookies } from "next/headers";
+import { Promotion } from "/addons/uscitech_academy/ui/src/types";
 
 interface Props extends PageProps {
 
 }
 export default async function StudentPage(props: Props) {
+    var promotions: Promotion[] = []
     var stats : {
         count: number;
         l2as: number;
@@ -21,6 +23,7 @@ export default async function StudentPage(props: Props) {
     }
     try{
         stats = ((await api(await cookies()).get(`/isp_stage/students/stats/`)).data)
+        promotions = ((await api(await cookies()).get(`/isp_stage/dept-recherche-officier/promotions/`)).data)
     }catch(e){}
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
@@ -29,6 +32,6 @@ export default async function StudentPage(props: Props) {
                 link: "/apps/isp_stage/students"
             }
         ]} />
-        <StudentLists {...props} stats={stats}/>
+        <StudentLists {...props} stats={stats} promotions={promotions}/>
     </div>
 }
