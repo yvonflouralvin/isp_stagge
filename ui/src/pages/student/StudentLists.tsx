@@ -7,6 +7,7 @@ import Link from "next/link";
 import { PlusIcon } from "lucide-react";
 import StudentUploadLists from "./StudentUploadLists";
 import React from "react";
+import { Promotion } from "/addons/uscitech_academy/ui/src/types";
 
 interface Props extends PageProps {
     stats: {
@@ -15,6 +16,7 @@ interface Props extends PageProps {
         l2lmd: number;
         l3lmd: number;
     }
+    promotions: Promotion[]
 }
 export default function StudentLists(props: Props) {
     const [count, setCount] = React.useState(0)
@@ -34,15 +36,13 @@ export default function StudentLists(props: Props) {
             </div>
         </div>
         <Accordion>
-            <AccordionItem key={"1"} aria-label="L2 (AS)" title="L2 (AS)" subtitle={`${props.stats.l2as} étudiants`} >
-                <StudentList filter_promotion="L2 (AS)" {...props} page_size={page_size} />
-            </AccordionItem>
-            <AccordionItem key={"2"} aria-label="L2 (LMD)" title="L2 (LMD)" subtitle={`${props.stats.l2lmd} étudiants`}>
-                <StudentList filter_promotion="L2 (LMD)" {...props} page_size={page_size}/>
-            </AccordionItem>
-            <AccordionItem key={"3"} aria-label="L3 (LMD)" title="L3 (LMD)" subtitle={`${props.stats.l3lmd} étudiants`}>
-                <StudentList filter_promotion="L3 (LMD)" {...props} page_size={page_size} />
-            </AccordionItem>
+            {
+                props.promotions.map((promotion)=>{
+                    return <AccordionItem key={promotion.id} aria-label={`${promotion.libelle} ${(promotion.option !== undefined && promotion.option !== null) ? `/ Option: ${promotion.option}` : ""}`} title={`${promotion.libelle} ${(promotion.option !== undefined && promotion.option !== null) ? `/ Option: ${promotion.option}` : ""}`} subtitle={`${promotion.student_count} étudiants`} >
+                    <StudentList filter_promotion={promotion.libelle} {...props} page_size={page_size} />
+                </AccordionItem>
+                })
+            }
         </Accordion>
     </div>
 }
