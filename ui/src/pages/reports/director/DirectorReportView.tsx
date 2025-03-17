@@ -44,7 +44,7 @@ export default async function DirectorReportView(props: Props) {
 
                     </div>
                     <div className="border-t border-inherent mt-[10px] w-full">
-                        <p className="text-[16px] text-gray-400 font-semibold py-[3px] bg-primary/40 px-[15px] text-white">Mémoires ({reports.memoires.length})</p>
+                        <p className="text-[16px] font-semibold py-[3px] bg-primary/40 px-[15px] text-white">Mémoires ({reports.memoires.length})</p>
                         <div className="border-t border-inherent w-full flex flex-col divide-y-[1px]">
                             {
                                 reports.memoires.map((memoire: StudentMemoire, index: number) => {
@@ -57,13 +57,25 @@ export default async function DirectorReportView(props: Props) {
                         </div>
                     </div>
                     <div className="border-t border-inherent mt-[10px] w-full">
-                        <p className="text-[16px] text-gray-400 font-semibold py-[3px] bg-primary/40 px-[15px] text-white">Projets Tutorés ({reports.projects.length})</p>
+                        <p className="text-[16px] font-semibold py-[3px] bg-primary/40 px-[15px] text-white">Projets Tutorés ({reports.projects.length})</p>
                         <div className="border-t border-inherent w-full flex flex-col divide-y-[1px]">
                             {
                                 reports.projects.map((projet: ProjetTutore, index: number) => {
-                                    return <div key={projet.id} className={`flex items-start gap-[4px] text-[12px]`}>
-                                        <p className="w-[40%]">{index + 1}. {projet.head.user.name} {projet.head.user.last_name} {projet.head.user.first_name}</p>
-                                        <p className="w-[60%]">{projet.subject}</p>
+                                    return <div key={projet.id} className={`w-full`}>
+                                        <div className={`flex items-start gap-[4px] text-[12px]`}>
+                                            <p className="w-[40%]">{index + 1}. {projet.head.user.name} {projet.head.user.last_name} {projet.head.user.first_name}</p>
+                                            <p className="w-[60%]">{projet.subject}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[14px] font-semibold">Membres</p>
+                                            <div className="pl-[15px]">
+                                                {
+                                                    projet.member_names.map((name, index)=>{
+                                                        return <p key={index+1} className="text-[13px] text-gray-400">{index+1}. {name}</p>
+                                                    })
+                                                }
+                                            </div>
+                                        </div>
                                     </div>
                                 })
                             }

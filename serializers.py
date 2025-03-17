@@ -119,15 +119,21 @@ class DirecteurTravauxSerializer(serializers.ModelSerializer):
 class ProjetTutoreSerializer(serializers.ModelSerializer):
     head = StudentSerializer(read_only=True)
     director = DirecteurTravauxSerializer(read_only=True)
+    # member = StudentSerializer(many=True, read_only=True)
+    member_names = serializers.SerializerMethodField(read_only=True)
     head_id = serializers.PrimaryKeyRelatedField(
         queryset = Student.objects.all(), source="head", required=True, allow_null=False
     )
     director_id = serializers.PrimaryKeyRelatedField(
         queryset = DirecteurTravaux.objects.all(), source="director", required=False, allow_null=True
     )
+
+    def get_member_names(self, obj):
+        return [f"{member.user.name} {member.user.last_name} {member.user.first_name}" for member in obj.member.all()]
+
     class Meta :
         model = ProjetTutore
-        fields = ['id', 'subject', 'head_id', 'head', 'member', 'director', 'director_id']
+        fields = ['id', 'subject', 'head_id', 'head', 'member', 'member_names', 'director', 'director_id']
     
 
 

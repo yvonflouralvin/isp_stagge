@@ -17,6 +17,7 @@ export type ProjetTutore =  {
     director_id: string
     head: Student
     member: string[]
+    member_names: string[]
 }
 
 export interface StudentMemoire {
