@@ -934,24 +934,35 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             dept_id = str(directeursTravail.department.id)
             
             # Fetch DepartmentSettings for the current department
-            dept_settings = DepartmentSettings.objects.filter(department=directeursTravail.department).first()
+            dept_settings = DepartmentSettings.objects.get_or_create(department=directeursTravail.department)[0]
             
-            # Calculate the used quota for ProjetTutore and StudentMemoire, split by category (interne, externe)
-            used_tutore_projects_interne = ProjetTutore.objects.filter(director=directeursTravail, director__category='interne').count()
-            used_tutore_projects_externe = ProjetTutore.objects.filter(director=directeursTravail, director__category='externe').count()
+            # Calculate used quota based on direction type and category
+            used_tutore_projects_interne = 0
+            used_tutore_projects_externe = 0
+            used_memoire_projects_interne = 0 
+            used_memoire_projects_externe = 0
+
+            if directeursTravail.direction_type == "projet-tutore":
+                if directeursTravail.category == "interne":
+                    used_tutore_projects_interne = ProjetTutore.objects.filter(director=directeursTravail).count()
+                else:
+                    used_tutore_projects_externe = ProjetTutore.objects.filter(director=directeursTravail).count()
             
-            used_memoire_projects_interne = StudentMemoire.objects.filter(director=directeursTravail, director__category='interne').count()
-            used_memoire_projects_externe = StudentMemoire.objects.filter(director=directeursTravail, director__category='externe').count()
+            elif directeursTravail.direction_type == "memoire":
+                if directeursTravail.category == "interne":
+                    used_memoire_projects_interne = StudentMemoire.objects.filter(director=directeursTravail).count()
+                else:
+                    used_memoire_projects_externe = StudentMemoire.objects.filter(director=directeursTravail).count()
 
             # Prepare the quota data
             quota_data = {
-                'max_tutore_projects_interne': dept_settings.max_teacher_tutore_project_group if dept_settings else 0,
-                'max_externe_tutore_projects': dept_settings.max_teacher_externe_tutore_project_group if dept_settings else 0,
-                'max_memoire_projects_interne': dept_settings.max_teacher_memoire if dept_settings else 0,
-                'max_externe_memoire_projects': dept_settings.max_teacher_externe_memoire if dept_settings else 0,
+                'max_tutore_projects_interne': dept_settings.max_teacher_tutore_project_group,
+                'max_externe_tutore_projects': dept_settings.max_teacher_externe_tutore_project_group,
+                'max_memoire_projects_interne': dept_settings.max_teacher_memoire,
+                'max_externe_memoire_projects': dept_settings.max_teacher_externe_memoire,
             }
 
-            # Prepare the used data, split by category
+            # Prepare the used data
             used_data = {
                 'used_tutore_projects_interne': used_tutore_projects_interne,
                 'used_tutore_projects_externe': used_tutore_projects_externe,
@@ -959,20 +970,20 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
                 'used_memoire_projects_externe': used_memoire_projects_externe
             }
             
-            # Check if department already exists in the details dictionary
+            # Add or update department details
             if dept_id not in details:
                 details[dept_id] = {
                     "department": GradeClasseSerializer(directeursTravail.department).data,
                     "quota": quota_data,
                     "used": used_data,
-                    "directeurs": [DirecteurTravauxSerializer(directeursTravail).data]
+                    "directeurs": []
                 }
-            else:
-                # Check if the director is already in the list for that department
-                if directeursTravail.id not in [d['id'] for d in details[dept_id]['directeurs']]:
-                    details[dept_id]['directeurs'].append(DirecteurTravauxSerializer(directeursTravail).data)
+            
+            # Always update the used counts and add the director
+            details[dept_id]["used"] = {
+                key: max(details[dept_id]["used"].get(key, 0), used_data[key])
+                for key in used_data
+            }
+            details[dept_id]["directeurs"].append(DirecteurTravauxSerializer(directeursTravail).data)
         
-        # Convert dictionary to list for response
-        response_data = list(details.values())
-        
-        return Response(response_data, status=200)
+        return Response(list(details.values()), status=200)

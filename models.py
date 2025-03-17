@@ -59,7 +59,7 @@ class Stage(CoreBaseModel):
     institution_address =  models.TextField(null=True, blank=True)
     institution_provisor =  models.TextField(null=True, blank=True)
     institution_provisor_provisor =  models.TextField(null=True, blank=True)
-    horraires = models.JSONField(null=True, blank=True, default={})
+    horraires = models.JSONField(null=True, blank=True, default=dict)
     facture = models.CharField(null=True, blank=True, max_length=30)
     horraire_status = models.BooleanField(default=False)
     quote = models.IntegerField(null=True, blank=True)
