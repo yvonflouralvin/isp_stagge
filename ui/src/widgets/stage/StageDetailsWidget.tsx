@@ -29,7 +29,7 @@ export default function StageDetailsWidget(props: Props) {
         {/* <StudentDetails label={"Maitre de Stage"} value={} /> */}
         <div>
             <p className='font-bold mt-[10px]'>Maitre de Stage</p>
-            <StageMaster stage={stage} />
+            <StageMaster {...props} stage={stage} />
         </div>
         {
             stage.stage === "pedagogique" && <>

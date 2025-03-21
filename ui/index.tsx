@@ -129,7 +129,7 @@ const config: AppConfig = {
 
         return menus
     },
-    page: (props: PageProps) => {
+    page: async (props: PageProps) => {
         if(props.params.app.length === 3 && props.params.app[2] === "reports") return {
             dashboardLayouting: true,
             render: ()=>{

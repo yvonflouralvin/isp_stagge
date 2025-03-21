@@ -57,7 +57,7 @@ class StageSerializer(serializers.ModelSerializer):
     
     class Meta :
         model = Stage
-        fields = ['id', 'stage', 'student', 'stagemaster', 'start_date', 'end_date', 'institution', 'institution_address', 'facture', 'horraires' , 'horraire_status', 'quote', 'quote_by', 'quote_status' ]
+        fields = ['id', 'stage', 'student', 'stagemaster', 'start_date', 'end_date', 'institution', 'institution_address', 'facture', 'horraires' , 'horraire_status', 'quote', 'quote_by', 'quote_status' , 'quote_object']
 
 class DeptRechercheOfficierSerializer(serializers.ModelSerializer):
     dept = GradeClasseSerializer(read_only=True)

@@ -14,15 +14,17 @@ import ListStageForDeptResearcher from './list_stage/ListStageForDeptResearcher'
 import ListStageForStageMaster from './list_stage/ListStageForStageMaster';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Grade } from '/addons/uscitech_academy/ui/src/types';
 
 interface Props extends PageProps {
   stage: string,
   promotions: any,
   promotion: any,
-  user: any,
-  onClickItem?: (e: any) => any
+  user: any, 
   filtering_promotions: any[]
   stagemaster: any
+  grade?: Grade
 }
 export default function ListStages(props: Props) {
 
@@ -30,7 +32,7 @@ export default function ListStages(props: Props) {
   const [selectedFilter, setSelectedFilter] = React.useState<{ cotation: string, assignation: string, dept: string }>({
     cotation: "all",
     assignation: "all",
-    dept: "all"
+    dept: props.grade ? props.grade.id : "all"
   })
 
   const [stages, setStages] = React.useState<any[]>([])
@@ -44,7 +46,7 @@ export default function ListStages(props: Props) {
 
   const load = async (pageNumber: number) => {
     setIsLoadingDatas(true)
-    api(cookies).get(`/isp_stage/student/${props.stage}?page=${pageNumber}${searchParams}&filter_assignation=${selectedFilter.assignation}&filter_cotation=${selectedFilter.cotation}&filter_dept=${selectedFilter.dept}`)
+    api(cookies).get(`/isp_stage/student/${props.stage}?page=${pageNumber}${searchParams}&page_size=30&filter_assignation=${selectedFilter.assignation}&filter_cotation=${selectedFilter.cotation}&filter_dept=${selectedFilter.dept}`)
       .then(result => {
         setStages(result.data.results)
         setTotal_pages(result.data.total_pages)
@@ -92,7 +94,7 @@ export default function ListStages(props: Props) {
 
   const onSubmitQuotes = async () => {
     try {
-      await api(cookies).get(`/isp_stage/stage-master/submit-quotes/`)
+      await api(cookies).get(`/isp_stage/stage-master/submit-quotes/${props.grade !== undefined ? `?dept${props.grade?.id}` : ""}`)
       window.location.reload()
     } catch (e) {
 
@@ -109,48 +111,27 @@ export default function ListStages(props: Props) {
     return stageTypes.find(st => st.id === props.params.app[2])
   }
 
+  const router = useRouter()
+  const onClickItem = (e: any) => {
+    router.push(`/apps/isp_stage/${props.params.app[2]}/${e.id}`)
+}
+
   return (
     <>
-      <div className='bg-white border-t border-inherent mt-[15px] pt-[15px]'>
-        <div className='flex flex-row gap-[10px]'>
-
-          <div className='flex-1 text-[14px]'>
-            <h1 className='m-0'>Stage {stageInfos()?.label} {props.promotion ? `(${props.promotion.grade.libelle})` : ""} </h1>
-            <p className='font-bold text-[18px]'>
-              {props.params.app[3] === "list" ? "Liste d'étudiants" : "Cotations d'étudiants"}
-            </p>
-          </div>
-
-          <>
-            {
-              props.params.app.length >= 4 && props.params.app[3] === "list" && <>{
-                props.promotion && <AddStage promotions={props.promotions} stage={props.stage} promotion={props.promotion} />
-              }</>
-            }
-
-          </>
-
-          {props.user.permissions.find((pr: string) => pr === "isp_user_stage_master") &&
-            <>
-              {
-                props.params.app[3] === "list" ? <Link href={`/apps/isp_stage/${props.stage}/cotations`} className="flex cursor-pointer items-center gap-1">
-                  <p className='text-[14px] text-gray-500 font-bold'>Cotations</p>
-                  <SheetIcon size={14} />
-                </Link> : <Link href={`/apps/isp_stage/${props.stage}/list`} className="flex cursor-pointer items-center gap-1">
-                  <p className='text-[14px] text-gray-500 font-bold'>Listes</p>
-                  <ListIcon size={14} />
-                </Link>
-              }
-            </>
-          }
-
-
+      <div className='bg-transparent'>
+        <div className='flex flex-wrap border-b border-inherent divide-x-[1px]'>
+          <Link href={`/apps/isp_stage/${props.stage}/list`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "list" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
+              <p className=''>Listes</p>
+          </Link> 
+          <Link href={`/apps/isp_stage/${props.stage}/cotations`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "cotations" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
+              <p className=''>Cotations</p>
+          </Link> 
         </div>
       </div>
-      <div className='mt-[5px]'>
+      <div className=''>
 
         <div className='bg-white rounded p-[0px] pb-[20px]'>
-          <div className='px-[20px] pt-[20px] flex items-center gap-[7px]'>
+          <div className='flex items-center gap-[7px]'>
             <div className='flex flex-1 items-center p-[10px] bg-[rgba(0,0,0,0.07)] rounded'>
               <input className="border-0 flex-1 px-[20px] text-[14px] outline-none bg-transparent" id="search-student" placeholder='Recherche' onKeyUp={e => {
                 if (e.keyCode === 13) handleSearch()
@@ -187,15 +168,15 @@ export default function ListStages(props: Props) {
               <p>Chargement...</p>
             </div> : <>
               {
-                props.user.permissions.find((p: string) => p === "isp_departement_officier") ? <>
-                  <ListStageForDeptResearcher {...props} onClickItem={props.onClickItem} stages={stages} />
+                (props.user.permissions.find((p: string) => p === "isp_departement_officier") && props.params.app[3] === "list")  ? <>
+                  <ListStageForDeptResearcher {...props} stages={stages} stagemaster={props.stagemaster} />
                 </> : <>
-                  <ListStageForStageMaster {...props} onClickItem={props.onClickItem} stages={stages} />
+                  <ListStageForStageMaster {...props} stages={stages} stagemaster={props.stagemaster} />
                 </>
               }
             </>
           }
-          <div className="px-[20px] flex items-center gap-[10px]">
+          <div className="px-[20px] mt-[10px] flex items-center gap-[10px]">
             {total_pages > 1 && <Pagination initialPage={1} total={total_pages} page={page} defaultValue={1} onChange={e => setPage(e)} />}- <p className="text-[12px] font-bold">{count} Enregistrement</p>
           </div>
         </div>

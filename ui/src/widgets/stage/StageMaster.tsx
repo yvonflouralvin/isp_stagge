@@ -58,7 +58,7 @@ export default function StageMaster(props: Props) {
         const search_value: any = document.getElementById("stagemastersearch");
         if (search_value.value === "") return;
         const datas: any = (await api(cookies).get(`/isp_stage/stage-master/?search=${search_value.value}`)).data;
-        setOptions(datas.results.map((e: any) => ({ value: e.id, label: `${e.user?.name} ${e.user?.first_name} ${e.user?.last_name}` })))
+        setOptions(datas.results.map((e: any) => ({ value: e.id, label: `${e.employee.fullname}` })))
     }
 
 
@@ -80,7 +80,7 @@ export default function StageMaster(props: Props) {
             {
                 stageMaster.map((sm: any) => {
                     return <div className='flex items-center gap-[10px]'>
-                        <p>{sm.user?.name} {sm.user?.last_name} {sm.user?.first_name} - Tel : {sm.user?.phone}</p>
+                        <p>{sm.employee.fullname}</p>
                         {props.user.permissions.find((pr: string) => pr === "isp_departement_officier") && <button className='text-[12px] bg-gray-400 px-[10px] rounded' onClick={() => handleRemove(sm.id)}>Retirer</button>}
                     </div>
                 })

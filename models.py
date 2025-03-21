@@ -63,6 +63,7 @@ class Stage(CoreBaseModel):
     facture = models.CharField(null=True, blank=True, max_length=30)
     horraire_status = models.BooleanField(default=False)
     quote = models.IntegerField(null=True, blank=True)
+    quote_object = models.JSONField(default=dict)
     quote_by = models.ForeignKey(StageMaster, on_delete=models.CASCADE, null=True, blank=True, related_name="quote_by")
     quote_status = models.CharField(choices=[('submitted', "Soumie"), ('draft', "Brouillon")], default='draft')
 

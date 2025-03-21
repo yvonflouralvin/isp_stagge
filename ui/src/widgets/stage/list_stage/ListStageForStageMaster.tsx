@@ -1,39 +1,66 @@
-import { PageProps } from "@/lib/shared/types/config";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Pagination, Spinner, Input } from "@nextui-org/react";
-import QuoteField from "./QuoteField";
+import { PageProps } from "@/lib/shared/types/config"; 
+import QuoteField, { quoteFields } from "./QuoteField";
+import Link from "next/link";
 
 interface Props extends PageProps {
     stages: any[]
-    onClickItem?: (e: any) => any
+    stagemaster: any
 }
 
 
 export default function ListStageForStageMaster(props: Props) {
+    const wrapper = (e: any, children: React.ReactNode)=>{
+        const className = `duration-300 hover:bg-[rgba(0,0,0,0.03)] w-full flex items-center cursor-pointer`
+        if(props.params.app[3] === "cotations") {
+            return <div className={className} key={e.id}>
+                {children}
+            </div>
+        }else{
+            return <Link 
+                key={e.id}
+                href={`/apps/isp_stage/${props.params.app[2]}/${e.id}`} 
+                className={className}>
+                    {children}
+            </Link>
+        }
+    }
     return <>
-        <Table className='shadow-0' shadow='none'>
-            <TableHeader>
-                <TableColumn>Nom</TableColumn>
-                <TableColumn>Postnom</TableColumn>
-                <TableColumn>Promotion</TableColumn>
-                <TableColumn>Cote</TableColumn>
-            </TableHeader>
-            <TableBody>
+         <div className='shadow-0 w-full overflow-y-scroll'>
+            <div className=" 
+                items-end 
+                w-full 
+                flex  
+                border-b
+                border-black
+                text-black 
+                font-semibold  
+                h-[150px]">
+                <p className="flex-1 px-[15px] text-[13px] ">NOMS & POST-NOMS</p>  
                 {
-                    props.stages.map(stage => {
-                        return (
-                            <TableRow className='duration-300 hover:bg-[rgba(0,0,0,0.03)]' aria-labelledby={`${stage.id}`} aria-label={`${stage.id}`} key={stage.id} onClick={() => {
-                                if (props.onClickItem && props.params.app[3] !== "cotations") props.onClickItem(stage)
-                            }
-                            }>
-                                <TableCell>{stage.student.user?.name}</TableCell>
-                                <TableCell>{stage.student.user?.last_name}</TableCell>
-                                <TableCell>{stage.student?.promotion?.grade?.libelle}</TableCell>
-                                <TableCell><QuoteField {...props} stage={stage} /></TableCell>
-                            </TableRow>
-                        )
+                    quoteFields.filter(field => field.stage === props.params.app[2]).map((field)=>{
+                        return <div key={field.index} className=" 
+                            border-l border-black flex items-center justify-center text-center h-[150px] w-[41px]
+                        ">
+                            <p 
+                                className=" 
+                                   text-[11px] px-[5px] text-right flex items-center justify-center h-full w-[200px] rotate-[-90deg] whitespace-nowrap
+                                    m-0
+                                ">
+                            {field.label}/{field.max}</p>
+                        </div>
                     })
                 }
-            </TableBody>
-        </Table>
+            </div>
+            <div className="flex flex-col  w-full border-b border-black divide-y-[1px] divide-black">
+                {
+                    props.stages.map(stage => {
+                        return  wrapper(stage, <>
+                            <p className="flex-1 px-[15px] text-[13px] text-gray-500">{stage.student.user?.name} {stage.student.user?.last_name}</p>  
+                            <QuoteField {...props} stage={stage} />
+                        </>)
+                    })
+                }
+            </div>
+            </div>
     </>
 }
