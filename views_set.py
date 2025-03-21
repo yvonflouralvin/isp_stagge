@@ -4,11 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404  
+ 
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
 
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from rest_framework.exceptions import MethodNotAllowed
 from django.core.exceptions import ObjectDoesNotExist
@@ -96,6 +97,9 @@ class StageViewSet(viewsets.ModelViewSet):
 
         if request.data.get("institution_provisor_provisor", None) is not None :
             stage.institution_provisor_provisor = request.data.get("institution_provisor_provisor")
+
+        if request.data.get("quote_object", None) is not None :
+            stage.quote_object = request.data.get("quote_object")
         
         if request.data.get("quote") is not None :
             if stage.quote_by == None :
@@ -114,6 +118,47 @@ class StageViewSet(viewsets.ModelViewSet):
             return Response(StageSerializer(queryset).data)
         return Response(None, 404)
 
+
+    @action(detail=False, methods=['get'])
+    def get_department_for_stages(self, request):
+        user = request.user
+        queryset = GradeClasse.objects.all()
+        
+        if user.is_superuser == True :
+            pass
+        elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')): 
+            dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
+            if dept_off.exists() :
+                dept_off = dept_off.first()
+                queryset = queryset.filter(id__in=[dept_off.dept.id])
+            else :
+                queryset = GradeClasse.objects.none() 
+        elif (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
+            # Filtrer les stages où l'utilisateur est un StageMaster
+            stage_master = StageMaster.objects.filter(employee__user=user).first()
+            if stage_master:
+                stages = Stage.objects.filter(stagemaster=stage_master)
+                stage_type = request.GET.get('stage', None)
+                if stage_type != None :
+                    stages =  stages.filter(stage=stage_type)
+                queryset = GradeClasse.objects.filter(promotion__student_promotion__in=stages.values('student'))
+            else:
+                queryset = GradeClasse.objects.none()
+
+        serialized_data = GradeClasseSerializer(queryset, many=True).data
+                
+        # Ajouter le nombre de stages à la réponse
+        for grade in serialized_data:
+            stages = Stage.objects.filter(student__promotion__grade__id = grade['id'])
+            if (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
+                if stage_master:
+                    stages = stages.filter(stagemaster=stage_master)
+            stage_type = request.GET.get('stage', None)
+            if stage_type != None :
+                stages =  stages.filter(stage=stage_type)
+            grade['stage_count'] = len(stages)
+
+        return Response(serialized_data)
 
 
 
@@ -160,9 +205,11 @@ class StageMasterViewSet(viewsets.ModelViewSet):
         stages = Stage.objects.filter(stagemaster__in =  stagemasters, stage=stage)
 
         stagemaster = StageMaster.objects.first(employee__user__id = user.id)
-        stagemaster.is_quote_submitted = True
-        stagemaster.save()
-
+        # stagemaster.is_quote_submitted = True
+        # stagemaster.save()
+        dept = request.GET.get('dept', None)
+        if dept != None :
+            stages = stages.filter(student__promotion__grade__id = dept )
         for st in stages :
             if st.quote is not None :
                 st.quote_status = "submitted"

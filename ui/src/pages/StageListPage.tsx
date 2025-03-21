@@ -5,10 +5,16 @@ import { cookies } from 'next/headers';
 import { ArchiveX } from 'lucide-react';
 import ListStageServerComponents from '../widgets/stage/ListStageServerComponents'; 
 import Breadcrumb from '@/components/ui/Breadcrumb';
+import { Grade } from '/addons/uscitech_academy/ui/src/types';
 
+export interface ExtendGrade extends Grade {
+    stage_count: number
+}
 
 
 export default async function StageListPage(props: PageProps) {
+
+
 
     const stage = props.params.app[2]
 
@@ -61,6 +67,9 @@ export default async function StageListPage(props: PageProps) {
         </div>
     }
 
+    // Je commence par vérifier qui s'est
+    const depts_for_stages: ExtendGrade[] = ((await api(await cookies()).get(`/isp_stage/stage/get_department_for_stages/?stage=${stage}`)).data)
+
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {
@@ -68,8 +77,10 @@ export default async function StageListPage(props: PageProps) {
                 link: `/apps/isp_stage/${props.params.app[2]}/list`
             }
         ]} />
+
+       
          
-        <ListStageServerComponents stagemaster={stagemaster} filtering_promotions={filtering_promotions} {...props} type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
+        <ListStageServerComponents  {...props} depts={depts_for_stages} stagemaster={stagemaster} filtering_promotions={filtering_promotions}  type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
         
     </div>
 }

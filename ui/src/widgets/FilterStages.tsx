@@ -65,13 +65,13 @@ export default function FilterStages(props: Props) {
                 })
             }
         </DropdownSection>
-        <DropdownSection showDivider title="Par département">
+        {/* <DropdownSection showDivider title="Par département">
             {
                 [ {libelle: "Tous les départements", id:"all"}, ...props.filtering_promotions].map((label: any) => {
                     return <DropdownItem onClick={() => props.onChange({ ...props.selectedFilter, dept: label.id })} className={` ${props.selectedFilter.dept === label.id ? "font-bold bg-gray-300" : ""} `} key={label.id}>{label.libelle}</DropdownItem>
                 })
             }
-        </DropdownSection>
+        </DropdownSection> */}
         </DropdownMenu>
     </Dropdown>
 }   
