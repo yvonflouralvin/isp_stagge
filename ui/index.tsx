@@ -130,43 +130,44 @@ const config: AppConfig = {
         return menus
     },
     page: async (props: PageProps) => {
-        if(props.params.app.length === 3 && props.params.app[2] === "reports") return {
+        const _props = props;
+        if(_props.params.app.length === 3 && _props.params.app[2] === "reports") return {
             dashboardLayouting: true,
             render: ()=>{
-                return <Reports {...props}/>
+                return <Reports {..._props}/>
             }
         }
-        if(props.params.app.length === 5 && props.params.app[2] === "reports" && props.params.app[3] === "director") return {
+        if(_props.params.app.length === 5 && _props.params.app[2] === "reports" && _props.params.app[3] === "director") return {
             dashboardLayouting: true,
             render: ()=>{
-                return <DirectorReportView {...props}/>
+                return <DirectorReportView {..._props}/>
             }
         }
-        if(props.params.app.length === 6 && props.params.app[2] === "reports" && props.params.app[3] === "director" && props.params.app[5] === "print") return {
+        if(_props.params.app.length === 6 && _props.params.app[2] === "reports" && _props.params.app[3] === "director" && _props.params.app[5] === "print") return {
             dashboardLayouting: false,
             render: ()=>{
-                return <DirectorReportView for='print' {...props}/>
+                return <DirectorReportView for='print' {..._props}/>
             }
         }
-        if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && props.params.app[2] === "entreprise")
+        if (_props.params.app.length >= 3 && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations") && _props.params.app[2] === "entreprise")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StageEntreprise(props);
+                    return pages.StageEntreprise(_props);
                 }
             }
-        else if (props.params.app.length >= 3 && props.params.app[2] === "pedagogique" && props.user.permissions.find(perm => perm === "isp_user_student"))
+        else if (_props.params.app.length >= 3 && _props.params.app[2] === "pedagogique" && _props.user.permissions.find(perm => perm === "isp_user_student"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
                     try {
                         const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
                         return await StageDetailsPage({
-                            ...props,
+                            ..._props,
                             params: {
-                                ...props.params,
+                                ..._props.params,
                                 app: [
-                                    ...props.params.app,
+                                    ..._props.params.app,
                                     stage.id
                                 ]
                             }
@@ -176,131 +177,131 @@ const config: AppConfig = {
                     }
                 }
             }
-        else if (props.params.app.length >= 3 && (props.params.app[3] === "list" || props.params.app[3] === "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
+        else if (_props.params.app.length >= 3 && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StageListPage(props);
+                    return await pages.StageListPage(_props);
                 }
             }
-        else if (props.params.app.length >= 3 && (props.params.app[3] !== "list" && props.params.app[3] !== "cotations") && (props.params.app[2] === "pedagogique" || props.params.app[2] === "impregnation"))
+        else if (_props.params.app.length >= 3 && (_props.params.app[3] !== "list" && _props.params.app[3] !== "cotations") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StageDetailsPage(props);
+                    return await pages.StageDetailsPage(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "dept_search_off")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "dept_search_off")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.DepartmentOfficierPageSSR(props);
+                    return await pages.DepartmentOfficierPageSSR(_props);
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "dept_search_off")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "dept_search_off")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.DepartmentOfficierFormSSR(props);
+                    return await pages.DepartmentOfficierFormSSR(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "stage-masters")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "stage-masters")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StageMasterPageSSR(props);
+                    return await pages.StageMasterPageSSR(_props);
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "stage-masters")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "stage-masters")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StageMasterFormSSR(props);
+                    return await pages.StageMasterFormSSR(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "projets-tutores")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "projets-tutores")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.ProjetTutoresPage(props);
+                    return await pages.ProjetTutoresPage(_props);
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "projets-tutores")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "projets-tutores")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.ProjetTutoresFormPage(props);
+                    return await pages.ProjetTutoresFormPage(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "projet-tutore")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "projet-tutore")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StudentProjetTurote(props);
+                    return await pages.StudentProjetTurote(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "students-memoires")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "students-memoires")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StudentMemoireListPage(props);
+                    return await pages.StudentMemoireListPage(_props);
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "students-memoires")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "students-memoires")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StudentMemoireDetailPage(props);
+                    return await pages.StudentMemoireDetailPage(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "student-memoire")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "student-memoire")
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.StudentMemoirePage(props);
+                    return await pages.StudentMemoirePage(_props);
                 }
             }
-        else if (props.params.app.length === 3 && props.params.app[2] === "students")
+        else if (_props.params.app.length === 3 && _props.params.app[2] === "students")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StudentPage(props)
+                    return pages.StudentPage(_props)
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "students" && props.params.app[3] !== "create")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "students" && _props.params.app[3] !== "create")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StudentFormPage({...props, for:"detail"})
+                    return pages.StudentFormPage({..._props, for:"detail"})
                 }
             }
-        else if (props.params.app.length === 4 && props.params.app[2] === "students" && props.params.app[3] === "create")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "students" && _props.params.app[3] === "create")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StudentFormPage({...props, for:"create"})
+                    return pages.StudentFormPage({..._props, for:"create"})
                 }
             }
 
-        else if (props.params.app.length === 4 && props.params.app[2] === "directeur-travaux")
+        else if (_props.params.app.length === 4 && _props.params.app[2] === "directeur-travaux")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.DirecteurTravauxPageSSR({...props})
+                    return pages.DirecteurTravauxPageSSR({..._props})
                 }
             }
-        else if (props.params.app.length === 5 && props.params.app[2] === "directeur-travaux")
+        else if (_props.params.app.length === 5 && _props.params.app[2] === "directeur-travaux")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.DirecteurTravauxFormSSR({...props})
+                    return pages.DirecteurTravauxFormSSR({..._props})
                 }
             }
         else
             return {
                 dashboardLayouting: true,
                 render: async () => {
-                    return await pages.NoActiveFeatures(props)
+                    return await pages.NoActiveFeatures(_props)
                 }
             }
         
