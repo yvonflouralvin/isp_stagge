@@ -3,19 +3,19 @@ import React from 'react'
 import { Pagination, Spinner } from "@nextui-org/react";
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
-import { ListIcon, SearchIcon, SheetIcon, TableIcon } from 'lucide-react';
+import {  SearchIcon, TableIcon } from 'lucide-react';
 import useEvent from '@/lib/hooks/useEvent';
 import FilterStages from '../FilterStages';
-import PermissionComponent from '@/components/ui/PermissionComponent';
-import AddStage from './AddStage';
+import PermissionComponent from '@/components/ui/PermissionComponent'; 
 import PrintReport from './PrintReport';
 import { PageProps } from '@/lib/shared/types/config';
 import ListStageForDeptResearcher from './list_stage/ListStageForDeptResearcher';
 import ListStageForStageMaster from './list_stage/ListStageForStageMaster';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link'; 
 import { Grade } from '/addons/uscitech_academy/ui/src/types';
+import { Input } from '@/components/ui/input';
+import AddStage from './AddStage';
 
 interface Props extends PageProps {
   stage: string,
@@ -101,45 +101,33 @@ export default function ListStages(props: Props) {
     }
   }
 
-  const stageInfos = () => {
-    const stageTypes = [
-      { id: 'impregnation', label: "Imprégnation", promotion: "/isp_stage/promotions-l2" },
-      { id: 'pedagogique', label: 'Pédagogique', promotion: "/isp_stage/promotions-l3" },
-      { id: 'entreprise', label: 'Entreprise', promotion: "/isp_stage/promotions-l3" }
-    ]
-
-    return stageTypes.find(st => st.id === props.params.app[2])
-  }
-
-  const router = useRouter()
-  const onClickItem = (e: any) => {
-    router.push(`/apps/isp_stage/${props.params.app[2]}/${e.id}`)
-}
-
   return (
     <>
       <div className='bg-transparent'>
         <div className='flex flex-wrap border-b border-inherent divide-x-[1px]'>
           <Link href={`/apps/isp_stage/${props.stage}/list`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "list" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
-              <p className=''>Listes</p>
+              <p>Listes</p>
           </Link> 
           <Link href={`/apps/isp_stage/${props.stage}/cotations`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "cotations" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
-              <p className=''>Cotations</p>
+              <p>Cotations</p>
           </Link> 
         </div>
       </div>
-      <div className=''>
+      <div>
 
         <div className='bg-white rounded p-[0px] pb-[20px]'>
           <div className='flex items-center gap-[7px]'>
-            <div className='flex flex-1 items-center p-[10px] bg-[rgba(0,0,0,0.07)] rounded'>
-              <input className="border-0 flex-1 px-[20px] text-[14px] outline-none bg-transparent" id="search-student" placeholder='Recherche' onKeyUp={e => {
+            <div className='flex flex-1 items-center p-[10px] bg-[rgba(0,0,0,0.0)] rounded border-b border-gray-600'>
+              <Input className="border-0 flex-1 px-[20px] text-[14px] outline-none bg-transparent" id="search-student" placeholder='Recherche' onKeyUp={e => {
                 if (e.keyCode === 13) handleSearch()
               }} />
               <div>
                 <SearchIcon className='cursor-pointer' size={"14px"} onClick={handleSearch} />
               </div>
             </div>
+            {
+              props.user.permissions.find((p: string)=> p === "isp_departement_officier") !== undefined && <AddStage promotion={props.promotion} promotions={props.promotions} stage={props.stage}  />
+            }
             <FilterStages {...props} selectedFilter={selectedFilter} onChange={setSelectedFilter} />
             <div className='flex gap-[5px]'>
               <PermissionComponent
@@ -149,7 +137,6 @@ export default function ListStages(props: Props) {
                 } datas={{ stage: props.stage }} />}
                 permissions={["isp_user_stage_master", "isp_departement_officier"]}
               />
-
             </div>
             {
               (props.params.app[3] === "cotations" && props.stagemaster !== undefined) && <div>

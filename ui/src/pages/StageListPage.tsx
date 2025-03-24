@@ -70,6 +70,10 @@ export default async function StageListPage(props: PageProps) {
     // Je commence par vérifier qui s'est
     const depts_for_stages: ExtendGrade[] = ((await api(await cookies()).get(`/isp_stage/stage/get_department_for_stages/?stage=${stage}`)).data)
 
+    const _props = {
+        ...props
+    }
+
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {
@@ -78,9 +82,9 @@ export default async function StageListPage(props: PageProps) {
             }
         ]} />
 
-       
+        
          
-        <ListStageServerComponents  {...props} depts={depts_for_stages} stagemaster={stagemaster} filtering_promotions={filtering_promotions}  type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
+        <ListStageServerComponents  {..._props} depts={depts_for_stages} stagemaster={stagemaster} filtering_promotions={filtering_promotions}  type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
         
     </div>
 }
