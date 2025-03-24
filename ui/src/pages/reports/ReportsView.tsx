@@ -59,9 +59,10 @@ export default function ReportsView(props: Props) {
                             <div className='duration-300 hidden bg-primary/30 sm:flex flex-col sm:flex-row items-center py-[4px] px-[15px]'>
                                 <p className='w-full sm:w-[70%] sm:text-[13px] text-[14px] text-black sm:text-gray-500'>Départements</p>
                                 <div className='flex items-center w-full sm:w-[30%]'>
-                                    <p className='flex-1 text-[13px] text-gray-500'>L1</p>
-                                    <p className='flex-1 text-[13px] text-gray-500'>L2</p>
-                                    <p className='flex-1 text-[13px] text-gray-500'>L3</p>
+                                    {/* <p className='flex-1 text-[13px] text-gray-500'>L1</p> */}
+                                    <p className='flex-1 text-[13px] text-gray-500'>L2 AS</p>
+                                    <p className='flex-1 text-[13px] text-gray-500'>L2 LMD</p>
+                                    <p className='flex-1 text-[13px] text-gray-500'>L3 LMD</p>
                                 </div>
                             </div>
                             <div className='flex flex-col divide-y-1 divide-y-gray-400'>
@@ -70,9 +71,9 @@ export default function ReportsView(props: Props) {
                                         return <div key={index + 1} className='duration-300 hover:bg-primary/10 flex flex-col sm:flex-row items-center py-[4px] px-[15px]'>
                                             <p className='w-full  sm:w-[70%] sm:text-[13px] text-[14px] text-black sm:text-gray-500'>{dept.department}</p>
                                             <div className='flex sm:flex-row flex-col items-start w-full sm:w-[30%]'>
-                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L1 (</span> {dept.promotions.find((pro: any) => pro.promotion === "L1") ? dept.promotions.find((pro: any) => pro.promotion === "L1").student_count : 0})</p>
-                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L2 (</span> {dept.promotions.find((pro: any) => pro.promotion === "L2 (LMD)") ? dept.promotions.find((pro: any) => pro.promotion === "L2 (LMD)").student_count : 0})</p>
-                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L3 (</span>{dept.promotions.find((pro: any) => pro.promotion === "L3 (LMD)") ? dept.promotions.find((pro: any) => pro.promotion === "L3 (LMD)") .student_count : 0})</p> 
+                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L2 AS (</span> {dept.promotions.find((pro: any) => pro.promotion === "L2 AS") ? dept.promotions.filter((pro: any) => pro.promotion === "L2 AS").reduce((acc: any, pro: any) =>  pro.student_count + acc, 0) : 0}</p>
+                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L2 LMD(</span> {dept.promotions.find((pro: any) => pro.promotion === "L2 (LMD)") ? dept.promotions.filter((pro: any) => pro.promotion === "L2 (LMD)").reduce((acc: any, pro: any) => pro.student_count + acc, 0) : 0}</p>
+                                                <p className='flex-1 text-[13px] flex gap-[4px] text-gray-500'><span className='sm:hidden flex'>L3 LMD(</span>{dept.promotions.find((pro: any) => pro.promotion === "L3 (LMD)") ? dept.promotions.filter((pro: any) => pro.promotion === "L3 (LMD)").reduce((acc: any, pro: any) => pro.student_count + acc, 0) : 0}</p> 
                                             </div>
                                         </div>
                                     })

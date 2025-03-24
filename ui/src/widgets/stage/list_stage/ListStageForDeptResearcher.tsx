@@ -34,7 +34,7 @@ export default function ListStageForDeptResearcher(props: Props) {
                         return (
                             <Link  
                                 key={stage.id}
-                                href={`/apps/isp_stage/${stage.id}`} 
+                                href={`/apps/isp_stage/${props.params.app[2]}/${stage.id}`} 
                                 className='duration-300 hover:bg-[rgba(0,0,0,0.03)] flex cursor-pointer w-full  px-[15px] py-[7px]'>
                                 <p  className="flex-1">{stage.student.user?.name} {stage.student.user?.last_name}</p> 
                                 <p  className="flex-1">{stage.facture}</p>
