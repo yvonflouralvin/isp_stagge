@@ -130,13 +130,10 @@ export default function ListStages(props: Props) {
             }
             <FilterStages {...props} selectedFilter={selectedFilter} onChange={setSelectedFilter} />
             <div className='flex gap-[5px]'>
-              <PermissionComponent
-                user={props.user}
-                children={<>
-                   <Link href={`/apps/isp_stage/${props.stage}/${props.params.app[3]}/${props.grade?.id}/printing`}><Button><PrinterIcon size={"15px"} /></Button></Link>
-                </>}
-                permissions={["isp_user_stage_master", "isp_departement_officier"]}
-              />
+             {
+                (props.user.permissions.find((per:string) => per === "isp_user_stage_master" || per === "isp_departement_officier") || props.user.is_superuser === true) &&
+                <Link href={`/apps/isp_stage/${props.stage}/${props.params.app[3]}/${props.grade?.id}/printing`}><Button><PrinterIcon size={"15px"} /></Button></Link>
+             }
             </div>
             {
               (props.params.app[3] === "cotations" && props.stagemaster !== undefined) && <div>
