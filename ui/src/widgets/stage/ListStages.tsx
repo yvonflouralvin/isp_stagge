@@ -3,7 +3,7 @@ import React from 'react'
 import { Pagination, Spinner } from "@nextui-org/react";
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
-import {  SearchIcon, TableIcon } from 'lucide-react';
+import {  PrinterIcon, SearchIcon, TableIcon } from 'lucide-react';
 import useEvent from '@/lib/hooks/useEvent';
 import FilterStages from '../FilterStages';
 import PermissionComponent from '@/components/ui/PermissionComponent'; 
@@ -132,9 +132,9 @@ export default function ListStages(props: Props) {
             <div className='flex gap-[5px]'>
               <PermissionComponent
                 user={props.user}
-                children={<PrintReport report={
-                  `${props.user.permissions.find((p: string) => p === "isp_user_stage_master") ? "stagemaster_students" : ""}${props.user.permissions.find((p: string) => p === "isp_departement_officier") ? "dept_chief_stage_students" : ""}`
-                } datas={{ stage: props.stage }} />}
+                children={<>
+                   <Link href={`/apps/isp_stage/${props.stage}/${props.params.app[3]}/${props.grade?.id}/printing`}><Button><PrinterIcon size={"15px"} /></Button></Link>
+                </>}
                 permissions={["isp_user_stage_master", "isp_departement_officier"]}
               />
             </div>

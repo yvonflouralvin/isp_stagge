@@ -318,25 +318,25 @@ class StudentForStageAPIView(APIView):
     def get(self, request, stage):
 
         paginator = Paginator()
-        stages = []
+        stages = Stage.objects.all()
 
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
         if not user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master') and user.is_superuser ==  False:
-            return Response({"message": "Vous n'avez pas les droits pour accéder à cette page."}, status=403)
+            return Response({"message": "Vous n'avez pas les droits pour accéder à cette page 1."}, status=403)
 
         # L'utilisateur est chef de departement à la recherche mais pas maitre de stage, mais n'a pas de département d'attache
         dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
-        if (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
+        if stage != "all" and (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
             stages = None
-        elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
-            stages = Stage.objects.filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage)
-        elif (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
-            stages = Stage.objects.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
-        elif user.is_superuser ==  True:
-            stages = Stage.objects.filter(stage=stage)
-        else :
-            stages = None
+        elif stage != "all" and  (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
+            stages = stages.filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage)
+        elif stage != "all" and (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
+            stages = stages.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
+        elif stage != "all" and user.is_superuser ==  True:
+            stages = stages.filter(stage=stage)
+        elif stage == "all" :
+            stages = Stage.objects.all()
 
         if stages == None :
             return Response({"message": "Vous n'avez pas les droits pour accéder à cette page."}, status=403)
@@ -383,7 +383,8 @@ class StudentForStageAPIView(APIView):
         if filter_dept != "all" :
             stages = stages.filter(student__promotion__grade__id=filter_dept)
         
-        
+        if stage == "all" :
+            return Response(StageSerializer(stages, many=True).data)
         paginated_stages = paginator.paginate_queryset(stages, request)
         stage_serializer= StageSerializer(paginated_stages, many=True)
         # return Response(stage_serializer.data)

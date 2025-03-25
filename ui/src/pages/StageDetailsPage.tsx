@@ -11,6 +11,7 @@ import DeleteStage from '../widgets/stage/details/DeleteStage';
 import StageHorraires from '../widgets/stage/details/StageHorraires';
 import StageHorraireActionBtn from '../widgets/stage/StageHorraireActionBtn';
 import StageSchoolDetails from '../widgets/stage/details/StageSchoolDetails';
+import OnDeleteButton from '@/components/ui/OnDeleteButton'
 
 export default async function StageDetailsPage(props: PageProps) {
 
@@ -76,13 +77,27 @@ export default async function StageDetailsPage(props: PageProps) {
         <PermissionComponent
                 user={props.user}
                 permissions={["isp_departement_officier"]}
-                children={<DeleteStage />} 
+                children={<OnDeleteStage stage={props.params.app[2]} id={stage.id} />} 
                 notGranted={<>
-                {props.user.is_superuser === true && <DeleteStage /> }
+                {props.user.is_superuser === true &&  <OnDeleteStage stage={props.params.app[2]} id={stage.id} />}
                 </>}
             />
         </div>
         
     </div>
 
+}
+
+interface OnDeleteStageProps {
+    stage: string
+    id: string
+}
+const OnDeleteStage = (props: OnDeleteStageProps)=> {
+    return <>
+        <OnDeleteButton 
+            back_url={`/apps/isp_stage/${props.stage}/list`}
+            message='Vous êtes sur le point de supprimer le stage suivant.'
+            url={`/isp_stage/stage/${props.id}/`}
+        />
+    </>
 }

@@ -11,11 +11,13 @@ export interface ExtendGrade extends Grade {
     stage_count: number
 }
 
+export interface StageListPageProps extends PageProps { 
+    
+}
 
-export default async function StageListPage(props: PageProps) {
+export default async function StageListPage(props: StageListPageProps) {
 
-
-
+    var current_department_for_print : Grade | undefined = undefined ;
     const stage = props.params.app[2]
 
     var stagemaster = undefined
@@ -23,6 +25,10 @@ export default async function StageListPage(props: PageProps) {
         stagemaster = (await api(await cookies()).get(`/isp_stage/stage-master/get-by-user/`)).data
     } catch (e) {
 
+    }
+
+    if(props.params.app.length === 6) {
+        current_department_for_print  = ((await api(await cookies()).get(`/uscitech_academy/gradeclasses/${props.params.app[4]}/`)).data)
     }
 
 
@@ -75,14 +81,29 @@ export default async function StageListPage(props: PageProps) {
     }
 
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
-        <Breadcrumb links={[
-            {
-                label: `Stage ${stageInfos()?.label}`,
-                link: `/apps/isp_stage/${props.params.app[2]}/list`
-            }
-        ]} />
 
-        
+        {
+            props.params.app.length < 6 &&  <Breadcrumb links={[
+                {
+                    label: `Stage ${stageInfos()?.label}`,
+                    link: `/apps/isp_stage/${props.params.app[2]}/list`
+                }
+            ]} />
+        }
+
+        {
+            (props.params.app.length === 6 && props.params.app[5] === "printing" && current_department_for_print !== undefined) && <div>
+                <p>Ministère de l'Enseignement Supérieur et Universitaire</p>
+                <p>INSTITUT SUPERIEUR PEDAGOGIQUE DE LA GOMBE</p>
+                <p>B.P. 3580. TEL : (243) 822358732</p>
+                <p>KINSHASA/GOMBE</p>
+                <div>
+                    <p>DEPARTEMENT : {current_department_for_print.libelle}</p>
+                    <p>Année academique : 2024-2025</p>
+                </div>
+                <p>FEUILLET DE COTATION DU STAGE {props.params.app[2] === "pedagogique" ? `PEDAGOGIQUE`: `IMPREGNATION`}</p>
+            </div>
+        }
          
         <ListStageServerComponents  {..._props} depts={depts_for_stages} stagemaster={stagemaster} filtering_promotions={filtering_promotions}  type_stage={stage} promotion={promotion} promotions={promotionsL3} user={props.user} />
         

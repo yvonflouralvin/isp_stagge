@@ -4,7 +4,7 @@ import StageDetailsPage from "./StageDetailsPage";
 import StageMasterUsers from "./StageMasterUsers";
 import StageEntreprise from "./StageEntreprise";
 import NoActiveFeatures from "./NoActiveFeatures";
-import StageListPage from "./StageListPage";
+import StageListPage, { StageListPageProps } from "./StageListPage";
 import ProjetTutoresPage from "./ProjetTutoresPage"; 
 import StudentProjetTurote from "./StudentProjetTurote";
 import ProjetTutoresFormPage from "./ProjetTutoresFormPage";
@@ -20,10 +20,11 @@ import { StudentFormPageProps } from "/addons/uscitech_academy/ui/src/types";
 import StudentPage from "./student/StudentPage";
 import DirecteursPageSSR from "./directeurs/DirecteursPageSSR";
 import DirecteursFormSSR from "./directeurs/DirecteursFormSSR";
+import StageListPrintingPage from "../widgets/stage/StageListPrintingPage";
 
 
 export default {
-    StageListPage: (props: PageProps) => StageListPage(props),
+    StageListPage: (props: StageListPageProps) => StageListPage(props),
     DeptRechercheUsers: (props: PageProps) => DeptRechercheUsers(props),
     StageDetailsPage: (props: PageProps) => StageDetailsPage(props),
     StageMasterUsers: (props: PageProps) => StageMasterUsers(props),
@@ -48,4 +49,5 @@ export default {
 
     StudentFormPage : (props: StudentFormPageProps) => StudentFormPage(props),
     StudentPage: (props: PageProps) => StudentPage(props),
+    StageListPrintingPage: (props: PageProps) => StageListPrintingPage(props)
 }
