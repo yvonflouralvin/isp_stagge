@@ -3,6 +3,9 @@ import { PageProps } from "@/lib/shared/types/config";
 import { cookies } from "next/headers";
 import ListStageForStageMaster from "./list_stage/ListStageForStageMaster";
 import { Grade } from "/addons/uscitech_academy/ui/src/types";
+import PrintingClientAction from "../../pages/reports/director/PrintingClientAction";
+import Image from "next/image";
+const logo = require('../../assets/images.png')
 
 
 export default async function StageListPrintingPage(props: PageProps){
@@ -13,6 +16,9 @@ export default async function StageListPrintingPage(props: PageProps){
             <div className="mb-[20px] pb-[20px] text-center border-b-[2px] border-black">
                 <p className="text-[20px] font-bold">Ministère de l'Enseignement Supérieur et Universitaire</p>
                 <p>INSTITUT SUPERIEUR PEDAGOGIQUE DE LA GOMBE</p>
+                <div className="flex items-center justify-center">
+                <Image width={60} height={60} alt="Logo ISP Gombe" src={logo} />
+                </div>
                 <p>B.P. 3580. TEL : (243) 822358732</p>
                 <p className="underline">KINSHASA/GOMBE</p>
             </div>
@@ -24,5 +30,6 @@ export default async function StageListPrintingPage(props: PageProps){
             <ListStageForStageMaster {...props} stages={stages}  stagemaster={undefined} />
             </div>
         </div>
+        <PrintingClientAction />
     </>
 }
