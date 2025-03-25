@@ -7,8 +7,10 @@ interface Props {
 export default function PrintingClientAction(props: Props){
     const router = useRouter()
     React.useEffect(()=>{
-        print()
-        router.back()
+        setTimeout(()=>{
+            print()
+            router.back()
+        }, 5000)
     }, [])
     return <></>
 }

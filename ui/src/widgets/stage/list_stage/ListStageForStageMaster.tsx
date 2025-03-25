@@ -1,3 +1,4 @@
+'use client'
 import { PageProps } from "@/lib/shared/types/config"; 
 import QuoteField, { quoteFields } from "./QuoteField";
 import Link from "next/link";

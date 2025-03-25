@@ -7,6 +7,8 @@ import api from "@/lib/network/api";
 import cookies from "@/lib/shared/cookies";
 import { Spinner } from '@nextui-org/react';
 import { Promotion, Student, StudentFormPageProps } from '/addons/uscitech_academy/ui/src/types';
+import OnDeleteButton from '@/components/ui/OnDeleteButton';
+import PermissionComponent from '@/components/ui/PermissionComponent';
 
 interface StudentFormProps extends StudentFormPageProps {
     student?: Student
@@ -103,6 +105,31 @@ export default function StudentForm(props: StudentFormProps) {
                     <SearchSelected  defaultValue={ (props.student !== undefined && props.student !== null) ? `${props.student?.promotion?.libelle} ${props.student?.promotion?.grade?.libelle}` : ""} onChange={(e: Promotion)=>setSelectedPromotion(e.id)} label='Promotion' render={(e: any) => (`${e.libelle} ${e.grade.libelle}`)} index='id' url='/isp_stage/promotions/' />
                 </div>
             </div>
+            {
+                props.student !== undefined && <div className='mt-[30px]'>
+                <PermissionComponent
+                        user={props.user}
+                        permissions={["isp_departement_officier"]}
+                        children={<OnDeleteStudent student={props.student} />} 
+                        notGranted={<>
+                        {props.user.is_superuser === true &&  <OnDeleteStudent student={props.student} />}
+                        </>}
+                    />
+                </div>
+            }
         </div>
+    </>
+}
+
+interface OnDeleteStudentProps {
+    student: Student 
+}
+const OnDeleteStudent = (props: OnDeleteStudentProps)=> {
+    return <>
+        <OnDeleteButton 
+            back_url={`/apps/isp_stage/students/`}
+            message={`Vous êtes sur le point de supprimer l'étudiant : ${props.student.user.name}`}
+            url={`/uscitech_academy/students/${props.student.id}/`}
+        />
     </>
 }
