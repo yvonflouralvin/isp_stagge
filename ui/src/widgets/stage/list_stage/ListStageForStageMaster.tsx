@@ -54,9 +54,9 @@ export default function ListStageForStageMaster(props: Props) {
             </div>
             <div className="flex flex-col  w-full border-b border-black divide-y-[1px] divide-black">
                 {
-                    props.stages.map(stage => {
+                    props.stages.map((stage, index) => {
                         return  wrapper(stage, <>
-                            <p className="flex-1 px-[15px] text-[13px] text-gray-500">{stage.student.user?.name} {stage.student.user?.last_name}</p>  
+                            <p className="flex-1 px-[15px] text-[13px] text-gray-500">{ (props.params.app.length === 6 && props.params.app[5] === "printing") ? `${index+1}. ` : ""}{stage.student.user?.name} {stage.student.user?.last_name}</p>  
                             <QuoteField {...props} stage={stage} />
                         </>)
                     })

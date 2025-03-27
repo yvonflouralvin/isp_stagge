@@ -320,6 +320,7 @@ class StudentForStageAPIView(APIView):
 
         paginator = Paginator()
         stages = Stage.objects.all()
+        disable_pagination = request.GET.get('disable_pagination', 0)
 
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
@@ -328,13 +329,13 @@ class StudentForStageAPIView(APIView):
 
         # L'utilisateur est chef de departement à la recherche mais pas maitre de stage, mais n'a pas de département d'attache
         dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
-        if stage != "all" and (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
+        if (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and not dept_off.exists():
             stages = None
-        elif stage != "all" and  (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
+        elif  (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')) and dept_off.exists(): 
             stages = stages.filter(student__promotion__grade__id=dept_off[0].dept.id, stage=stage)
-        elif stage != "all" and (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
+        elif (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
             stages = stages.filter(stagemaster__employee__user__id__in =  [user.id], stage=stage)
-        elif stage != "all" and user.is_superuser ==  True:
+        elif user.is_superuser ==  True:
             stages = stages.filter(stage=stage)
         elif stage == "all" :
             stages = Stage.objects.all()
@@ -384,9 +385,9 @@ class StudentForStageAPIView(APIView):
         if filter_dept != "all" :
             stages = stages.filter(student__promotion__grade__id=filter_dept)
         
-        if stage == "all" :
-            return Response(StageSerializer(stages, many=True).data)
-        paginated_stages = paginator.paginate_queryset(stages, request)
+        if disable_pagination == 1 :
+            return Response(StageSerializer(stages.order_by('student__user__name'), many=True).data)
+        paginated_stages = paginator.paginate_queryset(stages.order_by('student__user__name'), request)
         stage_serializer= StageSerializer(paginated_stages, many=True)
         # return Response(stage_serializer.data)
         # return Response({})
