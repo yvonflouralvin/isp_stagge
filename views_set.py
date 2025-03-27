@@ -319,7 +319,7 @@ class StudentForStageAPIView(APIView):
 
         paginator = Paginator()
         stages = Stage.objects.all()
-        disable_pagination = request.GET.get('disable_pagination', 0)
+        disable_pagination = request.GET.get('disable_pagination', "0")
 
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
@@ -384,7 +384,7 @@ class StudentForStageAPIView(APIView):
         if filter_dept != "all" :
             stages = stages.filter(student__promotion__grade__id=filter_dept)
         
-        if disable_pagination == 1 :
+        if disable_pagination == "1" :
             return Response(StageSerializer(stages.order_by('student__user__name'), many=True).data)
         paginated_stages = paginator.paginate_queryset(stages.order_by('student__user__name'), request)
         stage_serializer= StageSerializer(paginated_stages, many=True)
