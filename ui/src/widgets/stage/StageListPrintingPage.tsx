@@ -9,7 +9,7 @@ const logo = require('../../assets/images.png')
 
 
 export default async function StageListPrintingPage(props: PageProps){
-    const stages: any[] = ((await api(await cookies()).get(`/isp_stage/student/${props.params.app[2]}/?disable_pagination=1&filter_dept=${props.params.app[4]}`)).data)
+    const stages: any[] = ((await api(await cookies()).get(`/isp_stage/student/${props.params.app[2]}?disable_pagination=1&filter_dept=${props.params.app[4]}`)).data)
     const dept : Grade = ((await api(await cookies()).get(`/uscitech_academy/gradeclasses/${props.params.app[4]}/`)).data);
     return <>
         <div>
@@ -25,7 +25,7 @@ export default async function StageListPrintingPage(props: PageProps){
             <div>
                 <p>DEPARTEMENT : <span className="font-semibold">{dept.libelle}</span></p>
                 <p>Année académique : <span className="font-semibold">2024-2025</span></p>
-                <p>Effectif : <span className="font-semibold">{stages.length}</span></p>
+                <p>Effectif : <span className="font-semibold">{stages.length} étudiant{stages.length > 1 ? "s" : ""}</span></p>
             </div>
             <div className="border border-black mt-[10px]">
             <ListStageForStageMaster {...props} stages={stages}  stagemaster={undefined} />
