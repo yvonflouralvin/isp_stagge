@@ -33,11 +33,10 @@ export default function ListStageServerComponents(props: Props) {
                             </AccordionItem>
                         })
                     }
-                   
                 </Accordion>
             </> : <>
             {
-            (props.user.is_superuser !== true || props.user.permissions.find((perm: string) => perm === "isp_departement_officier")) ? <>
+            (props.user.is_superuser !== true && props.user.permissions.find((perm: string) => perm === "isp_departement_officier")) ? <>
                 <ListStages {...props} stage={props.type_stage} grade={props.depts[0]}  />              
             </> : <>
                 

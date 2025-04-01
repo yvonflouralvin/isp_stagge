@@ -75,6 +75,7 @@ export default async function StageListPage(props: StageListPageProps) {
 
     // Je commence par vérifier qui s'est
     const depts_for_stages: ExtendGrade[] = ((await api(await cookies()).get(`/isp_stage/stage/get_department_for_stages/?stage=${stage}`)).data)
+    console.log(depts_for_stages)
 
     const _props = {
         ...props

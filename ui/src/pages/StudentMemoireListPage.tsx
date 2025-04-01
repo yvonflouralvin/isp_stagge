@@ -17,12 +17,12 @@ export default async function StudentMemoireListPage(props: PageProps) {
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {
-                label: "Projets Tutorés",
-                link: "/apps/isp_stage/projets-tutores"
+                label: "Memoires",
+                link: "/apps/isp_stage/students-memoires"
             }
         ]} />
        
-                <ListStudentMemoires />
+                <ListStudentMemoires {...props} />
             </div>
          
 }

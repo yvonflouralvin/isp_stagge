@@ -141,7 +141,7 @@ class StageViewSet(viewsets.ModelViewSet):
                 stage_type = request.GET.get('stage', None)
                 if stage_type != None :
                     stages =  stages.filter(stage=stage_type)
-                queryset = GradeClasse.objects.filter(promotion__student_promotion__in=stages.values('student'))
+                queryset = GradeClasse.objects.filter(promotion__student_promotion__in=stages.values('student')).distinct()
             else:
                 queryset = GradeClasse.objects.none()
 
@@ -615,6 +615,19 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
             return Response(PromotionSerializer(promotions, many=True).data, status=200)
         return Response({}, status=404)
 
+    @action(detail=False, methods=['get'])
+    def student_without_memoires(self, request):
+        user = request.user
+        dept =  DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+        if not dept.exists() :
+            return Response([], 404)
+        dept = dept.first()
+        memoires = StudentMemoire.objects.filter(student__promotion__grade = dept.dept, director = None)
+        students_to_exclude = [memoire.student for memoire in memoires]
+        students = Student.objects.filter(promotion__grade = dept.dept).exclude(id__in = [student.id for student in students_to_exclude])
+        paginator = self.pagination_class()
+        paginated_students = paginator.paginate_queryset(students, request)
+        return paginator.get_paginated_response(StudentSerializer(paginated_students, many=True).data)
 
 class ProjetTutoreViewSet(viewsets.ModelViewSet):
     queryset = ProjetTutore.objects.all()
