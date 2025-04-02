@@ -21,6 +21,7 @@ import StudentPage from "./student/StudentPage";
 import DirecteursPageSSR from "./directeurs/DirecteursPageSSR";
 import DirecteursFormSSR from "./directeurs/DirecteursFormSSR";
 import StageListPrintingPage from "../widgets/stage/StageListPrintingPage";
+import StudentPrintMemoireRestStudent from "../../StudentPrintMemoireRestStudent";
 
 
 export default {
@@ -49,5 +50,8 @@ export default {
 
     StudentFormPage : (props: StudentFormPageProps) => StudentFormPage(props),
     StudentPage: (props: PageProps) => StudentPage(props),
-    StageListPrintingPage: (props: PageProps) => StageListPrintingPage(props)
+    StageListPrintingPage: (props: PageProps) => StageListPrintingPage(props),
+
+    StudentPrintMemoireRestStudent: (props: PageProps) => StudentPrintMemoireRestStudent(props)
+    
 }
