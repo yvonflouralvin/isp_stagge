@@ -605,6 +605,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
             return Response(GradeClasseSerializer(grades, many=True).data, status=200)
         return Response({}, status=404)
 
+
     @action(detail=False, methods=['get'])
     def promotions(self, request):
         user: User = request.user 
@@ -617,19 +618,26 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def student_without_memoires(self, request):
         user = request.user
-        dept =  DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
-        disable_pagination = request.GET.get('disable_pagination', '0')
-        if not dept.exists() :
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
+
+        if not dept:
             return Response([], 404)
-        dept = dept.first()
-        memoires = StudentMemoire.objects.filter(student__promotion__grade = dept.dept, director = None)
-        students_to_exclude = [memoire.student for memoire in memoires]
-        students = Student.objects.filter(promotion__grade = dept.dept, promotion__libelle = 'L2 (AS)').exclude(id__in = [student.id for student in students_to_exclude])
-        if disable_pagination == '0' :
+
+        # Trouver les étudiants sans mémoire ou avec mémoire sans directeur
+        students = Student.objects.filter(
+            promotion__grade=dept.dept,
+            promotion__libelle='L2 (AS)'
+        ).filter(
+            models.Q(studentmemoire__isnull=True) | models.Q(studentmemoire__director__isnull=True)
+        ).distinct()
+
+        disable_pagination = request.GET.get('disable_pagination', '0')
+
+        if disable_pagination == '0':
             paginator = self.pagination_class()
             paginated_students = paginator.paginate_queryset(students, request)
             return paginator.get_paginated_response(StudentSerializer(paginated_students, many=True).data)
-        else :
+        else:
             return Response(StudentSerializer(students, many=True).data)
 
 class ProjetTutoreViewSet(viewsets.ModelViewSet):
