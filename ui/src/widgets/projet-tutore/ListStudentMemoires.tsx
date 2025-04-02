@@ -2,12 +2,12 @@
 import React from 'react';
 import { Pagination } from '@nextui-org/react'
 import {  StudentMemoire } from '../../types'
-import { SearchIcon } from 'lucide-react';
+import { PrinterIcon, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/network/api';
 import cookies from '@/lib/shared/cookies';
 import TabView from '@/components/TabView'
-import ListView from '@/components/ListView'
+import ListView, { ListViewLoadData } from '@/components/ListView'
 import { PageProps } from '@/lib/shared/types/config';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 
@@ -20,7 +20,9 @@ export default function ListStudentMemoires(props: Props) {
     const [count, setCount] = React.useState(0);
     const [results, setResults] = React.useState([]);
     const [current_page, setCurrent_page] = React.useState(1);
-    const [selectedTab, setSelectedTab] = React.useState<any>(1)
+    const [selectedTab, setSelectedTab] = React.useState<any>(1);
+
+    const [totals, setTotals] = React.useState<{list:number, rest:number}>({list:-1, rest: -1}) 
 
     const load = async () => {
         const url = `/isp_stage/students-memoires/?page=${current_page}`
@@ -29,6 +31,10 @@ export default function ListStudentMemoires(props: Props) {
             setResults(tmp.data.results);
             setCount(tmp.data.count);
             setTotal_pages(tmp.data.total_pages)
+            setTotals({
+                ...totals,
+                list: tmp.data.count
+            })
         } catch (e) {
 
         }
@@ -48,13 +54,13 @@ export default function ListStudentMemoires(props: Props) {
                 {
                     props.user.permissions.find((perm:string)=> perm === "isp_departement_officier") ?  <>
                     <TabView tabs={[
-                        {key:1, label:"Liste Memoires"},
-                        {key:2, label:"Etudiants Restants"}
+                        {key:1, label:`Liste Memoires ${totals.list >= 0 ? `(${totals.list})` : ""}`},
+                        {key:2, label:`Etudiants Restants ${totals.rest >= 0 ? `(${totals.rest})` : ""}`}
                     ]} onChange={(e)=>setSelectedTab(e)} />
     
                     <div className="mt-[10px]">
                         {
-                            selectedTab === 1 ? <ListMemoire current_page={current_page} results={results} setCurrent_page={setCurrent_page} total_pages={total_pages}/> : <><ListStudentWithoutMemoire {...props}/></>
+                            selectedTab === 1 ? <ListMemoire current_page={current_page} results={results} setCurrent_page={setCurrent_page} total_pages={total_pages}/> : <><ListStudentWithoutMemoire {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/></>
                         }
                     </div>
     
@@ -105,11 +111,13 @@ const ListMemoire = (props: ListMemoireProps)=>{
 }
 
 interface ListStudentWithoutMemoireProps extends Props {
-
+    onLoaded: (data: ListViewLoadData) => any
 }
 const ListStudentWithoutMemoire = (props: ListStudentWithoutMemoireProps)=>{
-    return <ListView 
+    return <div className='w-full'>
+        <ListView 
         {...props}
+        className='p-0'
         breadcrumb={[]}
         renderRow={(e: Student)=> {
             return <p>{e.user.name} {e.user.last_name} {e.user.first_name}</p>
@@ -121,4 +129,6 @@ const ListStudentWithoutMemoire = (props: ListStudentWithoutMemoireProps)=>{
         padding={false}
         showTitle={false}
     />
+    <Link href={`/apps/isp_stage/students-memoires/printing/rest`} className='flex gap-[10px] mt-[10px]'>Imprimer <PrinterIcon size={"13px"}/></Link>
+    </div>
 }

@@ -619,15 +619,19 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     def student_without_memoires(self, request):
         user = request.user
         dept =  DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+        disable_pagination = request.GET.get('disable_pagination', '0')
         if not dept.exists() :
             return Response([], 404)
         dept = dept.first()
         memoires = StudentMemoire.objects.filter(student__promotion__grade = dept.dept, director = None)
         students_to_exclude = [memoire.student for memoire in memoires]
-        students = Student.objects.filter(promotion__grade = dept.dept).exclude(id__in = [student.id for student in students_to_exclude])
-        paginator = self.pagination_class()
-        paginated_students = paginator.paginate_queryset(students, request)
-        return paginator.get_paginated_response(StudentSerializer(paginated_students, many=True).data)
+        students = Student.objects.filter(promotion__grade = dept.dept, promotion__libelle = 'L2 (AS)').exclude(id__in = [student.id for student in students_to_exclude])
+        if disable_pagination == '0' :
+            paginator = self.pagination_class()
+            paginated_students = paginator.paginate_queryset(students, request)
+            return paginator.get_paginated_response(StudentSerializer(paginated_students, many=True).data)
+        else :
+            return Response(StudentSerializer(students, many=True).data)
 
 class ProjetTutoreViewSet(viewsets.ModelViewSet):
     queryset = ProjetTutore.objects.all()
@@ -708,11 +712,21 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
             else :
                 return StudentMemoire.objects.none()
 
-        # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
+        # Vérifier si l'utilisateur est un etudiant avec la permission spécifique
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
             student = Student.objects.filter(user=user).first()
             if student:
                 queryset = queryset.filter(student=student)
+
+        # Vérifier si l'utilisateur est un responsable à la recherche avec la permission spécifique
+        if user.has_perm('isp_stage.isp_departement_officier') :
+            dept = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
+            if not dept.exists() :
+                queryset = StudentMemoire.objects.none()
+            else :
+                dept = dept.first()
+                students = Student.objects.filter(promotion__grade=dept.dept)
+                queryset = queryset.filter(student__in=students)
 
         # Par défaut, retour vide
         return queryset
