@@ -60,54 +60,40 @@ export default function ListStudentMemoires(props: Props) {
     
                     <div className="mt-[10px]">
                         {
-                            selectedTab === 1 ? <ListMemoire current_page={current_page} results={results} setCurrent_page={setCurrent_page} total_pages={total_pages}/> : <><ListStudentWithoutMemoire {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/></>
+                            selectedTab === 1 ? <ListMemoire {...props} onLoaded={(data)=> setTotals({...totals, list: data.count})}/> : <><ListStudentWithoutMemoire {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/></>
                         }
                     </div>
     
                     </> : <>
-                    <ListMemoire current_page={current_page} results={results} setCurrent_page={setCurrent_page} total_pages={total_pages}/>
+                    <ListMemoire {...props} onLoaded={(data)=> setTotals({...totals, list: data.count})}/>
                 </> 
                 }
 
             </div>
 }
 
-interface ListMemoireProps {
-    results: StudentMemoire[]
-    total_pages: number
-    current_page: number
-    setCurrent_page: (e: number) => any
+interface ListMemoireProps extends Props {
+    onLoaded: (data: ListViewLoadData) => any
 }
 const ListMemoire = (props: ListMemoireProps)=>{
-    return <div>
-                <div className="flex items-center w-full bg-[rgba(0,0,0,0.03)]  px-[20px] py-[10px] rounded mb-[10px]">
-                    <input placeholder='Search' className='outline-none border-0 text-[13px] bg-transparent text-gray-500 flex-1' />
-                    <SearchIcon size="13px" className="cursor-pointer" />
-                </div>
-                <div>
-                    <div className="flex gap-[2px] px-[20px] py-[10px] bg-[rgba(0,0,0,0.03)] font-light  my-[3px] rounded ">
-                        <p className="w-[50%]">Sujet du groupe</p>
-                        {/* <p className="w-[25%]">Professeur</p> */}
-                        <p className="w-[25%]">Etudiant</p>
-                        <p className="w-[25%]">Directeur</p>
-                    </div>
-                    {
-                        props.results.map((subject: StudentMemoire, index) => {
-                            return <Link href={`/apps/isp_stage/students-memoires/${subject.id}`} key={subject.id} className="duration-300 flex gap-[2px] text-[13px] text-gray-500 px-[20px] py-[6px] my-[3px] cursor-pointer hover:bg-[0,0,0,0.02]">
-                                <p className="w-[50%]">{subject.subject}</p>
-                                {/* <p className="w-[25%]">{subject.teacher}</p> */}
-                                <p className="w-[25%]">{`${subject.student.user.name} ${subject.student.user.last_name} ${subject.student.user.first_name}`}</p>
-                                <p className="w-[25%]">{`${subject.director ? subject.director?.employee.fullname : "--"}`}</p>
-                            </Link>
-                        })
-                    }
-                </div>
-                {
-                    props.total_pages > 1 && <div>
-                        <Pagination total={props.total_pages} page={props.current_page} onChange={props.setCurrent_page} />
-                    </div>
-                }
-            </div>
+    return  <ListView 
+        {...props}
+        className='p-0'
+        breadcrumb={[]}
+        renderRow={(student: StudentMemoire)=> {
+            return <Link href={`/apps/isp_stage/students-memoires/${student.id}`} key={student.id} className="duration-300 flex gap-[2px] text-[13px] text-gray-500 px-[20px] py-[6px] my-[3px] cursor-pointer hover:bg-[0,0,0,0.02] w-full">
+                        <p className="w-[50%]">{student.subject}</p> 
+                        <p className="w-[25%]">{`${student.student.user.name} ${student.student.user.last_name} ${student.student.user.first_name}`}</p>
+                        <p className="w-[25%]">{`${student.director ? student.director?.employee.fullname : "--"}`}</p>
+                    </Link>
+        }}
+        subtitle={e => ``}
+        title=''
+        url='/isp_stage/students-memoires/'
+        showBreadcrumb={false}
+        padding={false}
+        showTitle={false}
+    />
 }
 
 interface ListStudentWithoutMemoireProps extends Props {

@@ -36,5 +36,12 @@
             "description": "L'utilisateur est un directeur de travaux à l'ISP"
         }
         
+    ],
+    "jobs": [
+        {
+            "id": "isp_stage_uploading_centralized_quotes",
+            "description": "Job utilisé pour traiter les fichiers d'updaload des cotes",
+            "target": "isp_stage.utils.uploading_centralized_quotes"
+        }
     ]
 }

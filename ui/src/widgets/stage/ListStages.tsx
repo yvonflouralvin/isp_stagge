@@ -3,25 +3,198 @@ import React from 'react'
 import { Pagination, Spinner } from "@nextui-org/react";
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
-import {  PrinterIcon, SearchIcon, TableIcon } from 'lucide-react';
+import { PrinterIcon, SearchIcon, TableIcon } from 'lucide-react';
 import useEvent from '@/lib/hooks/useEvent';
-import FilterStages from '../FilterStages';
-import PermissionComponent from '@/components/ui/PermissionComponent'; 
-import PrintReport from './PrintReport';
+import FilterStages from '../FilterStages'; 
 import { PageProps } from '@/lib/shared/types/config';
 import ListStageForDeptResearcher from './list_stage/ListStageForDeptResearcher';
 import ListStageForStageMaster from './list_stage/ListStageForStageMaster';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link'; 
+import Link from 'next/link';
 import { Grade } from '/addons/uscitech_academy/ui/src/types';
 import { Input } from '@/components/ui/input';
-import AddStage from './AddStage';
+import AddStage from './AddStage'; 
+
+export interface QuoteObject {
+  stage: number,
+  carnet: number,
+  rapport: number,
+  regularite: number,
+  tenue: number,
+  carnet_stage: number,
+  lecon: number,
+  rapport_stage: number,
+  defense_rapport: number,
+  seminaire: number,
+  stage_master: number,
+  soutenance: number,
+  lecture: number,
+  central_total: number,
+  central_moyenne: number
+}
+
+export interface QuoteField {
+  index:string
+  label: string
+  max: number
+  stage:"pedagogique"|"impregnation"
+  type: "value"|"function"
+  callback?: (e: QuoteObject)=> any
+}
+
+
+export const centralisatriceFields : QuoteField[] = [
+  {
+      index:"seminaire",
+      label: "Seminaire de Stage A",
+      max: 20,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"stage_master",
+      label: "Maitre de Stage B",
+      max: 40,
+      stage:"pedagogique",
+      type:"function",
+      callback: (quote: QuoteObject) => (parseInt(`${quote.stage}`)+ parseInt(`${quote.carnet}`) + parseInt(`${quote.rapport}`))/4
+  },
+  {
+      index:"soutenance",
+      label: "Soutenance D",
+      max: 20,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"lecture",
+      label: "Lecture Documents E",
+      max: 20,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"central_total",
+      label: "Total Général",
+      max: 100,
+      stage:"pedagogique",
+      type:"function",
+      callback: (quote : QuoteObject) => parseInt(`${quote.seminaire}`) + parseInt(`${quote.stage_master}`) + parseInt(`${quote.soutenance}`) + parseInt(`${quote.lecture}`)
+  },
+  {
+      index:"central_moyenne",
+      label: "Moyenne",
+      max: 20,
+      stage:"pedagogique",
+      type:"function",
+      callback: (quote : QuoteObject) => (parseInt(`${quote.seminaire}`) + ((parseInt(`${quote.stage}`) + parseInt(`${quote.carnet}`) + parseInt(`${quote.rapport}`))/4) + parseInt(`${quote.soutenance}`) + parseInt(`${quote.lecture}`))/5
+  }
+]
+
+
+export const quoteFields : QuoteField[] = [
+  {
+      index:"stage",
+      label: "Stage",
+      max: 120,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"carnet",
+      label: "Carnet",
+      max: 30,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"rapport",
+      label: "Rapport",
+      max: 10,
+      stage:"pedagogique",
+      type:"value"
+  },
+  {
+      index:"total",
+      label: "Total",
+      max: 160,
+      stage:"pedagogique",
+      type:"function",
+      callback: (quote: QuoteObject)=> parseInt(`${quote.stage}`) + parseInt(`${quote.carnet}`) + parseInt(`${quote.rapport}`)
+  },
+  {
+      index:"moyenne",
+      label: "Moyenne",
+      max: 40,
+      stage:"pedagogique",
+      type:"function",
+      callback: (quote: QuoteObject)=> (parseInt(`${quote.stage}`) + parseInt(`${quote.carnet}`) + parseInt(`${quote.rapport}`))/4
+  },
+  {
+      index:"regularite",
+      label: "Régularité",
+      max: 10,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"tenue",
+      label: "Tenue",
+      max: 10,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"carnet_stage",
+      label: "Carnet de Stage",
+      max: 10,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"lecon",
+      label: "Leçon",
+      max: 20,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"rapport_stage",
+      label: "Rapport",
+      max: 20,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"defense_rapport",
+      label: "Défense Rapport",
+      max: 20,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
+      index:"total",
+      label: "Total",
+      max: 100,
+      stage:"impregnation",
+      type:"function",
+      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`))
+  },
+  {
+      index:"moyenne-peda",
+      label: "Moyenne",
+      max: 20,
+      stage:"impregnation",
+      type:"function",
+      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`))/5
+  }
+]
 
 interface Props extends PageProps {
   stage: string,
   promotions: any,
   promotion: any,
-  user: any, 
+  user: any,
   filtering_promotions: any[]
   stagemaster: any
   grade?: Grade
@@ -90,7 +263,11 @@ export default function ListStages(props: Props) {
       setPage(total_pages)
       load(total_pages)
     }
-  }, [`new-stage-added-${props.stage}`])
+
+    if (eventId === `list-stage-pedagogique-updated`){
+      load(page)
+    }
+  }, [`new-stage-added-${props.stage}`, `list-stage-pedagogique-updated`])
 
   const onSubmitQuotes = async () => {
     try {
@@ -106,11 +283,17 @@ export default function ListStages(props: Props) {
       <div className='bg-transparent'>
         <div className='flex flex-wrap border-b border-inherent divide-x-[1px]'>
           <Link href={`/apps/isp_stage/${props.stage}/list`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "list" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
-              <p>Listes</p>
-          </Link> 
+            <p>Listes</p>
+          </Link>
           <Link href={`/apps/isp_stage/${props.stage}/cotations`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "cotations" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
-              <p>Cotations</p>
-          </Link> 
+            <p>Cotations</p>
+          </Link>
+          {
+            (props.stage === "pedagogique" && props.user.permissions.find((p: string) => p === "isp_departement_officier") )&& <Link href={`/apps/isp_stage/${props.stage}/fiche-centralisatrice`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "fiche-centralisatrice" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
+              <p>Fiche Centralisatrice</p>
+            </Link>
+          }
+
         </div>
       </div>
       <div>
@@ -126,14 +309,14 @@ export default function ListStages(props: Props) {
               </div>
             </div>
             {
-              props.user.permissions.find((p: string)=> p === "isp_departement_officier") !== undefined && <AddStage promotion={props.promotion} promotions={props.promotions} stage={props.stage}  />
+              props.user.permissions.find((p: string) => p === "isp_departement_officier") !== undefined && <AddStage promotion={props.promotion} promotions={props.promotions} stage={props.stage} />
             }
             <FilterStages {...props} selectedFilter={selectedFilter} onChange={setSelectedFilter} />
             <div className='flex gap-[5px]'>
-             {
-                (props.user.permissions.find((per:string) => per === "isp_user_stage_master" || per === "isp_departement_officier") || props.user.is_superuser === true) &&
+              {
+                (props.user.permissions.find((per: string) => per === "isp_user_stage_master" || per === "isp_departement_officier") || props.user.is_superuser === true) &&
                 <Link href={`/apps/isp_stage/${props.stage}/${props.params.app[3]}/${props.grade?.id}/printing`}><Button><PrinterIcon size={"15px"} /></Button></Link>
-             }
+              }
             </div>
             {
               (props.params.app[3] === "cotations" && props.stagemaster !== undefined) && <div>
@@ -152,10 +335,14 @@ export default function ListStages(props: Props) {
               <p>Chargement...</p>
             </div> : <>
               {
-                (props.user.permissions.find((p: string) => p === "isp_departement_officier") && props.params.app[3] === "list")  ? <>
+                (props.user.permissions.find((p: string) => p === "isp_departement_officier") && props.params.app[3] === "list") ? <>
                   <ListStageForDeptResearcher {...props} stages={stages} stagemaster={props.stagemaster} />
                 </> : <>
-                  <ListStageForStageMaster {...props} stages={stages} stagemaster={props.stagemaster} />
+                  {
+                    props.params.app[3] === "fiche-centralisatrice" && props.user.permissions.find((p: string) => p === "isp_departement_officier") ?  <ListStageForStageMaster {...props}  stages={stages} stagemaster={props.stagemaster} quoteFields={centralisatriceFields} /> : 
+                    <ListStageForStageMaster {...props} stages={stages} stagemaster={props.stagemaster} quoteFields={quoteFields} />
+                  }
+                 
                 </>
               }
             </>

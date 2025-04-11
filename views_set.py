@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404  
+from openpyxl import Workbook, load_workbook
+from django.utils.text import slugify
+from django.conf import settings
+from django.core.files.storage import default_storage
  
 
 from django.contrib.auth.hashers import make_password
@@ -14,9 +18,11 @@ from django.db.models import Q, Count
 from rest_framework.exceptions import MethodNotAllowed
 from django.core.exceptions import ObjectDoesNotExist
 
-from core.utils import Paginator
+from core.utils import Paginator, get_db_name
+import pandas as pd
  
 from core.models import *
+from job.utils import job
 from .models import *
 from uscitech_academy.models import *
 
@@ -623,13 +629,18 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         if not dept:
             return Response([], 404)
 
-        # Trouver les étudiants sans mémoire ou avec mémoire sans directeur
+        # Récupérer les étudiants ayant un mémoire mais sans directeur
+        memoires_sans_directeur = StudentMemoire.objects.filter(
+            student__promotion__grade=dept.dept, director__isnull=False
+        )
+        
+        students_a_exclure = memoires_sans_directeur.values_list('student_id', flat=True)
+        
+        # Récupérer tous les étudiants de L2 (AS) qui n'ont pas de mémoire ou un mémoire sans directeur
         students = Student.objects.filter(
-            promotion__grade=dept.dept,
+            promotion__grade=dept.dept, 
             promotion__libelle='L2 (AS)'
-        ).filter(
-            models.Q(studentmemoire__isnull=True) | models.Q(studentmemoire__director__isnull=True)
-        ).distinct()
+        ).exclude(id__in=students_a_exclure)
 
         disable_pagination = request.GET.get('disable_pagination', '0')
 
@@ -640,6 +651,79 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         else:
             return Response(StudentSerializer(students, many=True).data)
 
+    @action(detail=False, methods=['get'])
+    def generer_excel_student_pedagogique(self, request):
+        """
+        Génère un fichier Excel, l'enregistre dans le répertoire de médias
+        et redirige l'utilisateur vers une URL de téléchargement.
+        """
+
+        user = request.user
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
+
+        if not dept:
+            return Response([], 404)
+        
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+
+        # Créer un nouveau classeur Excel
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Données Etudiants"
+
+        # Ajouter des données d'exemple (remplacez ceci par vos données réelles)
+        data = [
+            ["ID", "Nom Complet", "Cote"]
+        ]
+
+        for stage in stages :
+            data.append([
+                f'{stage.id}',
+                f'{stage.student.user.name} {stage.student.user.last_name} {stage.student.user.first_name}',
+                f'{0}'
+            ])
+
+        for row_data in data:
+            sheet.append(row_data)
+
+        # Générer un nom de fichier unique
+        nom_fichier = f"stage_students_pedagogique_cotes_{slugify(dept.dept.libelle)}.xlsx"
+        chemin_fichier = os.path.join(settings.MEDIA_ROOT, nom_fichier)
+
+        # Enregistrer le fichier Excel
+        workbook.save(chemin_fichier)
+
+        # Construire l'URL de téléchargement
+        url_telechargement = os.path.join(settings.MEDIA_URL, nom_fichier)
+
+        # Rediriger l'utilisateur vers l'URL de téléchargement
+        return Response(url_telechargement)
+    
+    @action(detail=False, methods=['POST'])
+    def post_excel_student_pedagogique(self, request):
+        user = request.user
+        """
+        Reçoit un fichier Excel via une requête POST, le parcourt et affiche son contenu.
+        """
+        if request.method == 'POST' and request.FILES.get('fichier_excel'):
+            fichier_excel = request.FILES['fichier_excel']
+            file_name = default_storage.save(f'uploads/{fichier_excel.name}', fichier_excel)
+            file_path = default_storage.path(file_name)
+            _job = job({
+                "id": "isp_stage_uploading_centralized_quotes",
+                "db": get_db_name(request),
+                "username": user.username,
+                "index": request.POST.get('index', 'index'),
+                "fichier_excel": file_path
+            })
+
+            if _job != None :
+                return Response({'jobId': _job.id})
+            else:
+               return Response("Job is none", 400) 
+        else:
+            return Response( 'Error happen', 400)
+     
 class ProjetTutoreViewSet(viewsets.ModelViewSet):
     queryset = ProjetTutore.objects.all()
     serializer_class = ProjetTutoreSerializer
