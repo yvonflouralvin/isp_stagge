@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import ListStageForStageMaster from "./list_stage/ListStageForStageMaster";
 import { Grade } from "/addons/uscitech_academy/ui/src/types";
 import PrintingClientAction from "../../pages/reports/director/PrintingClientAction";
-import Image from "next/image";
+import Image from "next/image"; 
+import { centralisatriceFields, quoteFields } from "./ListStages";
 const logo = require('../../assets/images.png')
 
 
@@ -28,7 +29,7 @@ export default async function StageListPrintingPage(props: PageProps){
                 <p>Effectif : <span className="font-semibold">{stages.length} étudiant{stages.length > 1 ? "s" : ""}</span></p>
             </div>
             <div className="border border-black mt-[10px]">
-            <ListStageForStageMaster {...props} stages={stages}  stagemaster={undefined} />
+            <ListStageForStageMaster  {...props} stages={stages}  stagemaster={undefined}  quoteFields={props.params.app[3] === "cotations" ? quoteFields : centralisatriceFields}/>
             </div>
         </div>
         <PrintingClientAction />

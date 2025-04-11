@@ -177,14 +177,14 @@ const config: AppConfig = {
                     }
                 }
             }
-        else if (_props.params.app.length === 4 && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
+        else if (_props.params.app.length === 4 && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations" || _props.params.app[3] === "fiche-centralisatrice") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
                     return await pages.StageListPage(_props);
                 }
             }
-        else if (_props.params.app.length === 6 && _props.params.app[5] === "printing"  && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
+        else if (_props.params.app.length === 6 && _props.params.app[5] === "printing"  && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations" || _props.params.app[3] === "fiche-centralisatrice") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation"))
             return {
                 dashboardLayouting: false,
                 render: async () => {

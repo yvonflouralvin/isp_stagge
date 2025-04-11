@@ -1,6 +1,8 @@
 from reporter.models import ReportTask
 from core.models import User
 from .models import Stage, DeptRechercheOfficier, StageMaster
+from openpyxl import Workbook, load_workbook
+from .serializers import StageSerializer
 
 
 def user_get_stages(user: User, stage: str,  db_name: str = None):
@@ -111,3 +113,39 @@ def stagemaster_student_datas(task: ReportTask, db_name: str):
     print(data_to_return)
 
     return data_to_return
+
+
+def uploading_centralized_quotes(data: dict):
+    try:
+        # Charger le fichier Excel
+        workbook = load_workbook(data['fichier_excel'])
+
+        # Sélectionner la première feuille de calcul (ou une feuille spécifique)
+        sheet = workbook.active  # Ou workbook['NomDeLaFeuille']
+
+        contenu = []
+        # Parcourir les lignes de la feuille
+        i = 0
+        for row in sheet.iter_rows(): 
+            # Parcourir chaque ligne
+            if i > 0 :
+                try:
+                    stage = Stage.objects.using(data['db']).filter(id = row[0].value).first()
+                    quote_object = stage.quote_object
+                    quote_object[data['index']] = row[2].value
+                    stage.quote_object = quote_object
+                    stage.save()
+                    contenu.append(StageSerializer(stage).data)
+                except Exception as e1 :
+                    print(e1)
+                    pass
+                
+            i += 1
+
+        # Rendre un template avec le contenu du fichier
+        # return Response(contenu)
+        pass
+    except Exception as e2:
+        print(e2)
+        # return Response(f"Erreur lors du traitement du fichier Excel : {e}", status=400)
+        pass

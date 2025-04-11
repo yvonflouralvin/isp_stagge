@@ -55,11 +55,11 @@ export default function PrintReport(props: Props) {
 
 
     const { trigger, running } = useJob({
-        callback: (payload: any) => {
-            if (payload.jobId === undefined) return;
-            console.log("L'impression a marché : ", payload)
+        callback: (data: any) => {
+            if (data.jobId === undefined) return;
+            console.log("L'impression a marché : ", data)
             // printFile(`/api/apps/reporter/reports/${payload.jobId}/`)
-            downloadFile(`/api/apps/reporter/reports/${payload.jobId}/`, "rapports_stagiaires.pdf")
+            downloadFile(`/api/apps/reporter/reports/${data.jobId}/`, "rapports_stagiaires.pdf")
         },
         onTrigger: async () => {
             const result = await api(cookies).post(`${props.url ? props.url : "/reporter/reporter-task/"}`, {

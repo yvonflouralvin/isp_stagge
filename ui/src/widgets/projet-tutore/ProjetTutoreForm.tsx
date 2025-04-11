@@ -7,6 +7,7 @@ import { Modal, ModalBody, ModalContent, ModalHeader, Spinner } from '@nextui-or
 import cookies from '@/lib/shared/cookies';
 import api from '@/lib/network/api';
 import ConfirmDialogPopup from '@/components/ui/ConfirmDialogPopup';
+import OnDeleteButton from '@/components/ui/OnDeleteButton';
 
 
 export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
@@ -140,6 +141,16 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 {
                     isSaving === false ? <button onClick={handleSave} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Enregistrer toutes les modidications</button> : <Spinner size='sm' />
                 }
+            </div>
+        }
+
+        {
+            props.user.permissions.find((perm: string) => perm === "isp_departement_officier") && <div className='mt-[10px]'>
+                <OnDeleteButton 
+                back_url='/apps/isp_stage/projets-tutores'
+                message={`Vous ête sur le point de supprimer le projet tutoré de cet étudiant ainsi que tout le groupe ?`}
+                url={`/isp_stage/projets-tutores/${props.projet?.id}/`}
+            />
             </div>
         }
     </div>

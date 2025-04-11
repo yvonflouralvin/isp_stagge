@@ -2,136 +2,18 @@
 import React from 'react'
 import { PageProps } from "@/lib/shared/types/config";
 import api from '@/lib/network/api';
-import cookies from '@/lib/shared/cookies';
-import { Spinner } from '@nextui-org/react';
+import cookies from '@/lib/shared/cookies'; 
+import { QuoteField, QuoteObject } from '../ListStages';
 
 interface Props extends PageProps {
     stage: any
     stagemaster: any
-}
-interface QuoteObject {
-    stage: number,
-    carnet: number,
-    rapport: number,
-    regularite: number,
-    tenue: number,
-    carnet_stage: number,
-    lecon: number,
-    rapport_stage: number,
-    defense_rapport: number,
-}
-
-interface QuoteField {
-    index:string
-    label: string
-    max: number
-    stage:"pedagogique"|"impregnation"
-    type: "value"|"function"
-    callback?: (e: QuoteObject)=> any
+    quoteFields : QuoteField[]
 }
 
 
-export const quoteFields : QuoteField[] = [
-    {
-        index:"stage",
-        label: "Stage",
-        max: 120,
-        stage:"pedagogique",
-        type:"value"
-    },
-    {
-        index:"carnet",
-        label: "Carnet",
-        max: 30,
-        stage:"pedagogique",
-        type:"value"
-    },
-    {
-        index:"rapport",
-        label: "Rapport",
-        max: 10,
-        stage:"pedagogique",
-        type:"value"
-    },
-    {
-        index:"total",
-        label: "Total",
-        max: 160,
-        stage:"pedagogique",
-        type:"function",
-        callback: (quote: QuoteObject)=> quote.stage + quote.carnet + quote.rapport
-    },
-    {
-        index:"moyenne",
-        label: "Moyenne",
-        max: 40,
-        stage:"pedagogique",
-        type:"function",
-        callback: (quote: QuoteObject)=> (quote.stage + quote.carnet + quote.rapport)/40
-    },
-    {
-        index:"regularite",
-        label: "Régularité",
-        max: 10,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"tenue",
-        label: "Tenue",
-        max: 10,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"carnet_stage",
-        label: "Carnet de Stage",
-        max: 10,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"lecon",
-        label: "Leçon",
-        max: 20,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"rapport_stage",
-        label: "Rapport",
-        max: 20,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"defense_rapport",
-        label: "Défense Rapport",
-        max: 20,
-        stage:"impregnation",
-        type:"value"
-    },
-    {
-        index:"total",
-        label: "Total",
-        max: 100,
-        stage:"impregnation",
-        type:"function",
-        callback: (quote: QuoteObject)=> (quote.regularite + quote.tenue + quote.carnet_stage + quote.lecon + quote.rapport_stage + quote.defense_rapport)
-    },
-    {
-        index:"moyenne-peda",
-        label: "Moyenne",
-        max: 20,
-        stage:"impregnation",
-        type:"function",
-        callback: (quote: QuoteObject)=> (quote.regularite + quote.tenue + quote.carnet_stage + quote.lecon + quote.rapport_stage + quote.defense_rapport)/20
-    }
-]
 
-
-
-export default function QuoteField(props: Props) {
+export default function QuoteFieldComponent(props: Props) {
 
     const [quoteObject, setQuoteObject] = React.useState<QuoteObject>({
         stage: props.stage.quote_object.stage ? props.stage.quote_object.stage : 0,
@@ -143,6 +25,12 @@ export default function QuoteField(props: Props) {
         lecon: props.stage.quote_object.lecon ? props.stage.quote_object.lecon: 0,
         rapport_stage: props.stage.quote_object.rapport_stage ? props.stage.quote_object.rapport_stage: 0,
         defense_rapport: props.stage.quote_object.defense_rapport ? props.stage.quote_object.defense_rapport: 0,
+        seminaire: props.stage.quote_object.seminaire ? props.stage.quote_object.seminaire: 0,
+        stage_master: props.stage.quote_object.stage_master ? props.stage.quote_object.stage_master: 0,
+        soutenance: props.stage.quote_object.soutenance ? props.stage.quote_object.soutenance: 0,
+        lecture: props.stage.quote_object.lecture ? props.stage.quote_object.lecture: 0,
+        central_total: props.stage.quote_object.central_total ? props.stage.quote_object.central_total: 0,
+        central_moyenne: props.stage.quote_object.central_moyenne ? props.stage.quote_object.central_moyenne: 0
     }) 
 
     const [isSavingQuote, setIsSavingQuote] = React.useState(false)
@@ -187,7 +75,7 @@ export default function QuoteField(props: Props) {
                 ((props.stage.quote_by?.employee.user?.id === props.user.id && props.stage.quote_by) || (props.stage.quote_by === null || props.stage.quote_by === undefined))) ? 
                 <>
                 {
-                    quoteFields.filter(field => field.stage === props.params.app[2]).map((field: QuoteField) => {
+                    props.quoteFields.filter(field => field.stage === props.params.app[2]).map((field: QuoteField) => {
                         return <div className={classname_div} key={field.index}>
                             {
                                 field.type === "value" ? 
@@ -201,7 +89,13 @@ export default function QuoteField(props: Props) {
                                             field.index === "carnet_stage" ? quoteObject.carnet_stage :
                                             field.index === "lecon" ? quoteObject.lecon : 
                                             field.index === "rapport_stage" ? quoteObject.rapport_stage :
-                                            field.index === "defense_rapport" ? quoteObject.defense_rapport : 0 
+                                            field.index === "defense_rapport" ? quoteObject.defense_rapport : 
+                                            field.index === "seminaire" ? quoteObject.seminaire : 
+                                            field.index === "stage_master" ? quoteObject.stage_master : 
+                                            field.index === "soutenance" ? quoteObject.soutenance : 
+                                            field.index === "lecture" ? quoteObject.lecture : 
+                                            field.index === "central_total" ? quoteObject.central_total : 
+                                            field.index === "central_moyenne" ? quoteObject.central_total : 0 
                                         }`)}`} 
                                         onChange={(e: any) => {
                                             if(parseFloat(e.target.value) > field.max) setQuoteObject({...quoteObject, [field.index]: field.max})
@@ -223,9 +117,11 @@ export default function QuoteField(props: Props) {
             </> : 
             <>
                {
-                 quoteFields.filter(field => field.stage === props.params.app[2]).map((field: {index: string, max: number}) => {
+                props.quoteFields.filter(field => field.stage === props.params.app[2]).map((field: QuoteField) => {
                     return <div className={classname_div} key={field.index}>
-                            <p className={classname}>{props.stage.quote_status === "draft" ? `--` : `${parseFloat(`${
+                            <p className={classname}>{props.stage.quote_status === "draft" && props.params.app[3] === "cotations" ? `--` : <span>
+                                {
+                                    field.type === "value" ? `${parseFloat(`${
                                     field.index === "carnet" ? quoteObject.carnet : 
                                     field.index === "rapport" ? quoteObject.rapport : 
                                     field.index === "stage" ? quoteObject.stage : 
@@ -234,9 +130,17 @@ export default function QuoteField(props: Props) {
                                     field.index === "carnet_stage" ? quoteObject.carnet_stage :
                                     field.index === "lecon" ? quoteObject.lecon : 
                                     field.index === "rapport_stage" ? quoteObject.rapport_stage :
-                                    field.index === "defense_rapport" ? quoteObject.defense_rapport : 0 
+                                    field.index === "defense_rapport" ? quoteObject.defense_rapport : 
+                                    field.index === "seminaire" ? quoteObject.seminaire : 
+                                    field.index === "stage_master" ? quoteObject.stage_master : 
+                                    field.index === "soutenance" ? quoteObject.soutenance : 
+                                    field.index === "lecture" ? quoteObject.lecture : 
+                                    field.index === "central_total" ? quoteObject.central_total : 
+                                    field.index === "central_moyenne" ? quoteObject.central_total : 0 
                                 }
-                                `)}`}</p>
+                                `)}` : `${field.callback !== undefined ? field.callback(quoteObject) : 0}`
+                                }    
+                            </span>}</p>
                         </div> 
                  })
                }
