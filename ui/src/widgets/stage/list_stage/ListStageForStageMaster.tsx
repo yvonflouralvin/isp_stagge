@@ -68,7 +68,7 @@ export default function ListStageForStageMaster(props: Props) {
         </div>
         <>
                 {
-                    props.params.app.length >= 6 && <>
+                    props.params.app.length == 4 && <>
                     {
                 props.params.app[3] === "fiche-centralisatrice" && <div>
                     <ButtonDownloadQuoteFile />
