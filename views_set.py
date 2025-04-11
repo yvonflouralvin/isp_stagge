@@ -624,13 +624,18 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         if not dept:
             return Response([], 404)
 
-        # Trouver les étudiants sans mémoire ou avec mémoire sans directeur
+        # Récupérer les étudiants ayant un mémoire mais sans directeur
+        memoires_sans_directeur = StudentMemoire.objects.filter(
+            student__promotion__grade=dept.dept, director__isnull=False
+        )
+        
+        students_a_exclure = memoires_sans_directeur.values_list('student_id', flat=True)
+        
+        # Récupérer tous les étudiants de L2 (AS) qui n'ont pas de mémoire ou un mémoire sans directeur
         students = Student.objects.filter(
-            promotion__grade=dept.dept,
+            promotion__grade=dept.dept, 
             promotion__libelle='L2 (AS)'
-        ).filter(
-            models.Q(studentmemoire__isnull=True) | models.Q(studentmemoire__director__isnull=True)
-        ).distinct()
+        ).exclude(id__in=students_a_exclure)
 
         disable_pagination = request.GET.get('disable_pagination', '0')
 
