@@ -545,13 +545,28 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
                     )
 
                     created_students.append(student.id)
-
                 except:
                     pass
             
             return Response({'message': 'Importation réussie.', 'students': created_students}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='reset_password')
+    def reset_password(self, request, pk):
+        user = request.user
+        # student_id = request.data.get('student_id', None)
+        # if not student_id:
+        #     return Response({'error': 'Aucun étudiant fourni.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        student = Student.objects.filter(id=pk).first()
+        if not student:
+            return Response({'error': 'Étudiant non trouvé.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        student.user.set_password(make_password(os.environ.get("DEFAULT_PASS", "1234")))
+        student.user.save()
+        return Response({'message': 'Mot de passe réinitialisé avec succès.'}, status=status.HTTP_200_OK)
+    
 
 class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     queryset = DeptRechercheOfficier.objects.all()
@@ -765,6 +780,25 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(projets[0])
             return Response(serializer.data)
         return Response({"detail": "Aucun projet associé à cet utilisateur."}, status=404)
+
+
+    @action(detail=False, methods=['get'])
+    def student_without_project(self, request):
+        user = request.user
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
+        if not dept:
+            return Response([], 404)
+
+        students = Student.objects.filter(promotion__grade=dept.dept)
+        students_without_project = []
+        for student in students:
+            if not ProjetTutore.objects.filter(head=student).exists() or \
+               not ProjetTutore.objects.filter(member=student).exists() or \
+               ProjetTutore.objects.filter(models.Q(head=student) | models.Q(member=student), director__isnull=True).exists():
+                students_without_project.append(student)
+        return Response(StudentSerializer(students_without_project, many=True).data)
+    
+            
 
 
 class StudentMemoireViewSet(viewsets.ModelViewSet):

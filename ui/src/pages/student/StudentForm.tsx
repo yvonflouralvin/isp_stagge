@@ -8,6 +8,7 @@ import cookies from "@/lib/shared/cookies";
 import { Spinner } from '@nextui-org/react';
 import { Promotion, Student, StudentFormPageProps } from '/addons/uscitech_academy/ui/src/types';
 import OnDeleteButton from '@/components/ui/OnDeleteButton';
+import OnActionButton from '@/components/ui/OnActionButton';
 import PermissionComponent from '@/components/ui/PermissionComponent';
 
 interface StudentFormProps extends StudentFormPageProps {
@@ -110,16 +111,30 @@ export default function StudentForm(props: StudentFormProps) {
                 <PermissionComponent
                         user={props.user}
                         permissions={["isp_departement_officier"]}
-                        children={<OnDeleteStudent student={props.student} />} 
+                        children={<>
+                            <OnDeleteStudent student={props.student} />
+                            <OnActionButton 
+                                btnTitle='Réinitialiser le mot de passe'
+                                popupTitle='Réinitialiser le mot de passe'
+                                onAction={async ()=>{
+                                    await api(cookies).post(`/isp_stage/students/${props.student?.id}/reset_password/`)
+                                }}
+                                message={`Vous êtes sur le point de réinitialiser le mot de passe de l\'étudiant : ${props.student?.user?.name}`}
+                                color='bg-primary'
+                            />
+                        </>} 
                         notGranted={<>
                         {props.user.is_superuser === true &&  <OnDeleteStudent student={props.student} />}
                         </>}
                     />
+                 
                 </div>
             }
         </div>
     </>
 }
+
+
 
 interface OnDeleteStudentProps {
     student: Student 
