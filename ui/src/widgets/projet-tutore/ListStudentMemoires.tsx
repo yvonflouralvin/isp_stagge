@@ -1,8 +1,7 @@
 'use client'
-import React from 'react';
-import { Pagination } from '@nextui-org/react'
+import React from 'react'; 
 import {  StudentMemoire } from '../../types'
-import { PrinterIcon, SearchIcon } from 'lucide-react';
+import { PrinterIcon } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/network/api';
 import cookies from '@/lib/shared/cookies';

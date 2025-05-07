@@ -1,8 +1,6 @@
 import React from 'react';
 import { PageProps } from "@/lib/shared/types/config";
-import Breadcrumb from '@/components/ui/Breadcrumb'
-import ListProjetTutores from '../widgets/projet-tutore/ListProjetTutores';
-import StudentMemoireOptions from '../widgets/projet-tutore/StudentMemoireOptions';
+import Breadcrumb from '@/components/ui/Breadcrumb' 
 import ListStudentMemoires from '../widgets/projet-tutore/ListStudentMemoires';
 import { DepartmentSettings } from '../types';
 import api from '@/lib/network/api';
