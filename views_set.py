@@ -782,21 +782,30 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Aucun projet associé à cet utilisateur."}, status=404)
 
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='student-without-project')
     def student_without_project(self, request):
         user = request.user
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
         if not dept:
             return Response([], 404)
 
-        students = Student.objects.filter(promotion__grade=dept.dept)
-        students_without_project = []
-        for student in students:
-            if not ProjetTutore.objects.filter(head=student).exists() or \
-               not ProjetTutore.objects.filter(member=student).exists() or \
-               ProjetTutore.objects.filter(models.Q(head=student) | models.Q(member=student), director__isnull=True).exists():
-                students_without_project.append(student)
-        return Response(StudentSerializer(students_without_project, many=True).data)
+        students_without_project = Student.objects.filter(promotion__grade=dept.dept, promotion__libelle="L3 (LMD)")
+
+        heads_notnull = [pj.head.id for pj in ProjetTutore.objects.filter(director__isnull=False)]
+        members_notnull = [member.id for pj in ProjetTutore.objects.filter(director__isnull=False) for member in pj.member.all()]
+
+        students_without_project = students_without_project.exclude(
+            id__in=heads_notnull + members_notnull
+        ).distinct()
+
+        if request.query_params.get('disable_pagination') == '1':
+            serializer = StudentSerializer(students_without_project, many=True)
+            return Response(serializer.data)
+        else:
+            paginator = self.pagination_class()
+            paginated_students = paginator.paginate_queryset(students_without_project, self.request)
+            serializer = StudentSerializer(paginated_students, many=True)
+            return paginator.get_paginated_response(serializer.data)
     
             
 

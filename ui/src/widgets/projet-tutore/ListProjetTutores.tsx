@@ -2,7 +2,7 @@
 import React from 'react';
 import { Pagination } from '@nextui-org/react'
 import { DepartmentSettings, ProjetTutore } from '../../types'
-import { SearchIcon } from 'lucide-react';
+import { PrinterIcon, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/network/api';
 import cookies from '@/lib/shared/cookies';
@@ -57,7 +57,7 @@ const ListStudentWithoutProjetTutore = (props: ListStudentWithoutProjetTutorePro
                 <p className="w-[100%] sm:w-[50%]">Nom et Prénom</p>
                 {/* <p className="w-[25%]">Professeur</p> */}
                 <div className='flex flex-col sm:flex-row items-center gap-[5px] w-[50%]'>
-                    <p className="w-[50%]">Téléphone</p>
+                    {/* <p className="w-[50%]">Téléphone</p> */}
                     <p className="w-[50%]">Email</p>
                 </div>
             </div>
@@ -68,7 +68,7 @@ const ListStudentWithoutProjetTutore = (props: ListStudentWithoutProjetTutorePro
                 {/* <p className="w-[50%]">{student.teacher}</p> */}
                 <div className='flex w-[100%]  md:w-[50%] flex-col  sm:flex-row items-start sm:items-center gap-[5px]'>
                     <p className='sm:hidden flex text-[13px] text-gray-400 mt-[7px] font-semibold'>{student.user.name} {student.user.last_name} {student.user.first_name}</p>
-                    <p className="w-[100%] sm:w-[50%]">{`${student.user.phone}`}</p> 
+                    {/* <p className="w-[100%] sm:w-[50%]">{`${student.user.phone}`}</p>  */}
                     <p className="w-[100%] sm:w-[50%]">{`${student.user.email}`}</p>
                 </div>
             </Link>
@@ -77,6 +77,7 @@ const ListStudentWithoutProjetTutore = (props: ListStudentWithoutProjetTutorePro
         title='Projets Tutorés'
         url={`/isp_stage/projets-tutores/student-without-project/`}
     />
+    <Link href={`/apps/isp_stage/projets-tutores/printing/rest`} className='flex gap-[10px] mt-[10px]'>Imprimer <PrinterIcon size={"13px"}/></Link>
     </>
 }
 

@@ -247,6 +247,13 @@ const config: AppConfig = {
                     return await pages.StudentProjetTurote(_props);
                 }
             }
+        else if (_props.params.app.length === 5   && _props.params.app[3] === "printing"  && _props.params.app[4] === "rest" && _props.params.app[2] === "projets-tutores")
+            return {
+                dashboardLayouting: false,
+                render: async () => {
+                    return await pages.StudentPrintMemoireRestStudent(_props);
+                }
+            }
         else if (_props.params.app.length === 3 && _props.params.app[2] === "students-memoires")
             return {
                 dashboardLayouting: true,
