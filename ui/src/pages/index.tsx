@@ -20,7 +20,7 @@ import { StudentFormPageProps } from "/addons/uscitech_academy/ui/src/types";
 import StudentPage from "./student/StudentPage";
 import DirecteursPageSSR from "./directeurs/DirecteursPageSSR";
 import DirecteursFormSSR from "./directeurs/DirecteursFormSSR";
-import StageListPrintingPage from "../widgets/stage/StageListPrintingPage";
+import StageListPrintingPage from "../widgets/stage/StageListPrintingPage"; 
 import StudentPrintMemoireRestStudent from "../../StudentPrintMemoireRestStudent";
 
 
