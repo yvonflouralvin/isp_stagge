@@ -251,7 +251,7 @@ const config: AppConfig = {
             return {
                 dashboardLayouting: false,
                 render: async () => {
-                    return await pages.StudentPrintMemoireRestStudent(_props);
+                    return await pages.StudentPrintProjetTutoreRestStudent(_props);
                 }
             }
         else if (_props.params.app.length === 3 && _props.params.app[2] === "students-memoires")
