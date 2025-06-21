@@ -37,7 +37,7 @@ export interface QuoteField {
   index:string
   label: string
   max: number
-  stage:"pedagogique"|"impregnation"
+  stage:"pedagogique"|"impregnation"|"entreprise"
   type: "value"|"function"
   callback?: (e: QuoteObject)=> any
 }
@@ -93,6 +93,13 @@ export const centralisatriceFields : QuoteField[] = [
 
 
 export const quoteFields : QuoteField[] = [
+    {
+      index:"stage",
+      label: "Stage",
+      max: 120,
+      stage:"entreprise",
+      type:"value"
+  },
   {
       index:"stage",
       label: "Stage",
@@ -271,7 +278,7 @@ export default function ListStages(props: Props) {
 
   const onSubmitQuotes = async () => {
     try {
-      await api(cookies).get(`/isp_stage/stage-master/submit-quotes/${props.grade !== undefined ? `?dept${props.grade?.id}` : ""}`)
+      await api(cookies).get(`/isp_stage/stage-master/submit-quotes/${props.grade !== undefined ? `?dept${props.grade?.id}` : ""}&stage=${props.stage}`)
       window.location.reload()
     } catch (e) {
 

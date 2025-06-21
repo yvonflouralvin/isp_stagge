@@ -102,7 +102,7 @@ export default async function StageListPage(props: StageListPageProps) {
                     <p>DEPARTEMENT : {current_department_for_print.libelle}</p>
                     <p>Année academique : 2024-2025</p>
                 </div>
-                <p>FEUILLET DE COTATION DU STAGE {props.params.app[2] === "pedagogique" ? `PEDAGOGIQUE`: `IMPREGNATION`}</p>
+                <p>FEUILLET DE COTATION DU STAGE {props.params.app[2] === "pedagogique" ? `PEDAGOGIQUE`: ``} {props.params.app[2] === "entreprise" ? `ENTREPRISE`: ``} {props.params.app[2] === "impregnation" ? `IMPREGNATION`: ``} </p>
             </div>
         }
          
