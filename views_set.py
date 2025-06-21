@@ -563,7 +563,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         if not student:
             return Response({'error': 'Étudiant non trouvé.'}, status=status.HTTP_404_NOT_FOUND)
         
-        student.user.set_password(make_password(os.environ.get("DEFAULT_PASS", "1234")))
+        student.user.password = make_password(os.environ.get("DEFAULT_PASS", "1234"))
         student.user.save()
         return Response({'message': 'Mot de passe réinitialisé avec succès.'}, status=status.HTTP_200_OK)
     
@@ -798,6 +798,8 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             id__in=heads_notnull + members_notnull
         ).distinct()
 
+        students_without_project = students_without_project.order_by("user__name")
+        
         if request.query_params.get('disable_pagination') == '1':
             serializer = StudentSerializer(students_without_project, many=True)
             return Response(serializer.data)
