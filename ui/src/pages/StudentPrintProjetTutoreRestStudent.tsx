@@ -4,7 +4,7 @@ import Image from "next/image";
 import PrintingClientAction from "./reports/director/PrintingClientAction";
 import api from "@/lib/network/api";
 import { cookies } from "next/headers";
-const logo = require('../../assets/images.png')
+const logo = require('../assets/images.png')
 
 
 export default async function StudentPrintProjetTutoreRestStudent(props: PageProps) {

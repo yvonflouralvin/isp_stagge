@@ -209,18 +209,22 @@ class StageMasterViewSet(viewsets.ModelViewSet):
         stagemasters = StageMaster.objects.filter(employee__user__id = user.id)
         stages = Stage.objects.filter(stagemaster__in =  stagemasters, stage=stage)
 
-        stagemaster = StageMaster.objects.first(employee__user__id = user.id)
+        # stagemaster = StageMaster.objects.filter(employee__user__id = user.id)
         # stagemaster.is_quote_submitted = True
         # stagemaster.save()
         dept = request.GET.get('dept', None)
         if dept != None :
             stages = stages.filter(student__promotion__grade__id = dept )
-        for st in stages :
-            if st.quote is not None :
-                st.quote_status = "submitted"
-                st.save()
 
-        return Response(StageSerializer(stages, many=True).data, status=200)
+        for st in stages :
+            # if st.quote is not None :
+            st.quote_status = "submitted"
+            st.save()
+
+        return Response({
+            "stagemaster": StageMasterSerializer(stagemasters, many=True).data,
+            "stages": StageSerializer(stages, many=True).data
+        }, status=200)
 
 
     @action(detail=False, url_path='get-by-user')
@@ -786,7 +790,7 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
     def student_without_project(self, request):
         user = request.user
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
-        if not dept:
+        if not dept :
             return Response([], 404)
 
         students_without_project = Student.objects.filter(promotion__grade=dept.dept, promotion__libelle="L3 (LMD)")
@@ -797,6 +801,8 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
         students_without_project = students_without_project.exclude(
             id__in=heads_notnull + members_notnull
         ).distinct()
+
+        students_without_project = students_without_project.order_by("user__name")
 
         if request.query_params.get('disable_pagination') == '1':
             serializer = StudentSerializer(students_without_project, many=True)
@@ -996,9 +1002,9 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
             dept_officier = dept_officier.first()
             students_without_stage = students_without_stage.filter(promotion__grade__id = dept_officier.dept.id)
 
-        if stage_type == "pedagogique" : 
+        if stage_type == "pedagogique" or stage_type == "entreprise" : 
             students_without_stage = students_without_stage.filter(promotion__libelle = "L3 (LMD)")
-
+        
         if stage_type == "impregnation" : 
             students_without_stage = students_without_stage.filter(promotion__libelle = "L2 (LMD)")
         
