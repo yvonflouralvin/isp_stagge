@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { Pagination, Spinner } from "@nextui-org/react";
+import { Modal, ModalBody, ModalContent, ModalHeader, Pagination, Spinner } from "@nextui-org/react";
 import api from '@/lib/network/api'
 import cookies from '@/lib/shared/cookies';
 import { PrinterIcon, SearchIcon, TableIcon } from 'lucide-react';
@@ -14,10 +14,12 @@ import Link from 'next/link';
 import { Grade } from '/addons/uscitech_academy/ui/src/types';
 import { Input } from '@/components/ui/input';
 import AddStage from './AddStage'; 
+import SearchSelected from '@/components/ui/SearchSelected';
 
 export interface QuoteObject {
   stage: number,
   carnet: number,
+  fiche_prepa: number,
   rapport: number,
   regularite: number,
   tenue: number,
@@ -159,6 +161,13 @@ export const quoteFields : QuoteField[] = [
       type:"value"
   },
   {
+      index:"fiche_prepa",
+      label: "Fiche Préparation",
+      max: 10,
+      stage:"impregnation",
+      type:"value"
+  },
+  {
       index:"lecon",
       label: "Leçon",
       max: 20,
@@ -221,7 +230,7 @@ export default function ListStages(props: Props) {
   const [page, setPage] = React.useState(1)
   const [isLoadingDatas, setIsLoadingDatas] = React.useState(false);
   const [searchParams, setSearchParams] = React.useState("")
-
+  const [isOpen, setIsOpen] = React.useState(false)
   // label.key
 
   const load = async (pageNumber: number) => {
@@ -285,6 +294,13 @@ export default function ListStages(props: Props) {
     }
   }
 
+  const resetQuotes = async () => {
+    await api(cookies).get(`/isp_stage/stage-master/reset-quotes/${props.grade !== undefined ? `?dept${props.grade?.id}` : ""}&stage=${props.stage}&stage_master=${stageMaster}`)
+    window.location.reload()
+  }
+
+  const [stageMaster, setStageMaster] = React.useState<any>(null)
+
   return (
     <>
       <div className='bg-transparent'>
@@ -300,6 +316,12 @@ export default function ListStages(props: Props) {
               <p>Fiche Centralisatrice</p>
             </Link>
           }
+
+          <div className='flex-1 flex items-center justify-end'>
+            <button className='bg-primary text-white px-[10px] py-[5px] rounded-[5px]' onClick={() => setIsOpen(true)}>
+              <p>Réinitialiser Cotes</p>
+            </button>
+          </div>
 
         </div>
       </div>
@@ -360,7 +382,31 @@ export default function ListStages(props: Props) {
         </div>
 
       </div>
+      <Modal isOpen={isOpen} onOpenChange={setIsOpen}  size='lg' backdrop='blur'>
+        <ModalContent>
+          <ModalHeader>
+            <h2>Réinitialiser Cotes</h2>
+          </ModalHeader>
+            <ModalBody>
+              <div className='flex flex-col gap-[10px]'> 
+              <SearchSelected 
+                placeholder='Rechercher le maitre de stage'
+                index='id'
+                url='/isp_stage/stage-master/'
+                render={(e:any)=> e.employee.fullname}
+                onChange={(e:any)=> setStageMaster(e.id)}
+              />
+              {
+                stageMaster !== null && <Button className='bg-primary text-white' onClick={() => resetQuotes()}>Réinitialiser</Button>
+              }
+            </div>
+            </ModalBody> 
+        </ModalContent>
+      </Modal>
     </>
 
+      
   );
 }
+
+

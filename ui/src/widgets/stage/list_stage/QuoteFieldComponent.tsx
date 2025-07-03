@@ -18,6 +18,7 @@ export default function QuoteFieldComponent(props: Props) {
     const [quoteObject, setQuoteObject] = React.useState<QuoteObject>({
         stage: props.stage.quote_object.stage ? props.stage.quote_object.stage : 0,
         carnet: props.stage.quote_object.carnet ? props.stage.quote_object.carnet : 0,
+        fiche_prepa: props.stage.quote_object.fiche_prepa ? props.stage.quote_object.fiche_prepa : 0,
         rapport: props.stage.quote_object.rapport ? props.stage.quote_object.rapport: 0,
         regularite: props.stage.quote_object.regularite ? props.stage.quote_object.regularite: 0,
         tenue: props.stage.quote_object.tenue ? props.stage.quote_object.tenue: 0,
@@ -82,6 +83,7 @@ export default function QuoteFieldComponent(props: Props) {
                                     <input 
                                         value={`${parseFloat(`${
                                             field.index === "carnet" ? quoteObject.carnet : 
+                                            field.index === "fiche_prepa" ? quoteObject.fiche_prepa :
                                             field.index === "rapport" ? quoteObject.rapport : 
                                             field.index === "stage" ? quoteObject.stage : 
                                             field.index === "regularite" ? quoteObject.regularite : 
@@ -122,7 +124,8 @@ export default function QuoteFieldComponent(props: Props) {
                             <p className={classname}>{props.stage.quote_status === "draft" && props.params.app[3] === "cotations" ? `--` : <span>
                                 {
                                     field.type === "value" ? `${parseFloat(`${
-                                    field.index === "carnet" ? quoteObject.carnet : 
+                                    field.index === "carnet" ? quoteObject.carnet :         
+                                    field.index === "fiche_prepa" ? quoteObject.fiche_prepa :
                                     field.index === "rapport" ? quoteObject.rapport : 
                                     field.index === "stage" ? quoteObject.stage : 
                                     field.index === "regularite" ? quoteObject.regularite : 

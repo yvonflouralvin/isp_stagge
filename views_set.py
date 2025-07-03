@@ -226,6 +226,53 @@ class StageMasterViewSet(viewsets.ModelViewSet):
             "stages": StageSerializer(stages, many=True).data
         }, status=200)
 
+    @action(detail=False, url_path='reset-quotes')
+    def reset_quotes(self, request):
+        """
+        Réinitialise les cotes pour un maître de stage spécifique
+        """
+        user: User = request.user
+        
+        # Vérifier les permissions
+        if not user.has_perm('isp_stage.isp_departement_officier') and not user.is_superuser:
+            return Response({"message": "Vous n'avez pas les droits pour réinitialiser les cotes."}, status=403)
+        
+        stage = request.GET.get("stage")
+        stage_master_id = request.GET.get("stage_master")
+        dept = request.GET.get('dept', None)
+        
+        if not stage:
+            return Response({"message": "Le paramètre 'stage' est requis."}, status=400)
+        
+        if not stage_master_id:
+            return Response({"message": "Le paramètre 'stage_master' est requis."}, status=400)
+        
+        try:
+            stage_master = StageMaster.objects.get(id=stage_master_id)
+        except StageMaster.DoesNotExist:
+            return Response({"message": "Maître de stage non trouvé."}, status=404)
+        
+        # Filtrer les stages selon les paramètres
+        stages = Stage.objects.filter(stagemaster=stage_master, stage=stage)
+        
+        if dept:
+            stages = stages.filter(student__promotion__grade__id=dept)
+        
+        # Réinitialiser les cotes
+        updated_count = 0
+        for stage_obj in stages:
+            stage_obj.quote = None
+            stage_obj.quote_object = {}
+            stage_obj.quote_by = None
+            stage_obj.quote_status = "draft"
+            stage_obj.save()
+            updated_count += 1
+        
+        return Response({
+            "message": f"{updated_count} stages ont été réinitialisés avec succès.",
+            "updated_count": updated_count,
+            "stage_master": StageMasterSerializer(stage_master).data
+        }, status=200)
 
     @action(detail=False, url_path='get-by-user')
     def get_by_user(self, request):
