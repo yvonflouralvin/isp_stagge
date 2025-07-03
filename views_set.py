@@ -261,9 +261,9 @@ class StageMasterViewSet(viewsets.ModelViewSet):
         # Réinitialiser les cotes
         updated_count = 0
         for stage_obj in stages:
-            stage_obj.quote = None
-            stage_obj.quote_object = {}
-            stage_obj.quote_by = None
+            # stage_obj.quote = None
+            # stage_obj.quote_object = {}
+            # stage_obj.quote_by = None
             stage_obj.quote_status = "draft"
             stage_obj.save()
             updated_count += 1
