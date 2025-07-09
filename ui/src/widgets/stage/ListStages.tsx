@@ -194,7 +194,7 @@ export const quoteFields : QuoteField[] = [
       max: 100,
       stage:"impregnation",
       type:"function",
-      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`))
+      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`) + parseInt(`${quote.fiche_prepa}`))
   },
   {
       index:"moyenne-peda",
@@ -202,7 +202,7 @@ export const quoteFields : QuoteField[] = [
       max: 20,
       stage:"impregnation",
       type:"function",
-      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`))/5
+      callback: (quote: QuoteObject)=> (parseInt(`${quote.regularite}`) + parseInt(`${quote.tenue}`) + parseInt(`${quote.carnet_stage}`) + parseInt(`${quote.lecon}`) + parseInt(`${quote.rapport_stage}`) + parseInt(`${quote.defense_rapport}`) + parseInt(`${quote.fiche_prepa}`))/6
   }
 ]
 
@@ -316,12 +316,14 @@ export default function ListStages(props: Props) {
               <p>Fiche Centralisatrice</p>
             </Link>
           }
-
-          <div className='flex-1 flex items-center justify-end'>
+          {
+            props.user.permissions.find((p: string) => p === "isp_departement_officier") && <div className='flex-1 flex items-center justify-end'>
             <button className='bg-primary text-white px-[10px] py-[5px] rounded-[5px]' onClick={() => setIsOpen(true)}>
               <p>Réinitialiser Cotes</p>
             </button>
           </div>
+          }
+          
 
         </div>
       </div>

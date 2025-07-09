@@ -378,6 +378,21 @@ class StudentForStageAPIView(APIView):
         stages = Stage.objects.all()
         disable_pagination = request.GET.get('disable_pagination', "0")
 
+        if stage == "entreprise":
+            # Get students with pedagogique stage but no entreprise stage
+            pedagogique_students = Stage.objects.filter(stage="pedagogique").values_list('student_id', flat=True)
+            entreprise_students = Stage.objects.filter(stage="entreprise").values_list('student_id', flat=True)
+            missing_entreprise = set(pedagogique_students) - set(entreprise_students)
+
+            # Create missing entreprise stages
+            for student_id in missing_entreprise:
+                student = Student.objects.get(id=student_id)
+                stage = Stage.objects.create(
+                    stage="entreprise",
+                    student=student
+                )
+                stage.save()
+
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
         if not user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master') and user.is_superuser ==  False:
@@ -732,10 +747,11 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         
         stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
 
-        # Créer un nouveau classeur Excel
-        workbook = Workbook()
-        sheet = workbook.active
-        sheet.title = "Données Etudiants"
+        # Créer un nouveau classeur Excel 2016
+        workbook = Workbook(write_only=True)
+        workbook.iso_dates = True  # Format de date Excel 2016
+        sheet = workbook.create_sheet(title="Données Etudiants")
+        sheet.sheet_properties.filterMode = False  # Désactiver les filtres avancés Excel 2016
 
         # Ajouter des données d'exemple (remplacez ceci par vos données réelles)
         data = [
@@ -756,7 +772,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         nom_fichier = f"stage_students_pedagogique_cotes_{slugify(dept.dept.libelle)}.xlsx"
         chemin_fichier = os.path.join(settings.MEDIA_ROOT, nom_fichier)
 
-        # Enregistrer le fichier Excel
+        # Enregistrer le fichier Excel en format 2016
         workbook.save(chemin_fichier)
 
         # Construire l'URL de téléchargement
