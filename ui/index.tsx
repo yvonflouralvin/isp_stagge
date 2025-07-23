@@ -8,6 +8,8 @@ import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Reports from './src/pages/reports/Reports'; 
 import DirectorReportView from './src/pages/reports/director/DirectorReportView';
+
+
 const config: AppConfig = {
     label: "Etudiants",
     showInMainMenu: true,

@@ -72,6 +72,7 @@ export default function ListStageForStageMaster(props: Props) {
                     {
                 props.params.app[3] === "fiche-centralisatrice" && <div>
                     <ButtonDownloadQuoteFile />
+                    <ButtonDownloadCompletQuoteFile />
                     <AddStageQuoteListPopup {...props} />
                 </div>
             }</>
@@ -114,6 +115,43 @@ const ButtonDownloadQuoteFile = ()=>{
     }
     return <div className="flex gap-[10px] items-center cursor-pointer" onClick={handleDownload}>
     <p>Télécharger le fichier des cotes</p>
+    <DownloadIcon size={13}/>
+</div>
+}
+
+
+const ButtonDownloadCompletQuoteFile = ()=>{
+    ///isp_stage/dept-recherche-officier/generer_excel_student_pedagogique/
+
+    const handleDownload = async ()=>{
+        try{
+            const response = (await api(cookies).get(`isp_stage/dept-recherche-officier/generer_excel_student_pedagogique_full/`)).data
+            /**
+             * Déclenche le téléchargement d'un fichier à partir d'une URL.
+             *
+             * @param {string} url - L'URL du fichier à télécharger.
+             * @param {string} [nomFichier=''] - Le nom de fichier suggéré pour le téléchargement.
+             * Si non spécifié, le navigateur utilisera
+             * généralement le nom de fichier de l'URL.
+             */
+            const lien = document.createElement('a');
+            lien.href = response;
+            lien.download = 'excel_student_pedagogique'; // L'attribut 'download' suggère un nom de fichier
+
+            // Ajouter le lien au corps du document (il n'a pas besoin d'être visible)
+            document.body.appendChild(lien);
+
+            // Simuler un clic sur le lien pour démarrer le téléchargement
+            lien.click();
+
+            // Supprimer le lien du corps du document après le clic
+            document.body.removeChild(lien);
+        }catch(e){
+
+        }
+    }
+    return <div className="flex gap-[10px] items-center cursor-pointer" onClick={handleDownload}>
+    <p>Télécharger le fichier complet des cotes</p>
     <DownloadIcon size={13}/>
 </div>
 }
