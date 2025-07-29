@@ -154,7 +154,7 @@ const config: AppConfig = {
         /**
          * Quand c'est un etudiant qui veut consulter le stage pedagogique
          */
-        else if (_props.params.app.length >= 3 && _props.params.app[2] === "pedagogique" && _props.user.permissions.find(perm => perm === "isp_user_student"))
+        else if (_props.params.app.length >= 3 && ( _props.params.app[2] === "pedagogique" || _props.params.app[2] === "entreprise") && _props.user.permissions.find(perm => perm === "isp_user_student"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
