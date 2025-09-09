@@ -15,9 +15,17 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
     const [memberIds, setMemberIds] = React.useState<Student[]>(props.members)
     const [isSaving, setIsSaving] = React.useState(false)
     const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.director_id && props.projet?.director_id !== null && props.projet?.director_id !== null) ? props.projet?.director_id : undefined)
-
+    const [projet_submition, setProjetSubmition] = React.useState<any > ()
     React.useEffect(() => {
         console.log(props.projet)
+        if(props.projet?.status === "submitted"){
+            const exec = async ()=>{
+                const details =  await api(cookies).get(`/isp_stage/projets-tutores/${props.projet?.id}/details_submission/`)
+                setProjetSubmition(details.data)
+                console.log(details.data)
+            }
+            exec()
+        }
     }, [])
 
     const subject_input = React.useRef<any>()
@@ -182,22 +190,46 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
         }
         {
             props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
-                <>{props.projet?.status === "submitted" && <div className='border border-t p-[20px]'> 
-                    <p className=''>Ce travail a déjà été soumis par le groupe</p>
-                    <ConfirmDialogPopup onConfirm={async () => {
-                    setIsSaving(true)
-                    try {
-                        await api(cookies).post(`/isp_stage/projets-tutores/${props.projet?.id}/cancel_submission/`, {});
-                        window.location.reload();
-                    } catch (e) {
-                        console.error(e)
-                    }
-                    setIsSaving(false)
-                }} label='Annuler la soumission' title='Annuler la soumission'>
-                    <div>
-                        Vous êtes sur le point d'annuler la soumission de ce travail, l'étudiant devra commencer la soumission.
+                <>{projet_submition && <div className='border border-t p-[20px] mt-[20px]'>
+                    <p className='font-semibold text-lg'>Travail Soumis</p>
+                    <p className='text-gray-600 mt-1'>Ce travail a déjà été soumis par le groupe.</p>
+
+                    <div className='border-t border-gray-200 mt-4 pt-4'>
+                        <h3 className='text-md font-semibold text-gray-800'>Détails de la soumission</h3>
+                        <div className='mt-2'>
+                            <p className='text-gray-500 font-light text-sm'>Sujet final</p>
+                            <p className='font-semibold text-md'>{projet_submition?.final_subject}</p>
+                        </div>
+                        <div className='mt-3'>
+                            <p className='text-gray-500 font-light text-sm'>Membres ayant soumis</p>
+                            <div className='pl-2'>
+                                {
+                                    projet_submition.members.map((meb: Student) => {
+                                        return <div key={meb.id}>
+                                            <p className='text-sm'>- {meb.user.name} {meb.user.last_name} {meb.user.first_name} {props.projet?.head_id === meb.id ? "(Chef de groupe)" : ""}</p>
+                                        </div>
+                                    })
+                                }
+                            </div>
+                        </div>
                     </div>
-                </ConfirmDialogPopup>
+
+                    <div className='mt-4'>
+                        <ConfirmDialogPopup onConfirm={async () => {
+                            setIsSaving(true)
+                            try {
+                                await api(cookies).post(`/isp_stage/projets-tutores/${props.projet?.id}/cancel_submission/`, {});
+                                window.location.reload();
+                            } catch (e) {
+                                console.error(e)
+                            }
+                            setIsSaving(false)
+                        }} label='Annuler la soumission' title='Annuler la soumission'>
+                            <div>
+                                Vous êtes sur le point d'annuler la soumission de ce travail, l'étudiant devra commencer la soumission.
+                            </div>
+                        </ConfirmDialogPopup>
+                    </div>
                 </div>
                 }  </>
             </>}

@@ -19,9 +19,7 @@ export type ProjetTutore =  {
     status: "in_progress" | "submitted" | "validated" | "rejected"
 }
 
-export type ProjetTutoreSubmitted =  {
-    
-}
+
 
 export interface StudentMemoire {
     id: string

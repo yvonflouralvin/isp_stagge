@@ -263,6 +263,40 @@ def submit_projet_tutore(request, projet_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def projet_tutore_submission_details(request, projet_id):
+    """
+    Vue pour annuler la soumission d'un projet tutoré.
+    """
+    # # Vérifier si l'utilisateur a la permission (ex: officier du département)
+    # if not request.user.has_perm('isp_stage.isp_departement_officier'):
+    #     return Response(
+    #         {"error": "Vous n'avez pas la permission d'annuler cette soumission."},
+    #         status=status.HTTP_403_FORBIDDEN
+    #     )
+
+    try:
+        projet = ProjetTutore.objects.get(pk=projet_id)
+    except ProjetTutore.DoesNotExist:
+        return Response({"error": "Projet non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Trouver et supprimer la soumission associée
+    submission = ProjetTutoreSubmission.objects.filter(projet=projet)
+    # if submission.exists():
+    #     submission.delete()
+
+    # # Mettre à jour le statut du projet
+    # projet.status = 'in_progress'
+    # projet.save()
+
+    return Response(
+        ProjetTutoreSubmissionDetailSerializer(submission.first()).data,
+        status=status.HTTP_200_OK
+    )
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cancel_projet_tutore_submission(request, projet_id):

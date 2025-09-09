@@ -31,4 +31,5 @@ urlpatterns = [
     path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
     path('projets-tutores/<uuid:projet_id>/submit/', views.submit_projet_tutore, name='submit_projet_tutore'),
     path('projets-tutores/<str:projet_id>/cancel_submission/', views.cancel_projet_tutore_submission, name='cancel_projet_tutore_submission'),
+    path('projets-tutores/<str:projet_id>/details_submission/', views.projet_tutore_submission_details, name='projet_tutore_submission_details'),
 ]
