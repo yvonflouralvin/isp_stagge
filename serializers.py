@@ -181,3 +181,20 @@ class ProjetTutoreSubmissionSerializer(serializers.Serializer):
         if member_count != len(value):
             raise serializers.ValidationError("Un ou plusieurs IDs de membre sont invalides.")
         return value
+
+
+class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):
+    projet = ProjetTutoreSerializer(read_only=True)
+    submitter = StudentSerializer(read_only=True)
+    members = StudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProjetTutoreSubmission
+        fields = [
+            'id',
+            'projet',
+            'submitter',
+            'submission_date',
+            'final_subject',
+            'members'
+        ]

@@ -127,39 +127,53 @@ const ListAllProjetTutores = (props: ListAllProjetTutoresProps) => {
 interface ListAllSubmittedProjetTutoreProps extends Props {
     onLoaded: (data: ListViewLoadData) => any
 }
+
+// Définir un type pour la soumission pour une meilleure autocomplétion
+interface ProjetTutoreSubmission {
+    id: string;
+    final_subject: string;
+    submission_date: string;
+    projet: ProjetTutore; // Utilise le type ProjetTutore existant
+    submitter: Student;
+    members: Student[];
+}
+
 const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )=>{
     return   <ListView
         {...props}
+        onLoaded={props.onLoaded}
         showBreadcrumb={false}
         breadcrumb={[]}
         showTitle={false}
         renderColumns={() => {
-            return <div className="sm:flex hidden  flex-col md:flex-row gap-[5px] font-light  my-[3px] rounded w-full">
-                <p>Membres du groupe</p>
-                <p className="w-[100%] sm:w-[50%]">Sujet</p>
-                {/* <p className="w-[25%]">Professeur</p> */}
-                <div className='flex flex-col sm:flex-row items-center gap-[5px] w-[50%]'>
-                    {/* <p className="w-[50%]">Chef de groupe</p> */}
-                    <p className="w-[50%]">Directeur</p>
+            return <div className="sm:flex hidden flex-col md:flex-row gap-[5px] font-light my-[3px] rounded w-full text-sm text-gray-500">
+                <p className="w-full sm:w-[50%]">Sujet Final</p>
+                <div className='flex flex-col sm:flex-row items-center gap-[5px] w-full sm:w-[50%]'>
+                    <p className="w-full sm:w-[50%]">Chef de groupe</p>
+                    <p className="w-full sm:w-[50%]">Directeur</p>
                 </div>
             </div>
         }}
-        renderRow={(subject: ProjetTutore) => {
-            return <Link href={`/apps/isp_stage/projets-tutores/${subject.id}`} key={subject.id} className="duration-300 flex flex-col md:flex-row gap-[5px] text-[13px] text-gray-500 px-[20px] py-[6px] my-[3px] cursor-pointer hover:bg-[0,0,0,0.02] w-full">
-                <p className="w-[100%] md:w-[50%]">{subject.subject}</p>
-                {/* <p className="w-[50%]">{subject.teacher}</p> */}
-                <div className='flex w-[100%]  md:w-[50%] flex-col  sm:flex-row items-start sm:items-center gap-[5px]'>
-                    <p className='sm:hidden flex text-[13px] text-gray-400 mt-[7px] font-semibold'>Chef de groupe</p>
-                    <p className="w-[100%] sm:w-[50%]">{`${subject.head.user.name} ${subject.head.user.last_name} ${subject.head.user.first_name}`}</p>
-                    <p className='sm:hidden flex text-[13px] text-gray-400 mt-[7px] font-semibold'>Directeur</p>
-                    <p className="w-[100%] sm:w-[50%]">{`${subject.director ? subject.director?.employee.fullname : "--"}`}</p>
+        renderRow={(submission: ProjetTutoreSubmission) => {
+            // Les données viennent maintenant de l'objet `submission.projet`
+            const projet = submission.projet;
+            return <Link href={`/apps/isp_stage/projets-tutores/${projet.id}`} key={submission.id} className="duration-300 flex flex-col md:flex-row gap-[5px] text-[13px] text-gray-600 px-[20px] py-[8px] my-[3px] cursor-pointer hover:bg-gray-50 w-full border-b border-gray-100">
+                
+                <p className="w-full md:w-[50%] font-semibold">{submission.final_subject}</p>
+                <div className='flex w-full md:w-[50%] flex-col sm:flex-row items-start sm:items-center gap-[5px]'>
+                    <div className="w-full sm:w-[50%]">
+                        <p className='sm:hidden text-xs text-gray-400 mt-1'>Chef de groupe</p>
+                        <p>{`${projet.head.user.name} ${projet.head.user.last_name} ${projet.head.user.first_name}`}</p>
+                    </div>
+                    <div className="w-full sm:w-[50%]">
+                        <p className='sm:hidden text-xs text-gray-400 mt-1'>Directeur</p>
+                        <p>{`${projet.director ? projet.director?.employee.fullname : "--"}`}</p>
+                    </div>
                 </div>
             </Link>
         }}
-        subtitle={(projects: ProjetTutore[]) => `${projects.length} projets`}
-        title='Projets Tutorés'
-        url={`/isp_stage/projets-tutores/`}
+        subtitle={(submissions: ProjetTutoreSubmission[]) => `${submissions.length} projets soumis`}
+        title='Projets Tutorés Soumis'
+        url={`/isp_stage/projets-tutores-soumissions/`}
     />
-
-</>
 }

@@ -1420,3 +1420,39 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             details[dept_id]["directeurs"].append(DirecteurTravauxSerializer(directeursTravail).data)
         
         return Response(list(details.values()), status=200)
+
+
+class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = ProjetTutoreSubmission.objects.all().order_by('-submission_date')
+    serializer_class = ProjetTutoreSubmissionDetailSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        "final_subject", 
+        "projet__subject", 
+        "submitter__user__name", 
+        "submitter__user__first_name", 
+        "submitter__user__last_name"
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        if user.is_superuser:
+            return queryset
+
+        if user.has_perm('isp_stage.isp_departement_officier'):
+            dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user).first()
+            if dept_officier:
+                # Filtrer les soumissions dont le projet est rattaché au département de l'officier
+                return queryset.filter(projet__head__promotion__grade=dept_officier.dept)
+            else:
+                return ProjetTutoreSubmission.objects.none()
+
+        # Les étudiants ne voient que leurs propres soumissions
+        student = Student.objects.filter(user=user).first()
+        if student:
+            return queryset.filter(members=student)
+
+        return ProjetTutoreSubmission.objects.none()
