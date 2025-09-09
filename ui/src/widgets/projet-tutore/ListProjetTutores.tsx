@@ -124,6 +124,7 @@ const ListAllProjetTutores = (props: ListAllProjetTutoresProps) => {
 }
 
 
+import { FileDown } from 'lucide-react';
 interface ListAllSubmittedProjetTutoreProps extends Props {
     onLoaded: (data: ListViewLoadData) => any
 }
@@ -139,7 +140,46 @@ interface ProjetTutoreSubmission {
 }
 
 const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )=>{
-    return   <ListView
+    const [isExporting, setIsExporting] = React.useState(false);
+
+    const handleExport = async () => {
+        setIsExporting(true);
+        try {
+            const response = await api(cookies).get(`/isp_stage/projets-tutores-soumissions/export-excel/`, {
+                responseType: 'blob', // Important pour recevoir un fichier
+            });
+
+            // Créer un lien temporaire pour déclencher le téléchargement
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', 'projets-soumis.xlsx');
+            document.body.appendChild(link);
+            link.click();
+
+            // Nettoyage
+            link.parentNode?.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error("Erreur lors de l'exportation Excel:", error);
+            // Idéalement, afficher une notification à l'utilisateur ici
+        } finally {
+            setIsExporting(false);
+        }
+    };
+    return  <>
+    <div className='flex justify-end mb-2'>
+        <button 
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm py-2 px-4 rounded-lg disabled:opacity-50"
+        >
+            {isExporting ? 'Exportation...' : 'Exporter en Excel'}
+            <FileDown size={16} />
+        </button>
+    </div>
+    <ListView
         {...props}
         onLoaded={props.onLoaded}
         showBreadcrumb={false}
@@ -165,21 +205,11 @@ const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )
                 </div>
                 <p className="w-full sm:w-[50%] font-semibold">{submission.final_subject}</p>
                 <p className='w-full sm:w-[20%]'>{`${projet.director ? projet.director?.employee.fullname : "--"}`}</p>
-
-                {/* <div className='flex w-full md:w-[50%] flex-col sm:flex-row items-start sm:items-center gap-[5px]'>
-                    <div className="w-full sm:w-[50%]">
-                        <p className='sm:hidden text-xs text-gray-400 mt-1'>Chef de groupe</p>
-                        <p>{`${projet.head.user.name} ${projet.head.user.last_name} ${projet.head.user.first_name}`}</p>
-                    </div>
-                    <div className="w-full sm:w-[50%]">
-                        <p className='sm:hidden text-xs text-gray-400 mt-1'>Directeur</p>
-                        <p>{`${projet.director ? projet.director?.employee.fullname : "--"}`}</p>
-                    </div>
-                </div> */}
             </Link>
         }}
         subtitle={(submissions: ProjetTutoreSubmission[]) => `${submissions.length} projets soumis`}
         title='Projets Tutorés Soumis'
         url={`/isp_stage/projets-tutores-soumissions/`}
     />
+</>
 }

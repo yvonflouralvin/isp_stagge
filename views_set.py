@@ -1422,6 +1422,10 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
         return Response(list(details.values()), status=200)
 
 
+from django.http import HttpResponse
+from openpyxl import Workbook
+from io import BytesIO
+
 class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
     queryset = ProjetTutoreSubmission.objects.all().order_by('-submission_date')
     serializer_class = ProjetTutoreSubmissionDetailSerializer
@@ -1445,14 +1449,52 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
         if user.has_perm('isp_stage.isp_departement_officier'):
             dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user).first()
             if dept_officier:
-                # Filtrer les soumissions dont le projet est rattaché au département de l'officier
                 return queryset.filter(projet__head__promotion__grade=dept_officier.dept)
             else:
                 return ProjetTutoreSubmission.objects.none()
 
-        # Les étudiants ne voient que leurs propres soumissions
         student = Student.objects.filter(user=user).first()
         if student:
             return queryset.filter(members=student)
 
         return ProjetTutoreSubmission.objects.none()
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        queryset = self.get_queryset()
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Projets Tutorés Soumis"
+
+        headers = [
+            "Sujet Final", "Date de Soumission", "Chef de Groupe",
+            "Email Chef de Groupe", "Directeur", "Membres du Groupe"
+        ]
+        sheet.append(headers)
+
+        for submission in queryset:
+            members_list = ", ".join([f"{m.user.name} {m.user.last_name}" for m in submission.members.all()])
+            director_name = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
+            row = [
+                submission.final_subject,
+                submission.submission_date.strftime("%d/%m/%Y %H:%M"),
+                f"{submission.projet.head.user.name} {submission.projet.head.user.last_name}",
+                submission.projet.head.user.email,
+                director_name,
+                members_list
+            ]
+            sheet.append(row)
+
+        virtual_workbook = BytesIO()
+        workbook.save(virtual_workbook)
+        virtual_workbook.seek(0)
+
+        response = HttpResponse(
+            virtual_workbook.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="projets-soumis.xlsx"'
+        
+        return response
+
