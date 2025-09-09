@@ -16,9 +16,9 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
     const [isSaving, setIsSaving] = React.useState(false)
     const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.director_id && props.projet?.director_id !== null && props.projet?.director_id !== null) ? props.projet?.director_id : undefined)
 
-    React.useEffect(()=>{
+    React.useEffect(() => {
         console.log(props.projet)
-    },[])
+    }, [])
 
     const subject_input = React.useRef<any>()
 
@@ -72,7 +72,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                                         {
                                             props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
                                                 {
-                                                    (isSaving === true  && props.projet?.status !== "submitted")? <Spinner /> : <ConfirmDialogPopup onConfirm={async () => {
+                                                    (isSaving === true) ? <Spinner /> : <>{props.projet?.status !== "submitted" && <ConfirmDialogPopup onConfirm={async () => {
                                                         setIsSaving(true)
                                                         try {
                                                             const datas: any = {
@@ -92,6 +92,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                                                             Vous êtes sur le point de retirer le directeur de ce étudiant
                                                         </div>
                                                     </ConfirmDialogPopup>
+                                                    }  </>
                                                 }
                                             </>
                                         }
@@ -129,14 +130,14 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                 (props.for === "create" && props.department_settings !== undefined && props.department_settings.max_tutore_project_member_group > memberIds.length) && <div className='mt-[15px]'>
                     {
                         ((props.projet !== null && props.projet?.status !== "submitted")) && <ButtonAddMember onChange={(e: Student) => {
-                        if (memberIds.find(mid => mid.id === e.id)) return;
-                        setMemberIds([
-                            ...memberIds,
-                            e
-                        ])
-                    }} />
+                            if (memberIds.find(mid => mid.id === e.id)) return;
+                            setMemberIds([
+                                ...memberIds,
+                                e
+                            ])
+                        }} />
                     }
-                    
+
                 </div>
             }
 
@@ -145,7 +146,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
         {
             props.for === "create" && <div className='mt-[15px] border-t border-inherent flex w-full justify-end'>
                 {
-                    isSaving === false ? <>{ ((props.projet !== null && props.projet?.status !== "submitted")) && <button onClick={handleSave} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Enregistrer toutes les modidications</button> } </> : <Spinner size='sm' />
+                    isSaving === false ? <>{((props.projet !== null && props.projet?.status !== "submitted")) && <button onClick={handleSave} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Enregistrer toutes les modidications</button>} </> : <Spinner size='sm' />
                 }
             </div>
         }
@@ -154,21 +155,21 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
             props.projet !== null && props.projet?.status !== "submitted" && <>
                 {
                     props.user.permissions.find((perm: string) => perm === "isp_departement_officier") && <div className='mt-[10px]'>
-                        <OnDeleteButton 
-                        back_url='/apps/isp_stage/projets-tutores'
-                        message={`Vous ête sur le point de supprimer le projet tutoré de cet étudiant ainsi que tout le groupe ?`}
-                        url={`/isp_stage/projets-tutores/${props.projet?.id}/`}
-                    />
+                        <OnDeleteButton
+                            back_url='/apps/isp_stage/projets-tutores'
+                            message={`Vous ête sur le point de supprimer le projet tutoré de cet étudiant ainsi que tout le groupe ?`}
+                            url={`/isp_stage/projets-tutores/${props.projet?.id}/`}
+                        />
                     </div>
                 }
             </>
         }
-        
+
 
         {
             props.user.permissions.find((perm: string) => perm === "isp_user_student") && <div className='mt-[10px]'>
                 {
-                    props.projet && props.projet.status !== "submitted" && <ButtonSubmitProjetTutore 
+                    props.projet && props.projet.status !== "submitted" && <ButtonSubmitProjetTutore
                         projetId={props.projet?.id}
                         members={memberIds}
                         initialSubject={props.projet?.subject ?? ""}
@@ -176,9 +177,30 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                             window.location.reload();
                         }}
                     />
-                }            
+                }
             </div>
         }
+        {
+            props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
+                <>{props.projet?.status === "submitted" && <div className='border border-t p-[20px]'> 
+                    <p className=''>Ce travail a déjà été soumis par le groupe</p>
+                    <ConfirmDialogPopup onConfirm={async () => {
+                    setIsSaving(true)
+                    try {
+                        await api(cookies).post(`/isp_stage/projets-tutores/${props.projet?.id}/cancel_submission/`, {});
+                        window.location.reload();
+                    } catch (e) {
+                        console.error(e)
+                    }
+                    setIsSaving(false)
+                }} label='Annuler la soumission' title='Annuler la soumission'>
+                    <div>
+                        Vous êtes sur le point d'annuler la soumission de ce travail, l'étudiant devra commencer la soumission.
+                    </div>
+                </ConfirmDialogPopup>
+                </div>
+                }  </>
+            </>}
 
     </div>
 }
@@ -237,9 +259,9 @@ const ButtonSubmitProjetTutore = (
     const [error, setError] = React.useState<string | null>(null)
 
     const handleToggleMember = (memberId: string) => {
-        setSelectedMemberIds(prev => 
-            prev.includes(memberId) 
-                ? prev.filter(id => id !== memberId) 
+        setSelectedMemberIds(prev =>
+            prev.includes(memberId)
+                ? prev.filter(id => id !== memberId)
                 : [...prev, memberId]
         );
     };
@@ -258,7 +280,7 @@ const ButtonSubmitProjetTutore = (
             };
             // Note: L'URL de l'API '/submit/' est une convention. Adaptez-la si nécessaire.
             await api(cookies).post(`/isp_stage/projets-tutores/${props.projetId}/submit/`, payload);
-            
+
             setIsOpen(false);
             props.onSubmitted();
 
@@ -281,9 +303,9 @@ const ButtonSubmitProjetTutore = (
                     <div className='mt-[15px] flex flex-col gap-4'>
                         <div>
                             <p className="text-gray-600 text-sm font-medium">Sujet final du projet tutoré</p>
-                            <input 
-                                type="text" 
-                                className='border border-inherent rounded outline-none w-full bg-transparent text-[13px] p-2' 
+                            <input
+                                type="text"
+                                className='border border-inherent rounded outline-none w-full bg-transparent text-[13px] p-2'
                                 value={finalSubject}
                                 onChange={(e) => setFinalSubject(e.target.value)}
                             />
@@ -294,8 +316,8 @@ const ButtonSubmitProjetTutore = (
                                 {
                                     props.members.map((m: Student) => (
                                         <div key={`${m.id}`} className='flex items-center gap-[10px]'>
-                                            <input 
-                                                type='checkbox' 
+                                            <input
+                                                type='checkbox'
                                                 className='h-4 w-4 rounded'
                                                 checked={selectedMemberIds.includes(m.id)}
                                                 onChange={() => handleToggleMember(m.id)}
@@ -306,11 +328,11 @@ const ButtonSubmitProjetTutore = (
                                 }
                             </div>
                         </div>
-                        
+
                         {error && <p className="text-red-500 text-sm">{error}</p>}
 
                         <div className='flex justify-end items-center gap-3 mt-4 mb-2'>
-                             <button onClick={() => setIsOpen(false)} className='text-gray-600 text-[13px] py-[4px] px-[15px] rounded'>Annuler</button>
+                            <button onClick={() => setIsOpen(false)} className='text-gray-600 text-[13px] py-[4px] px-[15px] rounded'>Annuler</button>
                             <button onClick={submit} disabled={isSubmitting} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded flex items-center'>
                                 {isSubmitting ? <Spinner size='sm' color='white' /> : "Confirmer la soumission"}
                             </button>
