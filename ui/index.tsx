@@ -8,6 +8,8 @@ import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Reports from './src/pages/reports/Reports'; 
 import DirectorReportView from './src/pages/reports/director/DirectorReportView';
+
+
 const config: AppConfig = {
     label: "Etudiants",
     showInMainMenu: true,
@@ -152,12 +154,12 @@ const config: AppConfig = {
         /**
          * Quand c'est un etudiant qui veut consulter le stage pedagogique
          */
-        else if (_props.params.app.length >= 3 && _props.params.app[2] === "pedagogique" && _props.user.permissions.find(perm => perm === "isp_user_student"))
+        else if (_props.params.app.length >= 3 && ( _props.params.app[2] === "pedagogique" || _props.params.app[2] === "entreprise") && _props.user.permissions.find(perm => perm === "isp_user_student"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
                     try {
-                        const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
+                        const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/?stage=${_props.params.app[2]}`)).data;
                         return await StageDetailsPage({
                             ..._props,
                             params: {
@@ -169,6 +171,7 @@ const config: AppConfig = {
                             }
                         })
                     } catch (e) {
+                        console.log(e)
                         return redirect('/dashboard');
                     }
                 }

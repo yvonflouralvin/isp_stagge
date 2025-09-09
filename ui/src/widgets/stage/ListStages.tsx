@@ -32,7 +32,9 @@ export interface QuoteObject {
   soutenance: number,
   lecture: number,
   central_total: number,
-  central_moyenne: number
+  central_moyenne: number,
+  stage_master_entreprise: number,
+  lecture_document: number
 }
 
 export interface QuoteField {
@@ -90,13 +92,42 @@ export const centralisatriceFields : QuoteField[] = [
       stage:"pedagogique",
       type:"function",
       callback: (quote : QuoteObject) => (parseInt(`${quote.seminaire}`) + ((parseInt(`${quote.stage}`) + parseInt(`${quote.carnet}`) + parseInt(`${quote.rapport}`))/4) + parseInt(`${quote.soutenance}`) + parseInt(`${quote.lecture}`))/5
-  }
+  },
+  {
+      index:"stage_master_entreprise_centralized",
+      label: "Maitre de Stage",
+      max: 30,
+      stage:"entreprise",
+      type:"function",
+      callback: (quote : QuoteObject) => (parseInt(`${quote.stage_master_entreprise}`) / 4)
+  },
+  {
+    index:"lecture_document",
+    label: "Lecture des documents",
+    max: 70,
+    stage:"entreprise",
+    type:"value"
+  },{
+    index:"total_entreprise",
+    label: "Total",
+    max: 100,
+    stage:"entreprise",
+    type:"function",
+    callback: (quote : QuoteObject) => (parseInt(`${quote.stage_master_entreprise}`) / 4) + parseInt(`${quote.lecture_document}`)
+},{
+  index:"moyenne_entreprise",
+  label: "Moyenne",
+  max: 20,
+  stage:"entreprise",
+  type:"function",
+  callback: (quote : QuoteObject) => ((parseInt(`${quote.stage_master_entreprise}`) / 4) + parseInt(`${quote.lecture_document}`)) / 5
+}
 ]
 
 
 export const quoteFields : QuoteField[] = [
     {
-      index:"stage",
+      index:"stage_master_entreprise",
       label: "Stage",
       max: 120,
       stage:"entreprise",
@@ -312,7 +343,7 @@ export default function ListStages(props: Props) {
             <p>Cotations</p>
           </Link>
           {
-            (props.stage === "pedagogique" && props.user.permissions.find((p: string) => p === "isp_departement_officier") )&& <Link href={`/apps/isp_stage/${props.stage}/fiche-centralisatrice`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "fiche-centralisatrice" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
+            ((props.stage === "pedagogique"  || props.stage === "entreprise" )&& props.user.permissions.find((p: string) => p === "isp_departement_officier") )&& <Link href={`/apps/isp_stage/${props.stage}/fiche-centralisatrice`} className={`duration-300 cursor-pointer px-[15px] py-[5px] border-b-[3px] ${props.params.app[3] === "fiche-centralisatrice" ? "font-bold  border-b-primary text-primary text-[13px]" : "text-gray-500  text-[12px] font-normal border-transparent"}`}>
               <p>Fiche Centralisatrice</p>
             </Link>
           }

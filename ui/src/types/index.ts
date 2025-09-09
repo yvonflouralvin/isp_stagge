@@ -1,9 +1,7 @@
 import {
     Grade,
-    Student,
-    Teacher
-} from '/addons/uscitech_academy/ui/src/types'
-import { User } from "@/lib/shared/types"
+    Student
+} from '/addons/uscitech_academy/ui/src/types' 
 import {
     Employee
 } from '/addons/hr/ui/src/types'

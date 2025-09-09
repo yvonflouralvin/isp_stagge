@@ -31,7 +31,9 @@ export default function QuoteFieldComponent(props: Props) {
         soutenance: props.stage.quote_object.soutenance ? props.stage.quote_object.soutenance: 0,
         lecture: props.stage.quote_object.lecture ? props.stage.quote_object.lecture: 0,
         central_total: props.stage.quote_object.central_total ? props.stage.quote_object.central_total: 0,
-        central_moyenne: props.stage.quote_object.central_moyenne ? props.stage.quote_object.central_moyenne: 0
+        central_moyenne: props.stage.quote_object.central_moyenne ? props.stage.quote_object.central_moyenne: 0,
+        lecture_document: props.stage.quote_object.lecture_document ? props.stage.quote_object.lecture_document: 0,
+        stage_master_entreprise : props.stage.quote_object.stage_master_entreprise ? props.stage.quote_object.stage_master_entreprise: 0,
     }) 
 
     const [isSavingQuote, setIsSavingQuote] = React.useState(false)
@@ -97,7 +99,9 @@ export default function QuoteFieldComponent(props: Props) {
                                             field.index === "soutenance" ? quoteObject.soutenance : 
                                             field.index === "lecture" ? quoteObject.lecture : 
                                             field.index === "central_total" ? quoteObject.central_total : 
-                                            field.index === "central_moyenne" ? quoteObject.central_total : 0 
+                                            field.index === "central_moyenne" ? quoteObject.central_total : 
+                                            field.index === "lecture_document" ? quoteObject.lecture_document : 
+                                            field.index === "stage_master_entreprise" ? quoteObject.stage_master_entreprise : 0 
                                         }`)}`} 
                                         onChange={(e: any) => {
                                             if(parseFloat(e.target.value) > field.max) setQuoteObject({...quoteObject, [field.index]: field.max})
@@ -139,7 +143,9 @@ export default function QuoteFieldComponent(props: Props) {
                                     field.index === "soutenance" ? quoteObject.soutenance : 
                                     field.index === "lecture" ? quoteObject.lecture : 
                                     field.index === "central_total" ? quoteObject.central_total : 
-                                    field.index === "central_moyenne" ? quoteObject.central_total : 0 
+                                    field.index === "central_moyenne" ? quoteObject.central_total : 
+                                    field.index === "lecture_document" ? quoteObject.lecture_document : 
+                                    field.index === "stage_master_entreprise" ? quoteObject.stage_master_entreprise : 0
                                 }
                                 `)}` : `${field.callback !== undefined ? field.callback(quoteObject) : 0}`
                                 }    

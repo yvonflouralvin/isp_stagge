@@ -118,9 +118,26 @@ class StageViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path="get-by-user")
     def get_by_user(self, request):
         user = request.user
-        queryset = Stage.objects.filter(student__user__id=user.id).first()
-        if queryset:
-            return Response(StageSerializer(queryset).data)
+        stage_type = request.GET.get('stage', None)
+        queryset = Stage.objects.filter(student__user__id=user.id)
+        if stage_type is not None:
+            try:
+                if len(queryset) == 1 :
+                    tmp = queryset.first()
+                    if tmp.stage == 'pedagogique' :
+                        _stage = Stage.objects.create(
+                            stage="entreprise",
+                            student=tmp.student
+                        )
+                        _stage.save()
+                        queryset = Stage.objects.filter(student__user__id=user.id)
+            except:
+                pass
+            
+            queryset = queryset.filter(stage=stage_type)
+        stage_instance = queryset.first()
+        if stage_instance:
+            return Response(StageSerializer(stage_instance).data)
         return Response(None, 404)
 
 
@@ -731,6 +748,161 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
             return paginator.get_paginated_response(StudentSerializer(paginated_students, many=True).data)
         else:
             return Response(StudentSerializer(students, many=True).data)
+
+    
+
+    @action(detail=False, methods=['get'])
+    def generer_excel_student_pedagogique_full(self, request):
+        """
+        Génère un fichier Excel, l'enregistre dans le répertoire de médias
+        et redirige l'utilisateur vers une URL de téléchargement.
+        """
+        def get_attr(obj, key, default=0):
+            if isinstance(obj, dict):
+                return float(obj.get(key, default))
+            return float(getattr(obj, key, default))
+
+        stage = "pedagogique"
+
+        user = request.user
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
+
+        if not dept:
+            return Response([], 404)
+        
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+
+        # Créer un nouveau classeur Excel 2016
+        workbook = Workbook(write_only=True)
+        workbook.iso_dates = True  # Format de date Excel 2016
+        sheet = workbook.create_sheet(title="Données Etudiants")
+        sheet.sheet_properties.filterMode = False  # Désactiver les filtres avancés Excel 2016
+
+        data = []
+
+        if stage == "pedagogique" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Seminaire de Stage A/20",
+                "Maitre de Stage B/40",
+                "Soutenance D/20",
+                "Lecture Documents E/20",
+                "Total Général /100",
+                "Moyenne /20.",
+            ])
+            
+            
+            i = 1
+            for stage in stages :
+                i+=1
+                quote = stage.quote_object 
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}',
+                    f'{get_attr(quote, 'seminaire',0)}',
+                    f'{((get_attr(quote, 'stage',0)+get_attr(quote, 'carnet',0)+get_attr(quote, 'rapport',0))/4)}',
+                    f'{get_attr(quote, 'soutenance',0)}',
+                    f'{get_attr(quote, 'lecture',0)}',
+                    f'=E{i}+F{i}+G{i}+H{i}',
+                    f'=(E{i}+F{i}+G{i}+H{i})/5',
+                    # f'{((get_attr(quote, 'seminaire',0)+get_attr(quote, 'soutenance',0)+get_attr(quote, 'lecture',0)+float((get_attr(quote, 'stage',0)+get_attr(quote, 'carnet',0)+get_attr(quote, 'rapport',0))/4)))}',
+                    # f'{(float(get_attr(quote, 'seminaire',0)+get_attr(quote, 'soutenance',0)+get_attr(quote, 'lecture',0)+float((get_attr(quote, 'stage',0)+get_attr(quote, 'carnet',0)+get_attr(quote, 'rapport',0))/4))/5)}'
+                ])
+
+        if stage == "impregnation" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Régularité /10"
+                "Tenue /10"
+                "Carnet de Stage /10"
+                "Fiche Préparation /10"
+                "Leçon /20"
+                "Rapport /20"
+                "Défense Rapport /20",
+                "Total /100",
+                "Moyenne /20",
+            ]) 
+
+            i = 1
+            for stage in stages :
+                i+=1
+                quote = stage.quote_object 
+
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}',
+                    f'{get_attr(quote, 'regularite', 0)}',
+                    f'{get_attr(quote, 'tenue', 0)}',
+                    f'{get_attr(quote, 'carnet_stage', 0)}',
+                    f'{get_attr(quote, 'fiche_prepa', 0)}',
+                    f'{get_attr(quote, 'lecon', 0)}',
+                    f'{get_attr(quote, 'rapport_stage', 0)}',
+                    f'{get_attr(quote, 'defense_rapport', 0)}', 
+                    f'=E{i}+F{i}+G{i}+H{i}+I{i}+J{i}+K{i}',
+                    f'=(E{i}+F{i}+G{i}+H{i}+I{i}+J{i}+K{i})/5',
+                    # f'{((get_attr(quote, 'regularite', 0)+get_attr(quote, 'tenue', 0)+get_attr(quote, 'carnet_stage', 0)+get_attr(quote, 'fiche_prepa', 0)+get_attr(quote, 'lecon', 0)+get_attr(quote, 'rapport_stage', 0)+get_attr(quote, 'defense_rapport', 0)))}',
+                    # f'{((get_attr(quote, 'regularite', 0)+get_attr(quote, 'tenue', 0)+get_attr(quote, 'carnet_stage', 0)+get_attr(quote, 'fiche_prepa', 0)+get_attr(quote, 'lecon', 0)+get_attr(quote, 'rapport_stage', 0)+get_attr(quote, 'defense_rapport', 0))/5)}',
+                ])
+
+        if stage == "entreprise" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Maitre de Stage /30"
+                "Lecture des documents /70" ,
+                "Total /100",
+                "Moyenne /20",
+            ]) 
+            i = 1
+            for stage in stages :
+                i += 1
+                quote = stage.quote_object 
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}', 
+                    f'{get_attr(quote, 'stage_master_entreprise_centralized', 0)}',
+                    f'{get_attr(quote, 'lecture_document', 0)}', 
+                    f'=E{i}+F{i}',
+                    f'=(E{i}+F{i})/5',
+                    # f'{((get_attr(quote, 'quote_object.stage_master_entreprise_centralized', 0)+get_attr(quote, 'lecture_document', 0)))}',
+                    # f'{((get_attr(quote, 'quote_object.stage_master_entreprise_centralized', 0)+get_attr(quote, 'lecture_document', 0))/5)}',
+                ])
+
+
+        # Ajouter des données d'exemple (remplacez ceci par vos données réelles)
+        
+
+        
+
+        for row_data in data:
+            sheet.append(row_data)
+
+        # Générer un nom de fichier unique
+        nom_fichier = f"stage_students_pedagogique_cotes_{slugify(dept.dept.libelle)}.xlsx"
+        chemin_fichier = os.path.join(settings.MEDIA_ROOT, nom_fichier)
+
+        # Enregistrer le fichier Excel en format 2016
+        workbook.save(chemin_fichier)
+
+        # Construire l'URL de téléchargement
+        url_telechargement = os.path.join(settings.MEDIA_URL, nom_fichier)
+
+        # Rediriger l'utilisateur vers l'URL de téléchargement
+        return Response(url_telechargement)
 
     @action(detail=False, methods=['get'])
     def generer_excel_student_pedagogique(self, request):
