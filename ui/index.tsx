@@ -159,7 +159,8 @@ const config: AppConfig = {
                 dashboardLayouting: true,
                 render: async () => {
                     try {
-                        const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/`)).data;
+                        const stage = (await api(await cookies()).get(`/isp_stage/stage/get-by-user/?stage=${_props.params.app[2]}`)).data;
+                        console.log(`Stage i have found : ${JSON.stringify(stage)}`);
                         return await StageDetailsPage({
                             ..._props,
                             params: {

@@ -24,13 +24,14 @@ export default function ListProjetTutores(props: Props) {
             props.user.permissions.find((perm:string)=> perm === "isp_departement_officier") ?  <>
             <TabView tabs={[
                 {key:1, label:`Liste Memoires ${totals.list >= 0 ? `(${totals.list})` : ""}`},
-                {key:2, label:`Etudiants Restants ${totals.rest >= 0 ? `(${totals.rest})` : ""}`}
+                {key:2, label:`Etudiants Restants ${totals.rest >= 0 ? `(${totals.rest})` : ""}`},
+                {key:3, label:`Projects Soumits ${totals.rest >= 0 ? `(${totals.rest})` : ""}`}
             ]} onChange={(e)=>setSelectedTab(Number(e))} />
 
             <div className="mt-[10px]">
-                {
-                    selectedTab === 1 ? <ListAllProjetTutores {...props} onLoaded={(data)=> setTotals({...totals, list: data.count})}/> : <><ListStudentWithoutProjetTutore {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/></>
-                }
+                {  selectedTab === 1 && <ListAllProjetTutores {...props} onLoaded={(data)=> setTotals({...totals, list: data.count})}/>  } 
+                {  selectedTab === 2 && <ListStudentWithoutProjetTutore {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/> }
+                {  selectedTab === 3 && <ListAllSubmittedProjetTutore {...props} onLoaded={(data)=> setTotals({...totals, rest: data.count})}/> }
             </div>
 
             </> : <>
@@ -98,6 +99,47 @@ const ListAllProjetTutores = (props: ListAllProjetTutoresProps) => {
                 {/* <p className="w-[25%]">Professeur</p> */}
                 <div className='flex flex-col sm:flex-row items-center gap-[5px] w-[50%]'>
                     <p className="w-[50%]">Chef de groupe</p>
+                    <p className="w-[50%]">Directeur</p>
+                </div>
+            </div>
+        }}
+        renderRow={(subject: ProjetTutore) => {
+            return <Link href={`/apps/isp_stage/projets-tutores/${subject.id}`} key={subject.id} className="duration-300 flex flex-col md:flex-row gap-[5px] text-[13px] text-gray-500 px-[20px] py-[6px] my-[3px] cursor-pointer hover:bg-[0,0,0,0.02] w-full">
+                <p className="w-[100%] md:w-[50%]">{subject.subject}</p>
+                {/* <p className="w-[50%]">{subject.teacher}</p> */}
+                <div className='flex w-[100%]  md:w-[50%] flex-col  sm:flex-row items-start sm:items-center gap-[5px]'>
+                    <p className='sm:hidden flex text-[13px] text-gray-400 mt-[7px] font-semibold'>Chef de groupe</p>
+                    <p className="w-[100%] sm:w-[50%]">{`${subject.head.user.name} ${subject.head.user.last_name} ${subject.head.user.first_name}`}</p>
+                    <p className='sm:hidden flex text-[13px] text-gray-400 mt-[7px] font-semibold'>Directeur</p>
+                    <p className="w-[100%] sm:w-[50%]">{`${subject.director ? subject.director?.employee.fullname : "--"}`}</p>
+                </div>
+            </Link>
+        }}
+        subtitle={(projects: ProjetTutore[]) => `${projects.length} projets`}
+        title='Projets Tutorés'
+        url={`/isp_stage/projets-tutores/`}
+    />
+
+</>
+}
+
+
+interface ListAllSubmittedProjetTutoreProps extends Props {
+    onLoaded: (data: ListViewLoadData) => any
+}
+const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )=>{
+    return   <ListView
+        {...props}
+        showBreadcrumb={false}
+        breadcrumb={[]}
+        showTitle={false}
+        renderColumns={() => {
+            return <div className="sm:flex hidden  flex-col md:flex-row gap-[5px] font-light  my-[3px] rounded w-full">
+                <p>Membres du groupe</p>
+                <p className="w-[100%] sm:w-[50%]">Sujet</p>
+                {/* <p className="w-[25%]">Professeur</p> */}
+                <div className='flex flex-col sm:flex-row items-center gap-[5px] w-[50%]'>
+                    {/* <p className="w-[50%]">Chef de groupe</p> */}
                     <p className="w-[50%]">Directeur</p>
                 </div>
             </div>

@@ -70,11 +70,36 @@ class Stage(CoreBaseModel):
 
 class ProjetTutore(CoreBaseModel):
 
+    STATUS_CHOICES = [
+        ('in_progress', 'En cours'),
+        ('submitted', 'Soumis'),
+        ('validated', 'Validé'),
+        ('rejected', 'Rejeté'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.TextField(null=False, blank=False)
     head = models.ForeignKey(Student, null=False, related_name="head", on_delete=models.CASCADE)
     member = models.ManyToManyField(Student, related_name="member" )
     director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='in_progress',
+        verbose_name="Statut"
+    )
+
+
+class ProjetTutoreSubmission(CoreBaseModel):
+    projet = models.ForeignKey(ProjetTutore, on_delete=models.CASCADE, related_name="submissions")
+    submitter = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    submission_date = models.DateTimeField(auto_now_add=True)
+    final_subject = models.CharField(max_length=255)
+    members = models.ManyToManyField(Student, related_name="projet_submissions")
+
+    def __str__(self):
+        return f"Soumission pour {self.projet.subject} le {self.submission_date.strftime('%d/%m/%Y')}"
+
 
 
 class StudentMemoire(CoreBaseModel):

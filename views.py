@@ -10,6 +10,10 @@ from rest_framework.permissions import IsAuthenticated
 from .models import * 
 from .serializers import *
 
+from rest_framework import status
+from .serializers import ProjetTutoreSubmissionSerializer
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def stages_resumes(request):
@@ -205,3 +209,52 @@ def department_resumes_for_director(request, employee):
             return Response("No director informations found for this employee", 404)
         return Response("You are not Department chief", 404)
     return Response("You don't have right of  Department chief", 404)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_projet_tutore(request, projet_id):
+    """
+    Vue pour soumettre un projet tutoré final.
+    """
+    try:
+        projet = ProjetTutore.objects.get(pk=projet_id)
+    except ProjetTutore.DoesNotExist:
+        return Response({"error": "Projet non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Vérifier si l'utilisateur est un étudiant et membre du projet
+    # student = getattr(request.user, 'student', None)
+
+    student = get_object_or_404(Student, user__id = request.user.id)
+    if not student or not projet.member.filter(pk=student.pk).exists():
+        return Response(
+            {"error": "Vous n'êtes pas autorisé à soumettre ce projet."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    serializer = ProjetTutoreSubmissionSerializer(data=request.data)
+    if serializer.is_valid():
+        validated_data = serializer.validated_data
+        
+        # Créer l'enregistrement de la soumission
+        submission = ProjetTutoreSubmission.objects.create(
+            projet=projet,
+            submitter=student,
+            final_subject=validated_data['subject']
+        )
+        
+        # Ajouter les membres à la soumission
+        member_ids = validated_data['members']
+        members = Student.objects.filter(id__in=member_ids)
+        submission.members.set(members)
+        
+        # Mettre à jour le statut du projet
+        projet.status = 'submitted'
+        projet.subject = validated_data['subject'] # Met aussi à jour le sujet principal
+        projet.save()
+        
+        return Response(
+            {"success": "Projet soumis avec succès."},
+            status=status.HTTP_200_OK
+        )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

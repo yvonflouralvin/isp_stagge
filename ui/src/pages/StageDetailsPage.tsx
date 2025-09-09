@@ -17,7 +17,8 @@ export default async function StageDetailsPage(props: PageProps) {
 
     var stage: any = undefined;
     try {
-        stage = (await api(await cookies()).get(`/isp_stage/stage/${props.params.app[3]}/`)).data;
+        console.log(`/isp_stage/stage/${props.params.app[3]}/`);
+        stage = (await api(await cookies()).get(`/isp_stage/stage/${props.params.app[3]}/`)).data; 
         console.log(stage)
     } catch (e) {
         return <div>

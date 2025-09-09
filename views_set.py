@@ -52,8 +52,7 @@ class StageViewSet(viewsets.ModelViewSet):
     pagination = Paginator()
     queryset = Stage.objects.all()
     serializer_class = StageSerializer
-
-
+  
     @action(detail=True, methods=['post'], url_path="set-master")
     def set_master(self, request, pk):
         master_id = request.data.get("master-id")
@@ -63,7 +62,7 @@ class StageViewSet(viewsets.ModelViewSet):
         stage.save()    
 
         return Response(StageSerializer(stage).data)
-
+  
     @action(detail=True, methods=['post'], url_path="remove-master")
     def remove_master(self, request, pk):
         master_id = request.data.get("master-id")
@@ -73,8 +72,7 @@ class StageViewSet(viewsets.ModelViewSet):
         stage.save()
 
         return Response(StageSerializer(stage).data)
-
-
+  
     @action(detail=True, methods=['post'], url_path="update")
     def update_stage(self, request, pk):
         stage = get_object_or_404(Stage, id=pk) 
@@ -114,16 +112,28 @@ class StageViewSet(viewsets.ModelViewSet):
 
         stage.save()
         return Response(StageSerializer(stage).data)
-
+  
     @action(detail=False, methods=['get'], url_path="get-by-user")
     def get_by_user(self, request):
         user = request.user
-        queryset = Stage.objects.filter(student__user__id=user.id).first()
-        if queryset:
-            return Response(StageSerializer(queryset).data)
+        stage_type = request.GET.get('stage', None)
+        queryset = Stage.objects.filter(student__user__id=user.id)
+        if stage_type is not None:
+            if len(queryset) == 1 :
+                tmp = queryset.first()
+                if tmp.stage == 'pedagogique' :
+                    _stage = Stage.objects.create(
+                        stage="entreprise",
+                        student=tmp.student
+                    )
+                    _stage.save()
+                    queryset = Stage.objects.filter(student__user__id=user.id)
+            queryset = queryset.filter(stage=stage_type)
+        stage_instance = queryset.first()
+        if stage_instance:
+            return Response(StageSerializer(stage_instance).data)
         return Response(None, 404)
-
-
+  
     @action(detail=False, methods=['get'])
     def get_department_for_stages(self, request):
         user = request.user
@@ -164,7 +174,7 @@ class StageViewSet(viewsets.ModelViewSet):
             grade['stage_count'] = len(stages)
 
         return Response(serialized_data)
-
+    
 
 
 class StageMasterViewSet(viewsets.ModelViewSet):
@@ -387,11 +397,11 @@ class StudentForStageAPIView(APIView):
             # Create missing entreprise stages
             for student_id in missing_entreprise:
                 student = Student.objects.get(id=student_id)
-                stage = Stage.objects.create(
+                _stage = Stage.objects.create(
                     stage="entreprise",
                     student=student
                 )
-                stage.save()
+                _stage.save()
 
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
