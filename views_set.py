@@ -8,6 +8,7 @@ from openpyxl import Workbook, load_workbook
 from django.utils.text import slugify
 from django.conf import settings
 from django.core.files.storage import default_storage
+from collections import defaultdict
  
 
 from django.contrib.auth.hashers import make_password
@@ -1467,25 +1468,42 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
         sheet = workbook.active
         sheet.title = "Projets Tutorés Soumis"
 
-        headers = [
-            "Sujet Final", "Date de Soumission", "Chef de Groupe",
-            "Email Chef de Groupe", "Directeur", "Membres du Groupe"
-        ]
+        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur"]
         sheet.append(headers)
 
+        projets = defaultdict(list)
         for submission in queryset:
-            members_list = ", ".join([f"{m.user.name} {m.user.last_name}" for m in submission.members.all()])
-            director_name = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
-            row = [
-                submission.final_subject,
-                submission.submission_date.strftime("%d/%m/%Y %H:%M"),
-                f"{submission.projet.head.user.name} {submission.projet.head.user.last_name}",
-                submission.projet.head.user.email,
-                director_name,
-                members_list
-            ]
-            sheet.append(row)
+            projets[submission.projet.id].append(submission)
 
+        row_index = 2  # première ligne après l'entête
+        group_number = 1
+
+        for projet_id, submissions in projets.items():
+            submission = submissions[0]
+
+            sujet = submission.final_subject
+            directeur = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
+
+            # Récupérer tous les membres (y compris chef du groupe)
+            membres = [f"{submission.projet.head.user.name} {submission.projet.head.user.last_name} (Chef)"]
+            membres += [f"{m.user.name} {m.user.last_name}" for m in submission.members.all()]
+
+            start_row = row_index
+            for membre in membres:
+                sheet.append([group_number, membre, sujet, directeur])
+                row_index += 1
+
+            end_row = row_index - 1
+
+            # Fusionner N° Groupe, Sujet et Directeur
+            if start_row < end_row:
+                sheet.merge_cells(start_row=start_row, start_column=1, end_row=end_row, end_column=1)  # N° Groupe
+                sheet.merge_cells(start_row=start_row, start_column=3, end_row=end_row, end_column=3)  # Sujet
+                sheet.merge_cells(start_row=start_row, start_column=4, end_row=end_row, end_column=4)  # Directeur
+
+            group_number += 1
+
+        # Génération du fichier Excel
         virtual_workbook = BytesIO()
         workbook.save(virtual_workbook)
         virtual_workbook.seek(0)
@@ -1497,4 +1515,43 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename="projets-soumis.xlsx"'
         
         return response
+
+    # @action(detail=False, methods=['get'], url_path='export-excel')
+    # def export_excel(self, request):
+    #     queryset = self.get_queryset()
+
+    #     workbook = Workbook()
+    #     sheet = workbook.active
+    #     sheet.title = "Projets Tutorés Soumis"
+
+    #     headers = [
+    #         "Sujet Final", "Date de Soumission", "Chef de Groupe",
+    #         "Email Chef de Groupe", "Directeur", "Membres du Groupe"
+    #     ]
+    #     sheet.append(headers)
+
+    #     for submission in queryset:
+    #         members_list = ", ".join([f"{m.user.name} {m.user.last_name}" for m in submission.members.all()])
+    #         director_name = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
+    #         row = [
+    #             submission.final_subject,
+    #             submission.submission_date.strftime("%d/%m/%Y %H:%M"),
+    #             f"{submission.projet.head.user.name} {submission.projet.head.user.last_name}",
+    #             submission.projet.head.user.email,
+    #             director_name,
+    #             members_list
+    #         ]
+    #         sheet.append(row)
+
+    #     virtual_workbook = BytesIO()
+    #     workbook.save(virtual_workbook)
+    #     virtual_workbook.seek(0)
+
+    #     response = HttpResponse(
+    #         virtual_workbook.read(),
+    #         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    #     )
+    #     response['Content-Disposition'] = 'attachment; filename="projets-soumis.xlsx"'
+        
+    #     return response
 
