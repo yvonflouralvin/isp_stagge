@@ -72,7 +72,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
                                         {
                                             props.user.permissions.find(perm => perm === "isp_departement_officier") && <>
                                                 {
-                                                    isSaving === true ? <Spinner /> : <ConfirmDialogPopup onConfirm={async () => {
+                                                    (isSaving === true  && props.projet?.status !== "submitted")? <Spinner /> : <ConfirmDialogPopup onConfirm={async () => {
                                                         setIsSaving(true)
                                                         try {
                                                             const datas: any = {
@@ -151,14 +151,19 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
         }
 
         {
-            props.user.permissions.find((perm: string) => perm === "isp_departement_officier") && <div className='mt-[10px]'>
-                <OnDeleteButton 
-                back_url='/apps/isp_stage/projets-tutores'
-                message={`Vous ête sur le point de supprimer le projet tutoré de cet étudiant ainsi que tout le groupe ?`}
-                url={`/isp_stage/projets-tutores/${props.projet?.id}/`}
-            />
-            </div>
+            props.projet !== null && props.projet?.status !== "submitted" && <>
+                {
+                    props.user.permissions.find((perm: string) => perm === "isp_departement_officier") && <div className='mt-[10px]'>
+                        <OnDeleteButton 
+                        back_url='/apps/isp_stage/projets-tutores'
+                        message={`Vous ête sur le point de supprimer le projet tutoré de cet étudiant ainsi que tout le groupe ?`}
+                        url={`/isp_stage/projets-tutores/${props.projet?.id}/`}
+                    />
+                    </div>
+                }
+            </>
         }
+        
 
         {
             props.user.permissions.find((perm: string) => perm === "isp_user_student") && <div className='mt-[10px]'>
