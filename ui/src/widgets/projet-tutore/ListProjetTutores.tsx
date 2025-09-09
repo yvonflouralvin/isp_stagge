@@ -147,20 +147,26 @@ const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )
         showTitle={false}
         renderColumns={() => {
             return <div className="sm:flex hidden flex-col md:flex-row gap-[5px] font-light my-[3px] rounded w-full text-sm text-gray-500">
+                <p className="w-full sm:w-[30%]">Membres</p>
                 <p className="w-full sm:w-[50%]">Sujet Final</p>
-                <div className='flex flex-col sm:flex-row items-center gap-[5px] w-full sm:w-[50%]'>
-                    <p className="w-full sm:w-[50%]">Chef de groupe</p>
-                    <p className="w-full sm:w-[50%]">Directeur</p>
-                </div>
+                <p className="w-full sm:w-[20%]">Directeur</p> 
             </div>
         }}
         renderRow={(submission: ProjetTutoreSubmission) => {
             // Les données viennent maintenant de l'objet `submission.projet`
             const projet = submission.projet;
             return <Link href={`/apps/isp_stage/projets-tutores/${projet.id}`} key={submission.id} className="duration-300 flex flex-col md:flex-row gap-[5px] text-[13px] text-gray-600 px-[20px] py-[8px] my-[3px] cursor-pointer hover:bg-gray-50 w-full border-b border-gray-100">
-                
-                <p className="w-full md:w-[50%] font-semibold">{submission.final_subject}</p>
-                <div className='flex w-full md:w-[50%] flex-col sm:flex-row items-start sm:items-center gap-[5px]'>
+                <div className='w-full sm:w-[30%]'>
+                    {
+                        submission.members.map((s: Student) => {
+                            return <p key={s.id}>{s.user.name} {s.user.last_name} {s.user.first_name}</p>
+                        })
+                    }
+                </div>
+                <p className="w-full sm:w-[50%] font-semibold">{submission.final_subject}</p>
+                <p className='w-full sm:w-[20%]'>{`${projet.director ? projet.director?.employee.fullname : "--"}`}</p>
+
+                {/* <div className='flex w-full md:w-[50%] flex-col sm:flex-row items-start sm:items-center gap-[5px]'>
                     <div className="w-full sm:w-[50%]">
                         <p className='sm:hidden text-xs text-gray-400 mt-1'>Chef de groupe</p>
                         <p>{`${projet.head.user.name} ${projet.head.user.last_name} ${projet.head.user.first_name}`}</p>
@@ -169,7 +175,7 @@ const ListAllSubmittedProjetTutore = (props: ListAllSubmittedProjetTutoreProps )
                         <p className='sm:hidden text-xs text-gray-400 mt-1'>Directeur</p>
                         <p>{`${projet.director ? projet.director?.employee.fullname : "--"}`}</p>
                     </div>
-                </div>
+                </div> */}
             </Link>
         }}
         subtitle={(submissions: ProjetTutoreSubmission[]) => `${submissions.length} projets soumis`}
