@@ -250,6 +250,7 @@ def submit_projet_tutore(request, projet_id):
         # Mettre à jour le statut du projet
         projet.status = 'submitted'
         projet.subject = validated_data['subject'] # Met aussi à jour le sujet principal
+        projet.member.set(members) # <-- AJOUT DE CETTE LIGNE
         projet.save()
         
         return Response(
