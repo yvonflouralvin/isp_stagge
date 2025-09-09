@@ -18,6 +18,7 @@ router.register(r'students-memoires', StudentMemoireViewSet)
 router.register(r'department-settings', DepartmentSettingsViewSet)
 router.register(r'teacher-for-memoire-projet', StageSearchingTeacherViewSet)
 router.register(r'directeur-travaux', DirecteurTravauxViewSet)
+router.register(r'projets-tutores-soumissions', ProjetTutoreSubmissionViewSet)
 
 urlpatterns = [
     path('',include(router.urls)),
@@ -27,6 +28,6 @@ urlpatterns = [
     path('student/<stage>', StudentForStageAPIView.as_view(), name="student-stage"), 
     path('resumes', views.stages_resumes, name="staff-resumes"),
     path('admin-resumes', views.admin_reports, name='admin-resumes'),
-    path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director')
-    # path('stage/get-by-user-id/', ) /apps/{nom_addon}/urls
+    path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
+    path('projets-tutores/<uuid:projet_id>/submit/', views.submit_projet_tutore, name='submit_projet_tutore'),
 ]

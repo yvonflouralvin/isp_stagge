@@ -8,6 +8,7 @@ from openpyxl import Workbook, load_workbook
 from django.utils.text import slugify
 from django.conf import settings
 from django.core.files.storage import default_storage
+from collections import defaultdict
  
 
 from django.contrib.auth.hashers import make_password
@@ -52,8 +53,7 @@ class StageViewSet(viewsets.ModelViewSet):
     pagination = Paginator()
     queryset = Stage.objects.all()
     serializer_class = StageSerializer
-
-
+  
     @action(detail=True, methods=['post'], url_path="set-master")
     def set_master(self, request, pk):
         master_id = request.data.get("master-id")
@@ -63,7 +63,7 @@ class StageViewSet(viewsets.ModelViewSet):
         stage.save()    
 
         return Response(StageSerializer(stage).data)
-
+  
     @action(detail=True, methods=['post'], url_path="remove-master")
     def remove_master(self, request, pk):
         master_id = request.data.get("master-id")
@@ -73,8 +73,7 @@ class StageViewSet(viewsets.ModelViewSet):
         stage.save()
 
         return Response(StageSerializer(stage).data)
-
-
+  
     @action(detail=True, methods=['post'], url_path="update")
     def update_stage(self, request, pk):
         stage = get_object_or_404(Stage, id=pk) 
@@ -114,7 +113,7 @@ class StageViewSet(viewsets.ModelViewSet):
 
         stage.save()
         return Response(StageSerializer(stage).data)
-
+  
     @action(detail=False, methods=['get'], url_path="get-by-user")
     def get_by_user(self, request):
         user = request.user
@@ -139,8 +138,7 @@ class StageViewSet(viewsets.ModelViewSet):
         if stage_instance:
             return Response(StageSerializer(stage_instance).data)
         return Response(None, 404)
-
-
+  
     @action(detail=False, methods=['get'])
     def get_department_for_stages(self, request):
         user = request.user
@@ -181,7 +179,7 @@ class StageViewSet(viewsets.ModelViewSet):
             grade['stage_count'] = len(stages)
 
         return Response(serialized_data)
-
+    
 
 
 class StageMasterViewSet(viewsets.ModelViewSet):
@@ -404,11 +402,11 @@ class StudentForStageAPIView(APIView):
             # Create missing entreprise stages
             for student_id in missing_entreprise:
                 student = Student.objects.get(id=student_id)
-                stage = Stage.objects.create(
+                _stage = Stage.objects.create(
                     stage="entreprise",
                     student=student
                 )
-                stage.save()
+                _stage.save()
 
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
@@ -880,6 +878,140 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
                     f'=(E{i}+F{i})/5',
                     # f'{((get_attr(quote, 'quote_object.stage_master_entreprise_centralized', 0)+get_attr(quote, 'lecture_document', 0)))}',
                     # f'{((get_attr(quote, 'quote_object.stage_master_entreprise_centralized', 0)+get_attr(quote, 'lecture_document', 0))/5)}',
+                ])
+
+
+        # Ajouter des données d'exemple (remplacez ceci par vos données réelles)
+        
+
+        
+
+        for row_data in data:
+            sheet.append(row_data)
+
+        # Générer un nom de fichier unique
+        nom_fichier = f"stage_students_pedagogique_cotes_{slugify(dept.dept.libelle)}.xlsx"
+        chemin_fichier = os.path.join(settings.MEDIA_ROOT, nom_fichier)
+
+        # Enregistrer le fichier Excel en format 2016
+        workbook.save(chemin_fichier)
+
+        # Construire l'URL de téléchargement
+        url_telechargement = os.path.join(settings.MEDIA_URL, nom_fichier)
+
+        # Rediriger l'utilisateur vers l'URL de téléchargement
+        return Response(url_telechargement)
+
+    @action(detail=False, methods=['get'])
+    def generer_excel_student_pedagogique_full(self, request):
+        """
+        Génère un fichier Excel, l'enregistre dans le répertoire de médias
+        et redirige l'utilisateur vers une URL de téléchargement.
+        """
+
+        stage = "pedagogique"
+
+        user = request.user
+        dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
+
+        if not dept:
+            return Response([], 404)
+        
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+
+        # Créer un nouveau classeur Excel 2016
+        workbook = Workbook(write_only=True)
+        workbook.iso_dates = True  # Format de date Excel 2016
+        sheet = workbook.create_sheet(title="Données Etudiants")
+        sheet.sheet_properties.filterMode = False  # Désactiver les filtres avancés Excel 2016
+
+        data = []
+
+        if stage == "pedagogique" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Seminaire de Stage A/20",
+                "Maitre de Stage B/40",
+                "Soutenance D/20",
+                "Lecture Documents E/20",
+                "Total Général /100",
+                "Moyenne /20",
+            ])
+            
+
+            for stage in stages :
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}',
+                    f'{stage.quote_object.seminaire}',
+                    f'{((stage.quote_object.stage+stage.quote_object.carnet+stage.quote_object.rapport)/4)}',
+                    f'{stage.quote_object.soutenance}',
+                    f'{stage.quote_object.lecture}',
+                    f'{((stage.quote_object.seminaire+stage.quote_object.soutenance+stage.quote_object.lecture+((stage.quote_object.stage+stage.quote_object.carnet+stage.quote_object.rapport)/4)))}'
+                    f'{((stage.quote_object.seminaire+stage.quote_object.soutenance+stage.quote_object.lecture+((stage.quote_object.stage+stage.quote_object.carnet+stage.quote_object.rapport)/4))/5)}'
+                ])
+
+        if stage == "impregnation" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Régularité /10"
+                "Tenue /10"
+                "Carnet de Stage /10"
+                "Fiche Préparation /10"
+                "Leçon /20"
+                "Rapport /20"
+                "Défense Rapport /20",
+                "Total /100",
+                "Moyenne /20",
+            ]) 
+
+            for stage in stages :
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}',
+                    f'{stage.quote_object.regularite}',
+                    f'{stage.quote_object.tenue}',
+                    f'{stage.quote_object.carnet_stage}',
+                    f'{stage.quote_object.fiche_prepa}',
+                    f'{stage.quote_object.lecon}',
+                    f'{stage.quote_object.rapport_stage}',
+                    f'{stage.quote_object.defense_rapport}', 
+                    f'{((stage.quote_object.regularite+stage.quote_object.tenue+stage.quote_object.carnet_stage+stage.quote_object.fiche_prepa+stage.quote_object.lecon+stage.quote_object.rapport_stage+stage.quote_object.defense_rapport))}',
+                    f'{((stage.quote_object.regularite+stage.quote_object.tenue+stage.quote_object.carnet_stage+stage.quote_object.fiche_prepa+stage.quote_object.lecon+stage.quote_object.rapport_stage+stage.quote_object.defense_rapport)/5)}',
+                ])
+
+        if stage == "entreprise" :
+            data.append([
+                "ID", 
+                "Nom", 
+                "Postnom", 
+                "Prenom",
+                "Maitre de Stage /30"
+                "Lecture des documents /70" ,
+                "Total /100",
+                "Moyenne /20",
+            ]) 
+
+            for stage in stages :
+                data.append([
+                    f'{stage.id}',
+                    f'{stage.student.user.name}',
+                    f'{stage.student.user.last_name}',
+                    f'{stage.student.user.first_name}', 
+                    f'{stage.quote_object.stage_master_entreprise_centralized}',
+                    f'{stage.quote_object.lecture_document}', 
+                    f'{((stage.quote_object.quote_object.stage_master_entreprise_centralized+stage.quote_object.lecture_document))}',
+                    f'{((stage.quote_object.quote_object.stage_master_entreprise_centralized+stage.quote_object.lecture_document)/5)}',
                 ])
 
 
@@ -1448,3 +1580,97 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             details[dept_id]["directeurs"].append(DirecteurTravauxSerializer(directeursTravail).data)
         
         return Response(list(details.values()), status=200)
+
+
+from django.http import HttpResponse
+from openpyxl import Workbook
+from io import BytesIO
+
+class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = ProjetTutoreSubmission.objects.all().order_by('-submission_date')
+    serializer_class = ProjetTutoreSubmissionDetailSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        "final_subject", 
+        "projet__subject", 
+        "submitter__user__name", 
+        "submitter__user__first_name", 
+        "submitter__user__last_name"
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        if user.is_superuser:
+            return queryset
+
+        if user.has_perm('isp_stage.isp_departement_officier'):
+            dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user).first()
+            if dept_officier:
+                return queryset.filter(projet__head__promotion__grade=dept_officier.dept)
+            else:
+                return ProjetTutoreSubmission.objects.none()
+
+        student = Student.objects.filter(user=user).first()
+        if student:
+            return queryset.filter(members=student)
+
+        return ProjetTutoreSubmission.objects.none()
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        queryset = self.get_queryset()
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Projets Tutorés Soumis"
+
+        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur"]
+        sheet.append(headers)
+
+        projets = defaultdict(list)
+        for submission in queryset:
+            projets[submission.projet.id].append(submission)
+
+        row_index = 2  # première ligne après l'entête
+        group_number = 1
+
+        for projet_id, submissions in projets.items():
+            submission = submissions[0]
+
+            sujet = submission.final_subject
+            directeur = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
+
+            # Récupérer tous les membres (y compris chef du groupe)
+            membres = [f"{submission.projet.head.user.name} {submission.projet.head.user.last_name} (Chef)"]
+            membres += [f"{m.user.name} {m.user.last_name}" for m in submission.members.all()]
+
+            start_row = row_index
+            for membre in membres:
+                sheet.append([group_number, membre, sujet, directeur])
+                row_index += 1
+
+            end_row = row_index - 1
+
+            # Fusionner N° Groupe, Sujet et Directeur
+            if start_row < end_row:
+                sheet.merge_cells(start_row=start_row, start_column=1, end_row=end_row, end_column=1)  # N° Groupe
+                sheet.merge_cells(start_row=start_row, start_column=3, end_row=end_row, end_column=3)  # Sujet
+                sheet.merge_cells(start_row=start_row, start_column=4, end_row=end_row, end_column=4)  # Directeur
+
+            group_number += 1
+
+        # Génération du fichier Excel
+        virtual_workbook = BytesIO()
+        workbook.save(virtual_workbook)
+        virtual_workbook.seek(0)
+
+        response = HttpResponse(
+            virtual_workbook.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="projets-soumis.xlsx"'
+        
+        return response

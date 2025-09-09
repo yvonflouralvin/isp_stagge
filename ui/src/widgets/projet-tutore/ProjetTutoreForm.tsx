@@ -16,6 +16,9 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
     const [isSaving, setIsSaving] = React.useState(false)
     const [selectedTeacher, setSelectedTeacher] = React.useState<string | undefined>((props.projet?.director_id && props.projet?.director_id !== null && props.projet?.director_id !== null) ? props.projet?.director_id : undefined)
 
+    React.useEffect(()=>{
+        console.log(props.projet)
+    },[])
 
     const subject_input = React.useRef<any>()
 
@@ -124,13 +127,16 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
             </div>
             {
                 (props.for === "create" && props.department_settings !== undefined && props.department_settings.max_tutore_project_member_group > memberIds.length) && <div className='mt-[15px]'>
-                    <ButtonAddMember onChange={(e: Student) => {
+                    {
+                        ((props.projet !== null && props.projet?.status !== "submitted")) && <ButtonAddMember onChange={(e: Student) => {
                         if (memberIds.find(mid => mid.id === e.id)) return;
                         setMemberIds([
                             ...memberIds,
                             e
                         ])
                     }} />
+                    }
+                    
                 </div>
             }
 
@@ -139,7 +145,7 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
         {
             props.for === "create" && <div className='mt-[15px] border-t border-inherent flex w-full justify-end'>
                 {
-                    isSaving === false ? <button onClick={handleSave} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Enregistrer toutes les modidications</button> : <Spinner size='sm' />
+                    isSaving === false ? <>{ ((props.projet !== null && props.projet?.status !== "submitted")) && <button onClick={handleSave} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Enregistrer toutes les modidications</button> } </> : <Spinner size='sm' />
                 }
             </div>
         }
@@ -153,6 +159,22 @@ export default function ProjetTutoreForm(props: ProjetTutoreFormPageProps) {
             />
             </div>
         }
+
+        {
+            props.user.permissions.find((perm: string) => perm === "isp_user_student") && <div className='mt-[10px]'>
+                {
+                    props.projet && props.projet.status !== "submitted" && <ButtonSubmitProjetTutore 
+                        projetId={props.projet?.id}
+                        members={memberIds}
+                        initialSubject={props.projet?.subject ?? ""}
+                        onSubmitted={() => {
+                            window.location.reload();
+                        }}
+                    />
+                }            
+            </div>
+        }
+
     </div>
 }
 
@@ -191,3 +213,108 @@ const ButtonAddMember = (
         </Modal>
     </>
 }
+
+
+interface ButtonSubmitProjetTutoreProps {
+    members: Student[]
+    initialSubject: string
+    projetId: string
+    onSubmitted: () => void
+}
+
+const ButtonSubmitProjetTutore = (
+    props: ButtonSubmitProjetTutoreProps
+) => {
+    const [isOpen, setIsOpen] = React.useState(false)
+    const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const [finalSubject, setFinalSubject] = React.useState(props.initialSubject)
+    const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>([])
+    const [error, setError] = React.useState<string | null>(null)
+
+    const handleToggleMember = (memberId: string) => {
+        setSelectedMemberIds(prev => 
+            prev.includes(memberId) 
+                ? prev.filter(id => id !== memberId) 
+                : [...prev, memberId]
+        );
+    };
+
+    const submit = async () => {
+        if (!finalSubject || selectedMemberIds.length === 0) {
+            setError("Le sujet et au moins un membre sont requis.");
+            return;
+        }
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            const payload = {
+                subject: finalSubject,
+                members: selectedMemberIds,
+            };
+            // Note: L'URL de l'API '/submit/' est une convention. Adaptez-la si nécessaire.
+            await api(cookies).post(`/isp_stage/projets-tutores/${props.projetId}/submit/`, payload);
+            
+            setIsOpen(false);
+            props.onSubmitted();
+
+        } catch (e: any) {
+            console.error(e);
+            setError(e.message || "Une erreur est survenue lors de la soumission.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return <>
+        <button onClick={() => setIsOpen(true)} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded'>Soumettre le projet tutoré</button>
+        <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+            <ModalContent>
+                <ModalHeader>
+                    <p>Soumettre le projet tutoré</p>
+                </ModalHeader>
+                <ModalBody>
+                    <div className='mt-[15px] flex flex-col gap-4'>
+                        <div>
+                            <p className="text-gray-600 text-sm font-medium">Sujet final du projet tutoré</p>
+                            <input 
+                                type="text" 
+                                className='border border-inherent rounded outline-none w-full bg-transparent text-[13px] p-2' 
+                                value={finalSubject}
+                                onChange={(e) => setFinalSubject(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <p className="text-gray-600 text-sm font-medium">Membres inclus dans la soumission</p>
+                            <div className='flex flex-col gap-2 mt-2'>
+                                {
+                                    props.members.map((m: Student) => (
+                                        <div key={`${m.id}`} className='flex items-center gap-[10px]'>
+                                            <input 
+                                                type='checkbox' 
+                                                className='h-4 w-4 rounded'
+                                                checked={selectedMemberIds.includes(m.id)}
+                                                onChange={() => handleToggleMember(m.id)}
+                                            />
+                                            <p className='text-sm'>{m.user.name} {m.user.last_name} {m.user.first_name}</p>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
+                        
+                        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                        <div className='flex justify-end items-center gap-3 mt-4 mb-2'>
+                             <button onClick={() => setIsOpen(false)} className='text-gray-600 text-[13px] py-[4px] px-[15px] rounded'>Annuler</button>
+                            <button onClick={submit} disabled={isSubmitting} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded flex items-center'>
+                                {isSubmitting ? <Spinner size='sm' color='white' /> : "Confirmer la soumission"}
+                            </button>
+                        </div>
+                    </div>
+                </ModalBody>
+            </ModalContent>
+        </Modal>
+    </>
+}
+
+

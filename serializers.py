@@ -1,6 +1,5 @@
-from rest_framework import serializers 
-
-
+from rest_framework import serializers
+from uscitech_academy.models import Student 
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
@@ -133,7 +132,7 @@ class ProjetTutoreSerializer(serializers.ModelSerializer):
 
     class Meta :
         model = ProjetTutore
-        fields = ['id', 'subject', 'head_id', 'head', 'member', 'member_names', 'director', 'director_id']
+        fields = ['id', 'subject', 'head_id', 'head', 'member', 'member_names', 'director', 'director_id', 'status']
     
 
 
@@ -165,4 +164,37 @@ class DepartmentSettingsSerializer(serializers.ModelSerializer):
         model = DepartmentSettings
         fields = ['id', 'department', 'department_id', 'max_teacher_tutore_project_group', 'max_teacher_memoire', 'max_tutore_project_member_group', 'max_teacher_externe_tutore_project_group', 'max_teacher_externe_memoire']
 
+class ProjetTutoreSubmissionSerializer(serializers.Serializer):
+    subject = serializers.CharField(max_length=255)
+    members = serializers.ListField(
+        child=serializers.UUIDField()
+    )
 
+    def validate_members(self, value):
+        """
+        Vérifie que tous les IDs de membres correspondent à des étudiants existants.
+        """
+        if not value:
+            raise serializers.ValidationError("La liste des membres ne peut pas être vide.")
+        
+        member_count = Student.objects.filter(id__in=value).count()
+        if member_count != len(value):
+            raise serializers.ValidationError("Un ou plusieurs IDs de membre sont invalides.")
+        return value
+
+
+class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):
+    projet = ProjetTutoreSerializer(read_only=True)
+    submitter = StudentSerializer(read_only=True)
+    members = StudentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ProjetTutoreSubmission
+        fields = [
+            'id',
+            'projet',
+            'submitter',
+            'submission_date',
+            'final_subject',
+            'members'
+        ]

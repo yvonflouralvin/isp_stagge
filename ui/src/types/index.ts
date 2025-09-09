@@ -16,6 +16,11 @@ export type ProjetTutore =  {
     head: Student
     member: string[]
     member_names: string[]
+    status: "in_progress" | "submitted" | "validated" | "rejected"
+}
+
+export type ProjetTutoreSubmitted =  {
+    
 }
 
 export interface StudentMemoire {
