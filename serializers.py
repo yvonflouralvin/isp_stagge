@@ -187,6 +187,7 @@ class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):
     projet = ProjetTutoreSerializer(read_only=True)
     submitter = StudentSerializer(read_only=True)
     members = StudentSerializer(many=True, read_only=True)
+    
 
     class Meta:
         model = ProjetTutoreSubmission
@@ -196,5 +197,6 @@ class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):
             'submitter',
             'submission_date',
             'final_subject',
-            'members'
+            'members',
+            'created_at'
         ]
