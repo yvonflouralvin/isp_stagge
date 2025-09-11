@@ -1769,3 +1769,35 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
             return queryset.filter(submitter=student)
 
         return StudentMemoireSubmission.objects.none()
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        queryset = self.get_queryset()
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Mémoires Soumis"
+
+        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur", "Lecteur 1", "Lecteur 2"]
+        sheet.append(headers)
+
+        row_index = 2
+        for index, submission in enumerate(queryset, start=1):
+            student_name = f"{submission.memoire.student.user.name} {submission.memoire.student.user.last_name}"
+            sujet = submission.final_subject
+            directeur = submission.memoire.director.employee.fullname if submission.memoire.director else "N/A"
+            
+            sheet.append([index, student_name, sujet, directeur, "", ""])
+            row_index += 1
+
+        virtual_workbook = BytesIO()
+        workbook.save(virtual_workbook)
+        virtual_workbook.seek(0)
+
+        response = HttpResponse(
+            virtual_workbook.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="memoires-soumis.xlsx"'
+        
+        return response

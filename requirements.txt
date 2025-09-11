@@ -1,2 +1,3 @@
 python-slugify
 pdf2image
+openpyxl
