@@ -9,7 +9,7 @@ from django.utils.text import slugify
 from django.conf import settings
 from django.core.files.storage import default_storage
 from collections import defaultdict
- 
+
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
@@ -146,7 +146,7 @@ class StageViewSet(viewsets.ModelViewSet):
         
         if user.is_superuser == True :
             pass
-        elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')): 
+        elif (user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master')):
             dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
             if dept_off.exists() :
                 dept_off = dept_off.first()
@@ -180,7 +180,6 @@ class StageViewSet(viewsets.ModelViewSet):
 
         return Response(serialized_data)
     
-
 
 class StageMasterViewSet(viewsets.ModelViewSet):
     queryset = StageMaster.objects.all()
@@ -451,15 +450,15 @@ class StudentForStageAPIView(APIView):
         filter_stage_cotation = request.GET.get('filter_cotation', "all")
         
 
-        if user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master') : 
+        if user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master') :
             if filter_stage_cotation == "assigned" :
                 stages = stages.exclude(quote = None, quote_status="draft")
             elif filter_stage_cotation == "notassigned" :
                 stages = stages.filter(quote = None, quote_status="draft")
-            else: 
+            else:
                 pass
 
-        elif  not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master') : 
+        elif  not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master') :
             if filter_stage_cotation == "assigned" :
                 stages = stages.exclude(quote = None)
             elif filter_stage_cotation == "notassigned" :
@@ -488,7 +487,7 @@ class IspGombePromotionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.has_perm("isp_stage.isp_departement_officier") : 
+        if user.has_perm("isp_stage.isp_departement_officier") :
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not  department_officier.exists() :
                 return Promotion.objects.none() 
@@ -513,7 +512,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         filter_promotion = self.request.query_params.get('filter_promotion', None)
         
         user = self.request.user
-        if user.has_perm("isp_stage.isp_departement_officier") : 
+        if user.has_perm("isp_stage.isp_departement_officier") :
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not  department_officier.exists() :
                 return Student.objects.none()
@@ -612,7 +611,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
                     try:
                         permission = Permission.objects.get(codename="academy_is_student")
                         user.user_permissions.add(permission)
-                    except:
+                    except: 
                         pass
                     
                     promotion = None
@@ -1238,6 +1237,64 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
         # Par défaut, retour vide
         return queryset
 
+    @action(detail=True, methods=['post'], url_path='submit')
+    def submit(self, request, pk=None):
+        memoire = self.get_object()
+        
+        # Vérifier si l'utilisateur est le chef du projet
+        student = Student.objects.filter(user=request.user).first()
+        if not student or memoire.student != student:
+            return Response({"detail": "Seul l'étudiant concerné peut soumettre le travail."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = StudentMemoireSubmissionSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            
+            # Créer la soumission
+            submission = StudentMemoireSubmission.objects.create(
+                memoire=memoire,
+                submitter=student,
+                final_subject=data['subject']
+            )
+            
+            # Mettre à jour le statut du projet
+            memoire.status = 'submitted'
+            memoire.save()
+            
+            return Response(StudentMemoireSubmissionDetailSerializer(submission).data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path='details_submission')
+    def details_submission(self, request, pk=None):
+        memoire = self.get_object()
+        submission = StudentMemoireSubmission.objects.filter(memoire=memoire).last()
+        if not submission:
+            return Response({"detail": "Aucune soumission trouvée pour ce travail."}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response(StudentMemoireSubmissionDetailSerializer(submission).data)
+
+    @action(detail=True, methods=['post'], url_path='cancel_submission')
+    def cancel_submission(self, request, pk=None):
+        # Seuls les utilisateurs avec la permission 'isp_departement_officier' peuvent annuler
+        if not request.user.has_perm('isp_stage.isp_departement_officier'):
+            return Response({"detail": "Vous n'avez pas la permission d'annuler la soumission."}, status=status.HTTP_403_FORBIDDEN)
+
+        memoire = self.get_object()
+        if memoire.status != 'submitted':
+            return Response({"detail": "Le travail n'est pas en statut 'soumis'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Supprimer la dernière soumission
+        last_submission = StudentMemoireSubmission.objects.filter(memoire=memoire).last()
+        if last_submission:
+            last_submission.delete()
+
+        # Remettre le statut du projet à 'in_progress'
+        memoire.status = 'in_progress'
+        memoire.save()
+
+        return Response({"detail": "La soumission a été annulée avec succès."}, status=status.HTTP_200_OK)
+
 
 class DepartmentSettingsViewSet(viewsets.ModelViewSet):
     queryset = DepartmentSettings.objects.all()
@@ -1247,7 +1304,7 @@ class DepartmentSettingsViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def me(self, request):
         user: User = request.user
-        if user.has_perm('isp_stage.isp_departement_officier') : 
+        if user.has_perm('isp_stage.isp_departement_officier') :
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not department_officier.exists() :
                 return Response("Aucune donnée trouvé  -> department_officier", 404 )
@@ -1267,7 +1324,7 @@ class DepartmentSettingsViewSet(viewsets.ModelViewSet):
             student = Student.objects.filter(user = user)
             if not student.exists() :
                 return Response("Aucune donnée trouvé -> student", 404 )
-            else : 
+            else :
                 student: Student  = student[0]
                 department_settings = DepartmentSettings.objects.filter(department = student.promotion.grade )
                 if department_settings.exists() :
@@ -1369,10 +1426,10 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
             dept_officier = dept_officier.first()
             students_without_stage = students_without_stage.filter(promotion__grade__id = dept_officier.dept.id)
 
-        if stage_type == "pedagogique" or stage_type == "entreprise" : 
+        if stage_type == "pedagogique" or stage_type == "entreprise" :
             students_without_stage = students_without_stage.filter(promotion__libelle = "L3 (LMD)")
         
-        if stage_type == "impregnation" : 
+        if stage_type == "impregnation" :
             students_without_stage = students_without_stage.filter(promotion__libelle = "L2 (LMD)")
         
         page = self.paginate_queryset(students_without_stage)
@@ -1448,7 +1505,7 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             
         if user.has_perm('isp_stage.isp_departement_officier') :
             departmentOfficier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
-            if not departmentOfficier.exists() : 
+            if not departmentOfficier.exists() :
                 return DirecteurTravaux.objects.none()
             departmentOfficier = departmentOfficier.first()
             queryset = queryset.filter(department__id = departmentOfficier.dept.id)
@@ -1506,9 +1563,9 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
         user = self.request.user
         # if user.has_perm('isp_stage.isp_directeur_travaux'):
         directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id)
-        if directeursTraveaux.exists() : 
+        if directeursTraveaux.exists() :
             return Response( DirecteurTravauxSerializer(directeursTraveaux, many=True).data )
-        return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404)
+        return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404 )
 
     @action(detail=False, methods=['get'])
     def resumes(self, request):
@@ -1678,3 +1735,37 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename="projets-soumis.xlsx"'
         
         return response
+
+
+class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
+    queryset = StudentMemoireSubmission.objects.all().order_by('-submission_date')
+    serializer_class = StudentMemoireSubmissionDetailSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        "final_subject", 
+        "memoire__subject", 
+        "submitter__user__name", 
+        "submitter__user__first_name", 
+        "submitter__user__last_name"
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = super().get_queryset()
+
+        if user.is_superuser:
+            return queryset
+
+        if user.has_perm('isp_stage.isp_departement_officier'):
+            dept_officier = DeptRechercheOfficier.objects.filter(employee__user=user).first()
+            if dept_officier:
+                return queryset.filter(memoire__student__promotion__grade=dept_officier.dept)
+            else:
+                return StudentMemoireSubmission.objects.none()
+
+        student = Student.objects.filter(user=user).first()
+        if student:
+            return queryset.filter(submitter=student)
+
+        return StudentMemoireSubmission.objects.none()

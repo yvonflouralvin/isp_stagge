@@ -147,7 +147,7 @@ class StudentMemoireSerializer(serializers.ModelSerializer):
     )
     class Meta :
         model = StudentMemoire
-        fields = ['id', 'subject', 'student_id', 'student', 'director', 'director_id']
+        fields = ['id', 'subject', 'student_id', 'student', 'director', 'director_id', 'status']
     
 
 class DepartmentSettingsSerializer(serializers.ModelSerializer):
@@ -198,5 +198,23 @@ class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):
             'submission_date',
             'final_subject',
             'members',
+            'created_at'
+        ]
+
+class StudentMemoireSubmissionSerializer(serializers.Serializer):
+    subject = serializers.CharField(max_length=255)
+
+class StudentMemoireSubmissionDetailSerializer(serializers.ModelSerializer):
+    memoire = StudentMemoireSerializer(read_only=True)
+    submitter = StudentSerializer(read_only=True)
+    
+    class Meta:
+        model = StudentMemoireSubmission
+        fields = [
+            'id',
+            'memoire',
+            'submitter',
+            'submission_date',
+            'final_subject',
             'created_at'
         ]

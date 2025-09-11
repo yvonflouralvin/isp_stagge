@@ -28,6 +28,7 @@ export interface StudentMemoire {
     student: Student
     director_id: string
     student_id: string
+    status: "in_progress" | "submitted" | "validated" | "rejected"
 }
 
 export interface StudentMemoireFormPageProps extends PageProps {

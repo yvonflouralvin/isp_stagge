@@ -103,10 +103,34 @@ class ProjetTutoreSubmission(CoreBaseModel):
 
 
 class StudentMemoire(CoreBaseModel):
+
+    STATUS_CHOICES = [
+        ('in_progress', 'En cours'),
+        ('submitted', 'Soumis'),
+        ('validated', 'Validé'),
+        ('rejected', 'Rejeté'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject = models.TextField(null=False, blank=False)
     student = models.ForeignKey(Student, null=False, related_name="student", on_delete=models.CASCADE) 
     director = models.ForeignKey(DirecteurTravaux, null=True, blank=True, on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='in_progress',
+        verbose_name="Statut"
+    )
+
+class StudentMemoireSubmission(CoreBaseModel):
+    memoire = models.ForeignKey(StudentMemoire, on_delete=models.CASCADE, related_name="submissions")
+    submitter = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
+    submission_date = models.DateTimeField(auto_now_add=True)
+    final_subject = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"Soumission pour {self.memoire.subject} le {self.submission_date.strftime('%d/%m/%Y')}"
+
 
 class DepartmentSettings(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

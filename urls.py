@@ -19,6 +19,7 @@ router.register(r'department-settings', DepartmentSettingsViewSet)
 router.register(r'teacher-for-memoire-projet', StageSearchingTeacherViewSet)
 router.register(r'directeur-travaux', DirecteurTravauxViewSet)
 router.register(r'projets-tutores-soumissions', ProjetTutoreSubmissionViewSet)
+router.register(r'students-memoires-soumissions', StudentMemoireSubmissionViewSet)
 
 urlpatterns = [
     path('',include(router.urls)),
@@ -29,7 +30,4 @@ urlpatterns = [
     path('resumes', views.stages_resumes, name="staff-resumes"),
     path('admin-resumes', views.admin_reports, name='admin-resumes'),
     path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
-    path('projets-tutores/<uuid:projet_id>/submit/', views.submit_projet_tutore, name='submit_projet_tutore'),
-    path('projets-tutores/<str:projet_id>/cancel_submission/', views.cancel_projet_tutore_submission, name='cancel_projet_tutore_submission'),
-    path('projets-tutores/<str:projet_id>/details_submission/', views.projet_tutore_submission_details, name='projet_tutore_submission_details'),
 ]
