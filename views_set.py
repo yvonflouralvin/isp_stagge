@@ -1179,6 +1179,16 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             serializer = StudentSerializer(paginated_students, many=True)
             return paginator.get_paginated_response(serializer.data)
     
+
+
+    @action(detail=True, methods=['get'], url_path='details_submission')
+    def details_submission(self, request, pk=None):
+        projet = self.get_object()
+        submission = ProjetTutoreSubmission.objects.filter(projet=projet).last()
+        if not submission:
+            return Response({"detail": "Aucune soumission trouvée pour ce travail."}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response(ProjetTutoreSubmissionDetailSerializer(submission).data)
             
 
 
