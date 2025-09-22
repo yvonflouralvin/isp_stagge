@@ -1189,6 +1189,27 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Aucune soumission trouvée pour ce travail."}, status=status.HTTP_404_NOT_FOUND)
         
         return Response(ProjetTutoreSubmissionDetailSerializer(submission).data)
+
+    @action(detail=True, methods=['post'], url_path='cancel_submission')
+    def cancel_submission(self, request, pk=None):
+        # Seuls les utilisateurs avec la permission 'isp_departement_officier' peuvent annuler
+        if not request.user.has_perm('isp_stage.isp_departement_officier'):
+            return Response({"detail": "Vous n'avez pas la permission d'annuler la soumission."}, status=status.HTTP_403_FORBIDDEN)
+
+        projet = self.get_object()
+        if projet.status != 'submitted':
+            return Response({"detail": "Le travail n'est pas en statut 'soumis'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Supprimer la dernière soumission
+        last_submission = ProjetTutoreSubmission.objects.filter(projet=projet).last()
+        if last_submission:
+            last_submission.delete()
+
+        # Remettre le statut du projet à 'in_progress'
+        projet.status = 'in_progress'
+        projet.save()
+
+        return Response({"detail": "La soumission a été annulée avec succès."}, status=status.HTTP_200_OK)
             
 
 
