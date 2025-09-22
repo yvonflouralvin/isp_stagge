@@ -1715,7 +1715,8 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
         sheet = workbook.active
         sheet.title = "Projets Tutorés Soumis"
 
-        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur", "Lecteur 1", "Lecteur 2"]
+        # Ajout de la colonne Date
+        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur", "Lecteur 1", "Lecteur 2", "Date"]
         sheet.append(headers)
 
         projets = defaultdict(list)
@@ -1730,27 +1731,26 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
 
             sujet = submission.final_subject
             directeur = submission.projet.director.employee.fullname if submission.projet.director else "N/A"
-
-            # Récupérer tous les membres (y compris chef du groupe)
-            # membres = [f"{submission.projet.head.user.name} {submission.projet.head.user.last_name} (Chef)"]
+            date_creation = submission.created_at.strftime("%d/%m/%Y %H:%M")  # Format lisible
 
             membres = []
             membres += [f"{m.user.name} {m.user.last_name}" for m in submission.members.all()]
 
             start_row = row_index
             for membre in membres:
-                sheet.append([group_number, membre, sujet, directeur, "", ""])
+                sheet.append([group_number, membre, sujet, directeur, "", "", date_creation])
                 row_index += 1
 
             end_row = row_index - 1
 
-            # Fusionner N° Groupe, Sujet et Directeur
+            # Fusionner cellules (sauf Date, car spécifique à chaque submission si besoin)
             if start_row < end_row:
                 sheet.merge_cells(start_row=start_row, start_column=1, end_row=end_row, end_column=1)  # N° Groupe
                 sheet.merge_cells(start_row=start_row, start_column=3, end_row=end_row, end_column=3)  # Sujet
                 sheet.merge_cells(start_row=start_row, start_column=4, end_row=end_row, end_column=4)  # Directeur
                 sheet.merge_cells(start_row=start_row, start_column=5, end_row=end_row, end_column=5)  # Lecteur 1
                 sheet.merge_cells(start_row=start_row, start_column=6, end_row=end_row, end_column=6)  # Lecteur 2
+                sheet.merge_cells(start_row=start_row, start_column=7, end_row=end_row, end_column=7)  # Date
 
             group_number += 1
 
@@ -1809,7 +1809,7 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
         sheet = workbook.active
         sheet.title = "Mémoires Soumis"
 
-        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur", "Lecteur 1", "Lecteur 2"]
+        headers = ["N°", "Noms et Post-nom", "Sujet", "Directeur", "Lecteur 1", "Lecteur 2", "Date"]
         sheet.append(headers)
 
         row_index = 2
@@ -1817,8 +1817,9 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
             student_name = f"{submission.memoire.student.user.name} {submission.memoire.student.user.last_name}"
             sujet = submission.final_subject
             directeur = submission.memoire.director.employee.fullname if submission.memoire.director else "N/A"
+            date_creation = submission.created_at.strftime("%d/%m/%Y %H:%M")  # Format lisible
             
-            sheet.append([index, student_name, sujet, directeur, "", ""])
+            sheet.append([index, student_name, sujet, directeur, "", "", date_creation])
             row_index += 1
 
         virtual_workbook = BytesIO()
