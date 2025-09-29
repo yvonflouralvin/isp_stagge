@@ -191,6 +191,8 @@ const ButtonSubmitMemoire = (
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [finalSubject, setFinalSubject] = React.useState(props.initialSubject)
     const [error, setError] = React.useState<string | null>(null)
+    const [step, setStep] = React.useState<number>(1)
+    const [rootPassword, setRootPassword] = React.useState<string|undefined>()
 
     const submit = async () => {
         if (!finalSubject) {
@@ -225,6 +227,8 @@ const ButtonSubmitMemoire = (
                 </ModalHeader>
                 <ModalBody>
                     <div className='mt-[15px] flex flex-col gap-4'>
+                          {
+                            step === 1 && <>
                         <div>
                             <p className="text-gray-600 text-sm font-medium">Sujet final du travail</p>
                             <input
@@ -234,11 +238,24 @@ const ButtonSubmitMemoire = (
                                 onChange={(e) => setFinalSubject(e.target.value)}
                             />
                         </div>
-
+                        </> }
+                        {
+                            step === 2 && <>
+                            <div>
+                                <input placeholder='Password' onChange={(e)=> setRootPassword(e.target.value)}/>    
+                            </div>      
+                        </>
+                        }
                         {error && <p className="text-red-500 text-sm">{error}</p>}
 
                         <div className='flex justify-end items-center gap-3 mt-4 mb-2'>
-                            <button onClick={() => setIsOpen(false)} className='text-gray-600 text-[13px] py-[4px] px-[15px] rounded'>Annuler</button>
+                            <button onClick={() => {
+                                if(step === 2){
+                                    setStep(1);
+                                    return;
+                                }
+                                setIsOpen(false)
+                            }} className='text-gray-600 text-[13px] py-[4px] px-[15px] rounded'>Annuler</button>
                             <button onClick={submit} disabled={isSubmitting} className='bg-primary text-white text-[13px] py-[4px] px-[15px] rounded flex items-center'>
                                 {isSubmitting ? <Spinner size='sm' color='white' /> : "Confirmer la soumission"}
                             </button>
