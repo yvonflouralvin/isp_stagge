@@ -1180,6 +1180,35 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             return paginator.get_paginated_response(serializer.data)
     
 
+    @action(detail=True, methods=['post'], url_path='submit')
+    def submit(self, request, pk=None):
+        projet = self.get_object()
+
+        # Vérifier si l'utilisateur est le chef du projet
+        student = Student.objects.filter(user=request.user).first()
+        # if not student or projet.head != student:
+        #     return Response({"detail": "Seul l'étudiant concerné peut soumettre le travail."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = ProjetTutoreSubmissionSerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            
+            # Créer la soumission
+            submission = ProjetTutoreSubmission.objects.create(
+                projet=projet,
+                submitter=student
+            )
+            
+            # Mettre à jour le statut du projet
+            projet.status = 'submitted'
+            projet.save()
+            
+            return Response(ProjetTutoreSubmissionSerializer(submission).data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
+
 
     @action(detail=True, methods=['get'], url_path='details_submission')
     def details_submission(self, request, pk=None):

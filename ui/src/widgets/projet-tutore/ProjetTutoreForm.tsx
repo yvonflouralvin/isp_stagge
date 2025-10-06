@@ -318,7 +318,7 @@ const ButtonSubmitProjetTutore = (
         setError(null);
         try {
             const payload = {
-                subject: finalSubject,
+                final_subject: finalSubject,
                 members: selectedMemberIds,
             };
             // Note: L'URL de l'API '/submit/' est une convention. Adaptez-la si nécessaire.

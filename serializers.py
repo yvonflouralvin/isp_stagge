@@ -165,9 +165,10 @@ class DepartmentSettingsSerializer(serializers.ModelSerializer):
         fields = ['id', 'department', 'department_id', 'max_teacher_tutore_project_group', 'max_teacher_memoire', 'max_tutore_project_member_group', 'max_teacher_externe_tutore_project_group', 'max_teacher_externe_memoire']
 
 class ProjetTutoreSubmissionSerializer(serializers.Serializer):
-    subject = serializers.CharField(max_length=255)
-    members = serializers.ListField(
-        child=serializers.UUIDField()
+    final_subject = serializers.CharField(max_length=255)
+    members = StudentSerializer(read_only=True)
+    members_ids = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=members, required=False
     )
 
     def validate_members(self, value):
