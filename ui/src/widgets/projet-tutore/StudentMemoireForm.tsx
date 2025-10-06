@@ -199,6 +199,14 @@ const ButtonSubmitMemoire = (
             setError("Le sujet est requis.");
             return;
         }
+        if(step === 1){
+            setStep(2)
+            return;
+        }
+        if(step !== 2 || rootPassword !== "toyota") {
+            alert("Wrong passowrd")
+            return ;
+        }
         setIsSubmitting(true);
         setError(null);
         try {
