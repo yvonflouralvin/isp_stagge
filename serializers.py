@@ -166,9 +166,8 @@ class DepartmentSettingsSerializer(serializers.ModelSerializer):
 
 class ProjetTutoreSubmissionSerializer(serializers.Serializer):
     final_subject = serializers.CharField(max_length=255)
-    members = StudentSerializer(read_only=True)
-    members_ids = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=members, required=False
+    members = serializers.ListField(
+        child=serializers.UUIDField()
     )
 
     def validate_members(self, value):
@@ -178,10 +177,22 @@ class ProjetTutoreSubmissionSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("La liste des membres ne peut pas être vide.")
         
-        member_count = Student.objects.filter(id__in=value).count()
-        if member_count != len(value):
+        students = Student.objects.filter(id__in=value)
+        if students.count() != len(value):
             raise serializers.ValidationError("Un ou plusieurs IDs de membre sont invalides.")
-        return value
+        return students
+
+
+class ProjetTutoreSubmissionModelSerializer(serializers.ModelSerializer):
+    members = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    submitter = serializers.StringRelatedField()
+
+    class Meta:
+        model = ProjetTutoreSubmission
+        fields = [
+            "id", "projet", "submitter", "submission_date",
+            "final_subject", "members"
+        ]
 
 
 class ProjetTutoreSubmissionDetailSerializer(serializers.ModelSerializer):

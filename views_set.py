@@ -642,8 +642,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         student = Student.objects.filter(id=pk).first()
         if not student:
             return Response({'error': 'Étudiant non trouvé.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        student.user.set_password(make_password(os.environ.get("DEFAULT_PASS", "1234")))
+        student.user.set_password(os.environ.get("DEFAULT_PASS", "1234"))
         student.user.save()
         return Response({'message': 'Mot de passe réinitialisé avec succès.'}, status=status.HTTP_200_OK)
     
@@ -1196,14 +1195,19 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             # Créer la soumission
             submission = ProjetTutoreSubmission.objects.create(
                 projet=projet,
-                submitter=student
+                submitter=student,
+                final_subject=data["final_subject"]
             )
+
+            # Ajout des membres (ManyToMany)
+            submission.members.set(data["members"])
+            submission.save()
             
             # Mettre à jour le statut du projet
             projet.status = 'submitted'
             projet.save()
             
-            return Response(ProjetTutoreSubmissionSerializer(submission).data, status=status.HTTP_201_CREATED)
+            return Response(ProjetTutoreSubmissionModelSerializer(submission).data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
