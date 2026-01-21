@@ -230,3 +230,8 @@ class StudentMemoireSubmissionDetailSerializer(serializers.ModelSerializer):
             'final_subject',
             'created_at'
         ]
+
+class IspConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IspConfig
+        fields = ['config_key', 'config_value']
