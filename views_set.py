@@ -407,6 +407,24 @@ class StudentForStageAPIView(APIView):
                 )
                 _stage.save()
 
+        if stage == "pedagogique":
+            # Get students with entreptise stage but no pedagogique stage
+            pedagogique_students = Stage.objects.filter(stage="pedagogique").values_list('student_id', flat=True)
+            entreprise_students = Stage.objects.filter(stage="entreprise").values_list('student_id', flat=True)
+            missing_pedagogique = set(entreprise_students) - set(pedagogique_students)
+
+            print(missing_pedagogique)
+            print("missing pedagogique")
+
+            # Create missing pedagogique stages
+            for student_id in missing_pedagogique:
+                student = Student.objects.get(id=student_id)
+                _stage = Stage.objects.create(
+                    stage="pedagogique",
+                    student=student
+                )
+                _stage.save()
+
         user: User = request.user
         # L'utilisateur n'est ni maitre de stage, si chef de la recherche du département
         if not user.has_perm('isp_stage.isp_departement_officier') and not user.has_perm('isp_stage.isp_user_stage_master') and user.is_superuser ==  False:
