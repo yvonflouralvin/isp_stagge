@@ -2,21 +2,31 @@ from django.db import models
 from slugify import slugify
 import uuid
 from core.models import User
-from uscitech_academy.models import Student, GradeClasse, Teacher
+from uscitech_academy.models import Student, GradeClasse, Teacher, AcademicYear
 from hr.models import Employee
 from core.models import CoreBaseModel
 
+class IspConfig(CoreBaseModel):
+    id = models.UUIDField(default=uuid.uuid4, editable=False)
+    config_key = models.CharField(primary_key=True, editable=True)
+    config_value = models.CharField(max_length=255)
+
+class UserSelectedAcademicYear(CoreBaseModel):
+    id = models.CharField(primary_key=True, editable=True, max_length=255)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
+    academic_year = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, blank=True, null=True)
 
 class DeptRechercheOfficier(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=False)
     dept = models.ForeignKey(GradeClasse, on_delete=models.CASCADE)
-
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 class StageMaster(CoreBaseModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     employee = models.OneToOneField(Employee, on_delete=models.CASCADE)
     is_quote_submitted = models.BooleanField(default=False) 
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
     
 
 class DirecteurTravaux(CoreBaseModel):
@@ -34,11 +44,14 @@ class DirecteurTravaux(CoreBaseModel):
         ('externe', 'Pas du Département'),
     ], null=False)
 
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
+
     # Définir la contrainte d'unicité
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['department', 'direction_type', 'employee'], name='unique_director_for_dept_and_direction_type')
         ]
+
 
 class Stage(CoreBaseModel):
 
@@ -66,6 +79,7 @@ class Stage(CoreBaseModel):
     quote_object = models.JSONField(default=dict)
     quote_by = models.ForeignKey(StageMaster, on_delete=models.CASCADE, null=True, blank=True, related_name="quote_by")
     quote_status = models.CharField(choices=[('submitted', "Soumie"), ('draft', "Brouillon")], default='draft')
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class ProjetTutore(CoreBaseModel):
@@ -88,6 +102,7 @@ class ProjetTutore(CoreBaseModel):
         default='in_progress',
         verbose_name="Statut"
     )
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 
 class ProjetTutoreSubmission(CoreBaseModel):
@@ -99,6 +114,7 @@ class ProjetTutoreSubmission(CoreBaseModel):
 
     def __str__(self):
         return f"Soumission pour {self.projet.subject} le {self.submission_date.strftime('%d/%m/%Y')}"
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 
 
@@ -121,12 +137,14 @@ class StudentMemoire(CoreBaseModel):
         default='in_progress',
         verbose_name="Statut"
     )
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 class StudentMemoireSubmission(CoreBaseModel):
     memoire = models.ForeignKey(StudentMemoire, on_delete=models.CASCADE, related_name="submissions")
     submitter = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     final_subject = models.CharField(max_length=255)
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return f"Soumission pour {self.memoire.subject} le {self.submission_date.strftime('%d/%m/%Y')}"
@@ -140,5 +158,6 @@ class DepartmentSettings(CoreBaseModel):
     max_teacher_memoire = models.IntegerField(default=1, blank=True) # Nombre de memoire du département
     max_teacher_externe_memoire = models.IntegerField(default=1, blank=True) # Nombre de memoire du département
     max_tutore_project_member_group = models.IntegerField(default=1, blank=True)
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
 

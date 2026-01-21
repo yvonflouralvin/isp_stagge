@@ -35,24 +35,58 @@ from uscitech_academy.serializers import GradeClasseSerializer
 from rest_framework import status
 import pandas as pd
 from slugify import slugify
+import json
 
+
+
+def get_current_academic_year(user):
+    user_current_academic_year = UserSelectedAcademicYear.objects.filter(user = user).first()
+    if user_current_academic_year :
+        return user_current_academic_year.academic_year.id
+    else :
+        default_academic_year = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first() 
+        if default_academic_year :
+            UserSelectedAcademicYear.objects.create(
+                id = f'{user.id}',
+                user = user,
+                academic_year = default_academic_year.academic_year
+            )
+            return default_academic_year.academic_year.id
+    return None
+
+def get_academic_year(user):
+    return AcademicYear.objects.filter(id=get_current_academic_year(user)).first()
 
 class PromotionL2(APIView):
     def get(self, request):
+        user = request.user
+        #current_academic_year = get_current_academic_year(user)
+        #queryset = Promotion.objects.filter(libelle="L2 (LMD)", academicyear=current_academic_year)
         queryset = Promotion.objects.filter(libelle="L2 (LMD)")
         datas = PromotionSerializer(queryset, many=True)
         return Response(datas.data)
 
 class PromotionL3(APIView):
     def get(self, request):
+        #current_academic_year = get_current_academic_year(request.user)
+        #queryset = Promotion.objects.filter(libelle="L3 (LMD)", academicyear=current_academic_year)
         queryset = Promotion.objects.filter(libelle="L3 (LMD)")
         datas = PromotionSerializer(queryset, many=True)
         return Response(datas.data)
 
 class StageViewSet(viewsets.ModelViewSet):
     pagination = Paginator()
-    queryset = Stage.objects.all()
+    
+    # current_academic_year = current_academic_year = get_current_academic_year(user)
+    # queryset = Stage.objects.filter(academicyear=current_academic_year)
     serializer_class = StageSerializer
+
+    def get_queryset(self):
+        try:
+            current_academic_year = get_current_academic_year(self.request.user)
+            return Stage.objects.filter(academicyear=current_academic_year)
+        except:
+            return Stage.objects.none()
   
     @action(detail=True, methods=['post'], url_path="set-master")
     def set_master(self, request, pk):
@@ -118,7 +152,8 @@ class StageViewSet(viewsets.ModelViewSet):
     def get_by_user(self, request):
         user = request.user
         stage_type = request.GET.get('stage', None)
-        queryset = Stage.objects.filter(student__user__id=user.id)
+        current_academic_year = get_current_academic_year(user)
+        queryset = Stage.objects.filter(student__user__id=user.id, academicyear__id=current_academic_year)
         if stage_type is not None:
             try:
                 if len(queryset) == 1 :
@@ -182,7 +217,16 @@ class StageViewSet(viewsets.ModelViewSet):
     
 
 class StageMasterViewSet(viewsets.ModelViewSet):
-    queryset = StageMaster.objects.all()
+    
+    # current_academic_year = current_academic_year = get_current_academic_year(user)
+    # queryset = StageMaster.objects.filter(academicyear=current_academic_year)
+    
+    def get_queryset(self):
+        try:
+            current_academic_year = get_current_academic_year(self.request.user)
+            return StageMaster.objects.filter()
+        except:
+            return StageMaster.objects.none()
     serializer_class = StageMasterSerializer
     pagination_class = Paginator
     filter_backends = (filters.SearchFilter, DjangoFilterBackend)  # Ajout du filtre de recherche
@@ -388,14 +432,16 @@ class StudentForStageAPIView(APIView):
 
     def get(self, request, stage):
 
-        paginator = Paginator()
-        stages = Stage.objects.all()
+        paginator = Paginator() 
+        academicyear = get_academic_year(request.user)
+
+        stages = Stage.objects.filter(academicyear=academicyear) 
         disable_pagination = request.GET.get('disable_pagination', "0")
 
         if stage == "entreprise":
             # Get students with pedagogique stage but no entreprise stage
-            pedagogique_students = Stage.objects.filter(stage="pedagogique").values_list('student_id', flat=True)
-            entreprise_students = Stage.objects.filter(stage="entreprise").values_list('student_id', flat=True)
+            pedagogique_students = Stage.objects.filter(academicyear = academicyear,  stage="pedagogique").values_list('student_id', flat=True)
+            entreprise_students = Stage.objects.filter(academicyear = academicyear, stage="entreprise").values_list('student_id', flat=True)
             missing_entreprise = set(pedagogique_students) - set(entreprise_students)
 
             # Create missing entreprise stages
@@ -403,26 +449,25 @@ class StudentForStageAPIView(APIView):
                 student = Student.objects.get(id=student_id)
                 _stage = Stage.objects.create(
                     stage="entreprise",
-                    student=student
+                    student=student,
+                    academicyear = get_academic_year(request.user), 
                 )
                 _stage.save()
 
         if stage == "pedagogique":
             # Get students with entreptise stage but no pedagogique stage
-            pedagogique_students = Stage.objects.filter(stage="pedagogique").values_list('student_id', flat=True)
-            entreprise_students = Stage.objects.filter(stage="entreprise").values_list('student_id', flat=True)
+            pedagogique_students = Stage.objects.filter(academicyear = academicyear, stage="pedagogique").values_list('student_id', flat=True)
+            entreprise_students = Stage.objects.filter(academicyear = academicyear, stage="entreprise").values_list('student_id', flat=True)
             missing_pedagogique = set(entreprise_students) - set(pedagogique_students)
-
-            print(missing_pedagogique)
-            print("missing pedagogique")
 
             # Create missing pedagogique stages
             for student_id in missing_pedagogique:
                 student = Student.objects.get(id=student_id)
                 _stage = Stage.objects.create(
                     stage="pedagogique",
-                    student=student
-                )
+                    student=student,
+                    academicyear = academicyear
+                )   
                 _stage.save()
 
         user: User = request.user
@@ -441,7 +486,8 @@ class StudentForStageAPIView(APIView):
         elif user.is_superuser ==  True:
             stages = stages.filter(stage=stage)
         elif stage == "all" :
-            stages = Stage.objects.all()
+            current_academic_year = current_academic_year = get_current_academic_year(user)
+            stages = Stage.objects.filter(academicyear__id=current_academic_year) 
 
         if stages == None :
             return Response({"message": "Vous n'avez pas les droits pour accéder à cette page."}, status=403)
@@ -526,17 +572,19 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
         - Si `parent_department_id` est fourni, retourne les sous-départements du département donné.
         - Sinon, retourne tous les départements.
         """
+        user = self.request.user
+        current_academic_year = get_current_academic_year(user)
+        print("CURRENT ACADEMIC YEAR :",  current_academic_year)
         students_for = self.request.query_params.get('for', None)
         filter_promotion = self.request.query_params.get('filter_promotion', None)
         
-        user = self.request.user
         if user.has_perm("isp_stage.isp_departement_officier") :
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
             if not  department_officier.exists() :
                 return Student.objects.none()
             
             department_officier: DeptRechercheOfficier = department_officier[0]
-            queryset = Student.objects.filter(promotion__grade__id = department_officier.dept.id)
+            queryset = Student.objects.filter(promotion__grade__id = department_officier.dept.id, academicyear__id = current_academic_year)
             if filter_promotion != None :
                 queryset = queryset.filter(promotion__libelle = filter_promotion)
             return queryset
@@ -548,7 +596,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
 
             student = student.first()
             
-            queryset = Student.objects.filter(promotion__id=student.promotion.id)
+            queryset = Student.objects.filter(promotion__id=student.promotion.id, academicyear__id = current_academic_year)
 
             # Filtrage en fonction de "memoire"
             if students_for == "memoire":
@@ -557,7 +605,7 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
 
             # Filtrage en fonction de "projet-tutore"
             elif students_for == "projet-tutore":
-                projet_tutores = ProjetTutore.objects.filter(head__promotion__id=student.promotion.id)
+                projet_tutores = ProjetTutore.objects.filter(head__promotion__id=student.promotion.id, head__academicyear__id = current_academic_year)
                 excluded_members = [member.id for projet_tutore in projet_tutores for member in projet_tutore.member.all()]
                 excluded_heads = [projet_tutore.head.id for projet_tutore in projet_tutores]
                 queryset = queryset.exclude(id__in=excluded_members).exclude(id__in=excluded_heads)
@@ -574,7 +622,9 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        queryset = self.get_queryset()
+        user = request.user
+        current_academic_year = get_current_academic_year(user)
+        queryset = self.get_queryset() #.filter(academic_year__id = current_academic_year)
         return Response({
             "count": len(queryset),
             "l2as": len(queryset.filter(promotion__libelle = "L2 (AS)")),
@@ -585,6 +635,8 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='bulk-upload')
     def bulk_upload(self, request):
         user = request.user
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(request.user)
         # promotion = Promotion.objects.filter(grade__id = )
         promotion_id = request.data.get('promotion_id', None)
         file = request.FILES.get('file')
@@ -639,7 +691,8 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
                         
                     student, created = Student.objects.get_or_create(
                         user=user,
-                        defaults={'promotion': promotion}
+                        defaults={'promotion': promotion},
+                        academic_year = academicyear
                     )
 
                     created_students.append(student.id)
@@ -690,7 +743,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     
 
 
-    @action(detail=False, url_path='get_by_user_id/(?P<user_id>\d+)')
+    @action(detail=False, url_path=r'get_by_user_id/(?P<user_id>\d+)')
     def get_by_user_id(self, request, user_id):
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user_id)
         if dept.exists():
@@ -736,6 +789,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def student_without_memoires(self, request):
         user = request.user
+        academicyear = get_academic_year(user)
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
 
         if not dept:
@@ -743,7 +797,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
 
         # Récupérer les étudiants ayant un mémoire mais sans directeur
         memoires_sans_directeur = StudentMemoire.objects.filter(
-            student__promotion__grade=dept.dept, director__isnull=False
+            student__promotion__grade=dept.dept, director__isnull=False, academicyear = academicyear
         )
         
         students_a_exclure = memoires_sans_directeur.values_list('student_id', flat=True)
@@ -751,7 +805,8 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         # Récupérer tous les étudiants de L2 (AS) qui n'ont pas de mémoire ou un mémoire sans directeur
         students = Student.objects.filter(
             promotion__grade=dept.dept, 
-            promotion__libelle='L2 (AS)'
+            promotion__libelle='L2 (AS)',
+            academicyear = academicyear
         ).exclude(id__in=students_a_exclure)
 
         disable_pagination = request.GET.get('disable_pagination', '0')
@@ -767,6 +822,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def generer_excel_student_pedagogique_full(self, request):
+        academicyear = get_academic_year(request.user)
         """
         Génère un fichier Excel, l'enregistre dans le répertoire de médias
         et redirige l'utilisateur vers une URL de téléchargement.
@@ -784,7 +840,7 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         if not dept:
             return Response([], 404)
         
-        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept, academicyear = academicyear)
 
         # Créer un nouveau classeur Excel 2016
         workbook = Workbook(write_only=True)
@@ -928,12 +984,13 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         stage = "pedagogique"
 
         user = request.user
+        academicyear = get_academic_year(user)
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
 
         if not dept:
             return Response([], 404)
         
-        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept, academicyear = academicyear)
 
         # Créer un nouveau classeur Excel 2016
         workbook = Workbook(write_only=True)
@@ -1060,12 +1117,13 @@ class DeptRechercheOfficierViewSet(viewsets.ModelViewSet):
         """
 
         user = request.user
+        academicyear = get_academic_year(user)
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
 
         if not dept:
             return Response([], 404)
         
-        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept)
+        stages = Stage.objects.filter(stage = "pedagogique", student__promotion__grade = dept.dept, academicyear = academicyear)
 
         # Créer un nouveau classeur Excel 2016
         workbook = Workbook(write_only=True)
@@ -1135,7 +1193,9 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = ProjetTutore.objects.all()
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
+        queryset = ProjetTutore.objects.filter(academicyear = academicyear)
         # Superutilisateur voit tout
         if user.is_superuser:
             return queryset
@@ -1158,11 +1218,15 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my_projects(self, request):
         """Récupère les projets tutorés où l'utilisateur est soit 'head' soit 'member'"""
-        student = Student.objects.filter(user=request.user).first()
+        user = self.request.user
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
+        student = Student.objects.filter(user=request.user, academicyear = academicyear).first()
         if not student:
             return Response({"detail": "Aucun étudiant associé à cet utilisateur."}, status=404)
 
         projets = ProjetTutore.objects.filter(models.Q(head=student) | models.Q(member=student)).distinct()
+        projects = projects.filter(academicyear = academicyear)
         if len(projets) >= 1 :
             serializer = self.get_serializer(projets[0])
             return Response(serializer.data)
@@ -1172,14 +1236,16 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='student-without-project')
     def student_without_project(self, request):
         user = request.user
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
         dept = DeptRechercheOfficier.objects.filter(employee__user__id=user.id).first()
         if not dept :
             return Response([], 404)
 
-        students_without_project = Student.objects.filter(promotion__grade=dept.dept, promotion__libelle="L3 (LMD)")
+        students_without_project = Student.objects.filter(academicyear = academicyear,  promotion__grade=dept.dept, promotion__libelle="L3 (LMD)")
 
-        heads_notnull = [pj.head.id for pj in ProjetTutore.objects.filter(director__isnull=False)]
-        members_notnull = [member.id for pj in ProjetTutore.objects.filter(director__isnull=False) for member in pj.member.all()]
+        heads_notnull = [pj.head.id for pj in ProjetTutore.objects.filter(director__isnull=False, academicyear = academicyear)]
+        members_notnull = [member.id for pj in ProjetTutore.objects.filter(director__isnull=False , academicyear = academicyear) for member in pj.member.all()]
 
         students_without_project = students_without_project.exclude(
             id__in=heads_notnull + members_notnull
@@ -1200,9 +1266,12 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         projet = self.get_object()
+        user = request.user
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
 
         # Vérifier si l'utilisateur est le chef du projet
-        student = Student.objects.filter(user=request.user).first()
+        student = Student.objects.filter(user=request.user, academicyear = academicyear).first()
         # if not student or projet.head != student:
         #     return Response({"detail": "Seul l'étudiant concerné peut soumettre le travail."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -1214,7 +1283,8 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             submission = ProjetTutoreSubmission.objects.create(
                 projet=projet,
                 submitter=student,
-                final_subject=data["final_subject"]
+                final_subject=data["final_subject"],
+                academicyear = academicyear
             )
 
             # Ajout des membres (ManyToMany)
@@ -1234,8 +1304,11 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='details_submission')
     def details_submission(self, request, pk=None):
+        user = request.user 
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
         projet = self.get_object()
-        submission = ProjetTutoreSubmission.objects.filter(projet=projet).last()
+        submission = ProjetTutoreSubmission.objects.filter(projet=projet, academicyear = academicyear).last()
         if not submission:
             return Response({"detail": "Aucune soumission trouvée pour ce travail."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -1243,6 +1316,9 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='cancel_submission')
     def cancel_submission(self, request, pk=None):
+        user = request.user 
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
         # Seuls les utilisateurs avec la permission 'isp_departement_officier' peuvent annuler
         if not request.user.has_perm('isp_stage.isp_departement_officier'):
             return Response({"detail": "Vous n'avez pas la permission d'annuler la soumission."}, status=status.HTTP_403_FORBIDDEN)
@@ -1252,7 +1328,7 @@ class ProjetTutoreViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Le travail n'est pas en statut 'soumis'."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Supprimer la dernière soumission
-        last_submission = ProjetTutoreSubmission.objects.filter(projet=projet).last()
+        last_submission = ProjetTutoreSubmission.objects.filter(projet=projet, academicyear=academicyear).last()
         if last_submission:
             last_submission.delete()
 
@@ -1273,27 +1349,32 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def my_memoire(self, request):
+        user = request.user 
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
         """Récupère les projets tutorés où l'utilisateur est soit 'head' soit 'member'"""
-        student = Student.objects.filter(user=request.user).first()
+        student = Student.objects.filter(user=request.user, academicyear=academicyear).first()
         if not student:
             return Response({"detail": "Aucun étudiant associé à cet utilisateur."}, status=404)
 
-        projets = StudentMemoire.objects.filter(models.Q(student=student)).distinct()
+        projets = StudentMemoire.objects.filter(models.Q(student=student), academicyear=academicyear).distinct()
         if len(projets) >= 1 :
             serializer = self.get_serializer(projets[0])
             return Response(serializer.data)
         return Response({"detail": "Aucun memoire associé à cet utilisateur."}, status=404)
 
-    def get_queryset(self):
+    def get_queryset(self): 
         user = self.request.user
-        queryset = StudentMemoire.objects.all()
+        current_academic_year = get_current_academic_year(user)
+        academicyear = get_academic_year(user)
+        queryset = StudentMemoire.objects.filter(academicyear=academicyear)
         # Superutilisateur voit tout
         if user.is_superuser:
             return queryset
 
         # Vérifier si l'utilisateur est un enseignant avec la permission spécifique
         if user.has_perm('isp_stage.isp_directeur_travaux'):
-            director = DirecteurTravaux.objects.filter(employee__user=user, direction_type="memoire")
+            director = DirecteurTravaux.objects.filter(employee__user=user, direction_type="memoire", academicyear=academicyear)
             if director.exists() :
                 queryset = queryset.exclude(director = None)
                 queryset = queryset.filter(director__in = director) 
@@ -1302,7 +1383,7 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
 
         # Vérifier si l'utilisateur est un etudiant avec la permission spécifique
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm("uscitech_academy.academy_is_student"):
-            student = Student.objects.filter(user=user).first()
+            student = Student.objects.filter(user=user, academicyear=academicyear).first()
             if student:
                 queryset = queryset.filter(student=student)
 
@@ -1313,7 +1394,7 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
                 queryset = StudentMemoire.objects.none()
             else :
                 dept = dept.first()
-                students = Student.objects.filter(promotion__grade=dept.dept)
+                students = Student.objects.filter(promotion__grade=dept.dept, academicyear=academicyear)
                 queryset = queryset.filter(student__in=students)
 
         # Par défaut, retour vide
@@ -1322,9 +1403,10 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         memoire = self.get_object()
+        academicyear = get_academic_year(request.user)
         
         # Vérifier si l'utilisateur est le chef du projet
-        student = Student.objects.filter(user=request.user).first()
+        student = Student.objects.filter(user=request.user, academicyear=academicyear).first()
         if not student or memoire.student != student:
             return Response({"detail": "Seul l'étudiant concerné peut soumettre le travail."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -1336,7 +1418,8 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
             submission = StudentMemoireSubmission.objects.create(
                 memoire=memoire,
                 submitter=student,
-                final_subject=data['subject']
+                final_subject=data['subject'],
+                academicyear=academicyear
             )
             
             # Mettre à jour le statut du projet
@@ -1349,8 +1432,9 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='details_submission')
     def details_submission(self, request, pk=None):
+        academicyear = get_academic_year(request.user)
         memoire = self.get_object()
-        submission = StudentMemoireSubmission.objects.filter(memoire=memoire).last()
+        submission = StudentMemoireSubmission.objects.filter(memoire=memoire, academicyear = academicyear).last()
         if not submission:
             return Response({"detail": "Aucune soumission trouvée pour ce travail."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -1358,6 +1442,7 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='cancel_submission')
     def cancel_submission(self, request, pk=None):
+        academicyear = get_academic_year(request.user)
         # Seuls les utilisateurs avec la permission 'isp_departement_officier' peuvent annuler
         if not request.user.has_perm('isp_stage.isp_departement_officier'):
             return Response({"detail": "Vous n'avez pas la permission d'annuler la soumission."}, status=status.HTTP_403_FORBIDDEN)
@@ -1367,7 +1452,7 @@ class StudentMemoireViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Le travail n'est pas en statut 'soumis'."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Supprimer la dernière soumission
-        last_submission = StudentMemoireSubmission.objects.filter(memoire=memoire).last()
+        last_submission = StudentMemoireSubmission.objects.filter(memoire=memoire, academicyear = academicyear).last()
         if last_submission:
             last_submission.delete()
 
@@ -1383,8 +1468,14 @@ class DepartmentSettingsViewSet(viewsets.ModelViewSet):
     serializer_class = DepartmentSettingsSerializer
     pagination_class = Paginator
 
+    def get_queryset(self):
+        academicyear = get_academic_year(self.request.user)
+        queryset = DepartmentSettings.objects.filter(academicyear = academicyear)
+        return queryset 
+
     @action(detail=False, methods=['get'])
     def me(self, request):
+        academicyear = get_academic_year(request.user)
         user: User = request.user
         if user.has_perm('isp_stage.isp_departement_officier') :
             department_officier = DeptRechercheOfficier.objects.filter(employee__user__id = user.id)
@@ -1392,28 +1483,30 @@ class DepartmentSettingsViewSet(viewsets.ModelViewSet):
                 return Response("Aucune donnée trouvé  -> department_officier", 404 )
             else :
                 department_officier: DeptRechercheOfficier  = department_officier[0]
-                department_settings = DepartmentSettings.objects.filter(department = department_officier.dept )
+                department_settings = DepartmentSettings.objects.filter(department = department_officier.dept, academicyear = academicyear )
                 if department_settings.exists() :
                     department_settings = department_settings[0]
                 else :
                     department_settings = DepartmentSettings.objects.create(
-                        department = department_officier.dept
+                        department = department_officier.dept,
+                        academicyear = academicyear
                     )
                 serializer = self.get_serializer(department_settings)
                 return Response(serializer.data)
 
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student') :
-            student = Student.objects.filter(user = user)
+            student = Student.objects.filter(user = user, academicyear = academicyear)
             if not student.exists() :
                 return Response("Aucune donnée trouvé -> student", 404 )
             else :
                 student: Student  = student[0]
-                department_settings = DepartmentSettings.objects.filter(department = student.promotion.grade )
+                department_settings = DepartmentSettings.objects.filter(department = student.promotion.grade, academicyear = academicyear )
                 if department_settings.exists() :
                     department_settings = department_settings[0]
                 else :
                     department_settings = DepartmentSettings.objects.create(
-                        department = student.promotion.grade
+                        department = student.promotion.grade,
+                        academicyear = academicyear
                     )
                 serializer = self.get_serializer(department_settings)
                 return Response(serializer.data)
@@ -1433,23 +1526,24 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         user = self.request.user
-
+        academicyear = get_academic_year(user)
         # Vérification des permissions
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student'):
             try:
                 # Récupérer l'étudiant
-                student = Student.objects.get(user=user)
+                student = Student.objects.get(user=user, academicyear = academicyear)
             except ObjectDoesNotExist as e:
                 print(e)
                 return Teacher.objects.none()
 
             # Récupérer les paramètres de département pour l'étudiant
             department_settings, created = DepartmentSettings.objects.get_or_create(
-                department=student.promotion.grade
+                department=student.promotion.grade,
+                academicyear = academicyear
             )
 
             # Récupérer les projets tutorés pour le grade de l'étudiant
-            projets = ProjetTutore.objects.filter(head__promotion__grade=student.promotion.grade)
+            projets = ProjetTutore.objects.filter(head__promotion__grade=student.promotion.grade, academicyear = academicyear)
             print(projets)
 
             # Créer un dictionnaire pour regrouper les enseignants et compter leur nombre d'affectations
@@ -1482,15 +1576,16 @@ class StageSearchingTeacherViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def without_stage(self, request):
-        students_without_stage = Student.objects.all()
+
+        academicyear = get_academic_year(request.user)
+        students_without_stage = Student.objects.filter(academicyear = academicyear)
         search_query = request.GET.get("search", None)
         stage_type = request.GET.get("stage_type", None)
-
         if search_query:
             students_without_stage = students_without_stage.filter(
                 Q(user__username__icontains=search_query) |
                 Q(user__first_name__icontains=search_query) |
-                Q(user__last_name__icontains=search_query)
+                Q(user__last_name__icontains=search_query) 
             )
         
         if stage_type:
@@ -1546,8 +1641,12 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
     search_fields = ["employee__fullname", "employee__user__name",  "employee__user__last_name",  "employee__user__first_name",  "employee__user__phone",  "employee__user__email"]
 
     def perform_create(self, serializer):
+        
+        academicyear = get_academic_year(self.request.user) 
         """Ajouter la permission isp_directeur_travaux à l'utilisateur lors de la création."""
         directeur_travaux = serializer.save()
+        directeur_travaux.academicyear = academicyear 
+        directeur_travaux.save()
         user = directeur_travaux.employee.user  # Récupérer l'utilisateur
 
         permission = Permission.objects.get(codename="isp_directeur_travaux")
@@ -1578,7 +1677,8 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
 
         user = self.request.user
-        queryset = DirecteurTravaux.objects.all()
+        academicyear = get_academic_year(user)
+        queryset = DirecteurTravaux.objects.filter(academicyear = academicyear)
 
         # Filtrage supplémentaire basé sur un paramètre GET
         direction_type = self.request.query_params.get('direction_type', None)
@@ -1593,7 +1693,7 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(department__id = departmentOfficier.dept.id)
         
         if user.has_perm('isp_stage.isp_user_student') or user.has_perm('uscitech_academy.academy_is_student'):
-            student = Student.objects.filter(user__id = user.id)
+            student = Student.objects.filter(user__id = user.id, academicyear = academicyear)
             if not student.exists():
                 return DirecteurTravaux.objects.none()
             student = student.first()
@@ -1601,15 +1701,16 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
 
             # Récupérer les paramètres de département pour l'étudiant
             department_settings, created = DepartmentSettings.objects.get_or_create(
-                department=student.promotion.grade
+                department=student.promotion.grade,
+                academicyear = academicyear
             )
 
             useds =  [] 
             
             if direction_type == "projet-tutore":
-                useds = ProjetTutore.objects.filter(director__in = queryset)
+                useds = ProjetTutore.objects.filter(director__in = queryset, academicyear = academicyear)
             if direction_type == "memoire":
-                useds = StudentMemoire.objects.filter(director__in = queryset)
+                useds = StudentMemoire.objects.filter(director__in = queryset, academicyear = academicyear)
             director_count = {}
             for projet in useds:
                 if projet.director == None :
@@ -1643,18 +1744,20 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
     def me(self, request):
 
         user = self.request.user
+        academicyear = get_academic_year(user)
         # if user.has_perm('isp_stage.isp_directeur_travaux'):
-        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id)
+        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id = user.id, academicyear = academicyear)
         if directeursTraveaux.exists() :
             return Response( DirecteurTravauxSerializer(directeursTraveaux, many=True).data )
         return Response("Aucun enregistrement de directeur de travaux trouvé pour vous ", 404 )
 
     @action(detail=False, methods=['get'])
     def resumes(self, request):
-        user = self.request.user
+        user = self.request.user    
+        academicyear = get_academic_year(user)
         
         # Fetching all associated "Directeurs de Travaux" for the current user
-        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id=user.id)
+        directeursTraveaux = DirecteurTravaux.objects.filter(employee__user__id=user.id, academicyear = academicyear)
         
         if not directeursTraveaux.exists():
             return Response("Aucun enregistrement de directeur de travaux trouvé pour vous", status=404)
@@ -1666,7 +1769,7 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
             dept_id = str(directeursTravail.department.id)
             
             # Fetch DepartmentSettings for the current department
-            dept_settings = DepartmentSettings.objects.get_or_create(department=directeursTravail.department)[0]
+            dept_settings = DepartmentSettings.objects.get_or_create(department=directeursTravail.department, academicyear = academicyear)[0]
             
             # Calculate used quota based on direction type and category
             used_tutore_projects_interne = 0
@@ -1676,15 +1779,15 @@ class DirecteurTravauxViewSet(viewsets.ModelViewSet):
 
             if directeursTravail.direction_type == "projet-tutore":
                 if directeursTravail.category == "interne":
-                    used_tutore_projects_interne = ProjetTutore.objects.filter(director=directeursTravail).count()
+                    used_tutore_projects_interne = ProjetTutore.objects.filter(director=directeursTravail, academicyear = academicyear).count()
                 else:
-                    used_tutore_projects_externe = ProjetTutore.objects.filter(director=directeursTravail).count()
+                    used_tutore_projects_externe = ProjetTutore.objects.filter(director=directeursTravail, academicyear = academicyear).count()
             
             elif directeursTravail.direction_type == "memoire":
                 if directeursTravail.category == "interne":
-                    used_memoire_projects_interne = StudentMemoire.objects.filter(director=directeursTravail).count()
+                    used_memoire_projects_interne = StudentMemoire.objects.filter(director=directeursTravail, academicyear = academicyear).count()
                 else:
-                    used_memoire_projects_externe = StudentMemoire.objects.filter(director=directeursTravail).count()
+                    used_memoire_projects_externe = StudentMemoire.objects.filter(director=directeursTravail, academicyear = academicyear).count()
 
             # Prepare the quota data
             quota_data = {
@@ -1740,7 +1843,8 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = super().get_queryset()
+        academicyear = get_academic_year(user)
+        queryset = super().get_queryset().filter(academicyear = academicyear)
 
         if user.is_superuser:
             return queryset
@@ -1752,7 +1856,7 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
             else:
                 return ProjetTutoreSubmission.objects.none()
 
-        student = Student.objects.filter(user=user).first()
+        student = Student.objects.filter(user=user, academicyear = academicyear).first()
         if student:
             return queryset.filter(members=student)
 
@@ -1760,8 +1864,9 @@ class ProjetTutoreSubmissionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request):
-        queryset = self.get_queryset()
-
+        academicyear = get_academic_year(request.user)
+        queryset = self.get_queryset().filter(academicyear = academicyear)
+        
         workbook = Workbook()
         sheet = workbook.active
         sheet.title = "Projets Tutorés Soumis"
@@ -1834,7 +1939,8 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = super().get_queryset()
+        academicyear = get_academic_year(user)
+        queryset = super().get_queryset().filter(academicyear = academicyear)
 
         if user.is_superuser:
             return queryset
@@ -1846,7 +1952,7 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
             else:
                 return StudentMemoireSubmission.objects.none()
 
-        student = Student.objects.filter(user=user).first()
+        student = Student.objects.filter(user=user, academicyear = academicyear).first()
         if student:
             return queryset.filter(submitter=student)
 
@@ -1854,7 +1960,8 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request):
-        queryset = self.get_queryset()
+        academicyear = get_academic_year(request.user)
+        queryset = self.get_queryset().filter(academicyear = academicyear)
 
         workbook = Workbook()
         sheet = workbook.active
@@ -1884,3 +1991,216 @@ class StudentMemoireSubmissionViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename="memoires-soumis.xlsx"'
         
         return response
+
+
+
+class IspConfigViewSet(viewsets.ModelViewSet):
+    queryset = IspConfig.objects.all()
+    serializer_class = IspConfigSerializer
+    pagination_class = Paginator
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        "config_key", 
+        "config_value"
+    ]
+
+    @action(detail=False, methods=['get'], url_path='config-dict')
+    def get_config_dict(self, request):
+        return Response([
+            {"key": "current_academic_year", "description": "Année académique actuelle"},
+            {"key": "#userId_001", "description": "User selected academic year"}
+        ])
+
+    @action(detail=False, methods=['get'], url_path='get-default-academic-year')
+    def get_default_academic_year(self, request):
+        selected_academic_year = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first()
+        if selected_academic_year :
+            return Response(
+                {
+                    "config_key": "default_001",
+                    "config_value": selected_academic_year.academic_year.id,
+                    "id": selected_academic_year.academic_year.id,
+                    "name": selected_academic_year.academic_year.name
+                },
+                status=status.HTTP_200_OK
+            )
+        else :
+            return Response(
+                {
+                    "config_key": "default_001",
+                    "config_value": None
+                },
+                status=status.HTTP_200_OK
+            )
+
+    @action(detail=False, methods=['post'], url_path='set-default-academic-year')
+    def set_default_academic_year(self, request):
+        user = request.user
+        academic_year = request.data.get('academic_year')
+        
+        try:
+            academic_year = uuid.UUID(academic_year)
+        except ValueError:
+            return Response(
+                {"detail": "academic_year doit être un UUID valide"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        academic_year = AcademicYear.objects.filter(id=academic_year).first()
+        if not academic_year:
+            return Response(
+                {"detail": "Année académique introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        selected_academic_year = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first()
+        if selected_academic_year:
+            selected_academic_year.academic_year = academic_year
+            selected_academic_year.save()
+            return Response(
+                {
+                    "config_key": "default_001",
+                    "config_value": academic_year.id,
+                    "created": False
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            selected_academic_year = UserSelectedAcademicYear.objects.create(id="default_academic_year", academic_year=academic_year)
+            return Response(
+                {
+                    "config_key": "default_001",
+                    "config_value": academic_year.id,
+                    "created": True
+                },
+                status=status.HTTP_201_CREATED
+            )
+        
+    
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path=r'user-config/(?P<config_key>[^/.]+)'
+    )
+    def get_user_config(self, request, config_key=None):
+        user = request.user
+
+        full_key = f"{user.id}_{config_key}"
+
+        config = IspConfig.objects.filter(config_key=full_key).first()
+
+        if config_key == "001":
+            user_selected_academic_year = UserSelectedAcademicYear.objects.filter(user=user).first()
+            if user_selected_academic_year:
+                return Response({
+                    "config_key": config_key,
+                    "config_value": user_selected_academic_year.academic_year.id,
+                    "id": user_selected_academic_year.academic_year.id,
+                    "name" : user_selected_academic_year.academic_year.name
+                })
+            else:
+                default_academic_year = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first()
+                if default_academic_year :
+                    UserSelectedAcademicYear.objects.create(
+                        id = f'{user.id}_001',
+                        user = user,
+                        academic_year = default_academic_year.academic_year
+                    )
+                    return Response({
+                        "config_key": config_key,
+                        "config_value": default_academic_year.academic_year.id,
+                        "id": user_selected_academic_year.academic_year.id,
+                        "name" : user_selected_academic_year.academic_year.name
+                    })
+                else:
+                    return Response({
+                        "config_key": config_key,
+                        "config_value": None,
+                        "id": user_selected_academic_year.academic_year.id,
+                        "name" : user_selected_academic_year.academic_year.name
+                    }) 
+
+        if not config:
+            return Response(
+                {"detail": "Configuration introuvable"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response({
+            "config_key": config.config_key,
+            "config_value": config.config_value
+        })
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path=r'set-user-config/(?P<config_key>[^/.]+)'
+    )
+    def set_user_config(self, request, config_key=None):
+        user = request.user
+        value = request.data.get('config_value')
+
+        if config_key == "001":
+            try:
+                value = uuid.UUID(value)
+            except ValueError:
+                return Response(
+                    {"detail": "config_value doit être un UUID valide"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            academic_year = AcademicYear.objects.filter(id=value).first()
+            if not academic_year:
+                return Response(
+                    {"detail": "Année académique introuvable"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            user_selected_academic_year = UserSelectedAcademicYear.objects.filter(user=user).first()
+            if user_selected_academic_year:
+                user_selected_academic_year.academic_year = academic_year
+                user_selected_academic_year.save()
+                return Response(
+                    {
+                        "config_key": config_key,
+                        "config_value": academic_year.id,
+                        "name": academic_year.name, 
+                        "created": False
+                    },
+                    status=status.HTTP_200_OK
+                )
+            else:
+                user_selected_academic_year = UserSelectedAcademicYear.objects.create(user=user, config_key=config_key, academic_year=academic_year)
+                return Response(
+                    {
+                        "config_key": config_key,
+                        "config_value": academic_year.id,
+                        "name": academic_year.name, 
+                        "created": True
+                    },
+                    status=status.HTTP_201_CREATED
+                )
+
+        else :
+
+            if value is None:
+                return Response(
+                    {"detail": "config_value est requis"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            full_key = f"{user.id}_{config_key}"
+
+            config, created = IspConfig.objects.update_or_create(
+                config_key=full_key,
+                config_value=value
+            )
+
+            return Response(
+                {
+                    "config_key": config_key,
+                    "config_value": value,
+                    "created": created
+                },
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+            )
+    
+
+
+    

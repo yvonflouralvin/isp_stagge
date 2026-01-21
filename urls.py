@@ -11,8 +11,8 @@ router.register(r'dept-recherche-officier', DeptRechercheOfficierViewSet)
 router.register(r'students', DeptRechercheOfficierStudentListsViewSet) 
 router.register(r'promotions', IspGombePromotionViewSet) 
 
-router.register(r'stage', StageViewSet)
-router.register(r'stage-master', StageMasterViewSet)
+router.register(r'stage', StageViewSet, basename='stage')
+router.register(r'stage-master', StageMasterViewSet, basename='stage-master')
 router.register(r'projets-tutores', ProjetTutoreViewSet)
 router.register(r'students-memoires', StudentMemoireViewSet)
 router.register(r'department-settings', DepartmentSettingsViewSet)
@@ -20,6 +20,9 @@ router.register(r'teacher-for-memoire-projet', StageSearchingTeacherViewSet)
 router.register(r'directeur-travaux', DirecteurTravauxViewSet)
 router.register(r'projets-tutores-soumissions', ProjetTutoreSubmissionViewSet)
 router.register(r'students-memoires-soumissions', StudentMemoireSubmissionViewSet)
+router.register(r'isp_config', IspConfigViewSet)
+
+
 
 urlpatterns = [
     path('',include(router.urls)),

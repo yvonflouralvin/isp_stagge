@@ -24,7 +24,12 @@ export default async function StudentPage(props: Props) {
     try{
         stats = ((await api(await cookies()).get(`/isp_stage/students/stats/`)).data)
         promotions = ((await api(await cookies()).get(`/isp_stage/dept-recherche-officier/promotions/`)).data)
-    }catch(e){}
+        console.log("######################### START PROMOTIONS #########################")
+        console.log(promotions)
+        console.log("######################### END PROMOTIONS #########################")
+    }catch(e){
+        console.error(e)
+    }
     return <div className='flex w-full h-full flex-col bg-white rounded shadow p-[5px] md:p-[20px]'>
         <Breadcrumb links={[
             {

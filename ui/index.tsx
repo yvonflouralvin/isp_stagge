@@ -8,6 +8,7 @@ import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Reports from './src/pages/reports/Reports'; 
 import DirectorReportView from './src/pages/reports/director/DirectorReportView';
+import AcademicYearPage from './src/pages/academicyear/AcademicYearPage';
 
 
 const config: AppConfig = {
@@ -93,11 +94,13 @@ const config: AppConfig = {
                         label: "Dept. Rechercher Off.",
                         link: "/apps/isp_stage/dept_search_off",
                         permissions: ["isp_user_management"],
+                        is_superuser: true
                     },
                     {
                         label: "Maitre de Stage",
                         link: "/apps/isp_stage/stage-masters",
                         permissions: ["isp_user_management"],
+                        is_superuser: true
                     }
                 ]
             },
@@ -129,10 +132,26 @@ const config: AppConfig = {
             }
         ]
 
+        menus.push(
+            {
+                label:"Année Academique",
+                link:"/apps/isp_stage/academic-years", 
+                permissions: [
+                    'isp_departement_officier'
+                ]
+            }
+        )
+
         return menus
     },
     page: async (props: PageProps) => {
         const _props = props;
+        if(_props.params.app.length === 3 && _props.params.app[2] === "academic-years") return {
+                dashboardLayouting: true,
+                render: ()=>{
+                    return <AcademicYearPage {..._props}/>
+            }
+        }
         if(_props.params.app.length === 3 && _props.params.app[2] === "reports") return {
             dashboardLayouting: true,
             render: ()=>{
