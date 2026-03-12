@@ -160,4 +160,56 @@ class DepartmentSettings(CoreBaseModel):
     max_tutore_project_member_group = models.IntegerField(default=1, blank=True)
     academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
 
+class IspStudent(models.Model):
 
+    matricule = models.CharField(max_length=20, primary_key=True)
+
+    nom = models.CharField(max_length=100)
+    postnom = models.CharField(max_length=100)
+    prenom = models.CharField(max_length=100)
+
+    codpromo = models.CharField(max_length=50)
+    codsec = models.IntegerField()
+
+    vacation = models.CharField(max_length=20)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    academicyear = models.ForeignKey(
+        AcademicYear,
+        on_delete=models.CASCADE,
+        related_name="isp_students",
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"{self.matricule} - {self.nom} {self.postnom} {self.prenom}"
+        
+
+class IspPaiement(models.Model):
+
+    student = models.ForeignKey(
+        IspStudent,
+        on_delete=models.CASCADE,
+        related_name="paiements"
+    )
+
+    datepai = models.DateField()
+    montant = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    academicyear = models.ForeignKey(
+        AcademicYear,
+        on_delete=models.CASCADE,
+        related_name="isp_paiements",
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"{self.student.matricule} - {self.montant} ({self.datepai})"
+
+    class Meta:
+        unique_together = ("student", "datepai", "montant", "academicyear")

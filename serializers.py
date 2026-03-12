@@ -235,3 +235,44 @@ class IspConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = IspConfig
         fields = ['config_key', 'config_value']
+
+class IspStudentSerializer(serializers.ModelSerializer):
+
+    # paiements = IspPaiementSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = IspStudent
+        fields = [
+            "matricule",
+            "nom",
+            "postnom",
+            "prenom",
+            "codpromo",
+            "codsec",
+            "vacation",
+            "academicyear",
+            "created_at",
+            # "paiements"
+        ]
+        read_only_fields = ["academicyear", "created_at"]
+
+class IspPaiementSerializer(serializers.ModelSerializer):
+
+    student = IspStudentSerializer(read_only=True)
+    student_id = serializers.PrimaryKeyRelatedField(
+        queryset = IspStudent.objects.all(), source="student", required=True, allow_null=False
+    )
+
+    class Meta:
+        model = IspPaiement
+        fields = [
+            "id",
+            "student",
+            "student_id",
+            "datepai",
+            "montant",
+            "academicyear",
+            "created_at"
+        ]
+        read_only_fields = ["academicyear", "created_at"]
+

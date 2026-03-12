@@ -9,6 +9,7 @@ import { Student } from '/addons/uscitech_academy/ui/src/types';
 import Reports from './src/pages/reports/Reports'; 
 import DirectorReportView from './src/pages/reports/director/DirectorReportView';
 import AcademicYearPage from './src/pages/academicyear/AcademicYearPage';
+import PaymentsPage from './src/pages/paiements/PaymentsPage'
 
 
 const config: AppConfig = {
@@ -129,6 +130,12 @@ const config: AppConfig = {
                 link:"/apps/isp_stage/reports",
                 is_superuser: true,
                 permissions: ['isp_departement_officier']
+            },
+            {
+                label:"Paiements",
+                link:"/apps/isp_stage/payments",
+                is_superuser: true,
+                permissions: ['isp_departement_officier']
             }
         ]
 
@@ -150,6 +157,12 @@ const config: AppConfig = {
                 dashboardLayouting: true,
                 render: ()=>{
                     return <AcademicYearPage {..._props}/>
+            }
+        }
+        if(_props.params.app.length === 3 && _props.params.app[2] === "payments") return {
+                dashboardLayouting: true,
+                render: ()=>{
+                    return <PaymentsPage {..._props}/>
             }
         }
         if(_props.params.app.length === 3 && _props.params.app[2] === "reports") return {

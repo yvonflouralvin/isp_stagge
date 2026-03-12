@@ -37,6 +37,7 @@ import pandas as pd
 from slugify import slugify
 import json
 
+from django.db.models import Sum
 
 
 def get_current_academic_year(user):
@@ -419,10 +420,13 @@ class StudentForStageAPIView(APIView):
         
         student = Student.objects.filter(id=request.data.get("student_id")).first()
         
+        academic_year = get_academic_year(request.user)
+
         stg = Stage()
         stg.stage = request.data.get("stage")
         stg.student = student
         stg.facture = request.data.get("facture")
+        stg.academicyear = academic_year   # 🔴 on fixe l'année académique
         stg.save()
 
         return Response({
@@ -565,6 +569,10 @@ class DeptRechercheOfficierStudentListsViewSet(viewsets.ModelViewSet):
     pagination_class = Paginator
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
     search_fields = ["user__username", "user__first_name", "user__last_name", "user__name"]
+
+    def perform_create(self, serializer):
+        academic_year = get_academic_year(self.request.user)
+        serializer.save(academicyear=academic_year)
 
     def get_queryset(self):
         """
@@ -2202,5 +2210,50 @@ class IspConfigViewSet(viewsets.ModelViewSet):
             )
     
 
+class IspPaiementViewSet(viewsets.ModelViewSet):
+    queryset = IspPaiement.objects.all()
+    serializer_class = IspPaiementSerializer
+    pagination_class = Paginator
 
-    
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+
+    search_fields = [
+        "student__matricule",
+        "student__nom",
+        "student__postnom",
+        "student__prenom",
+    ]
+
+    filterset_fields = [
+        "datepai",
+        "student__codpromo",
+        "student__vacation",
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        queryset = IspPaiement.objects.all().select_related("student")
+
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Calcul de la somme totale avant pagination
+        total_sum = queryset.aggregate(total=Sum("montant"))["total"] or 0
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({
+                "total_sum": total_sum,
+                "results": serializer.data
+            })
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "total_sum": total_sum,
+            "results": serializer.data
+        })

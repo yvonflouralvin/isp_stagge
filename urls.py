@@ -33,4 +33,6 @@ urlpatterns = [
     path('resumes', views.stages_resumes, name="staff-resumes"),
     path('admin-resumes', views.admin_reports, name='admin-resumes'),
     path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
+    path("sync-isp-paiements/", views.sync_isp_paiements),
+    path("isp-paiements/", IspPaiementViewSet.as_view({"get": "list"})),
 ]

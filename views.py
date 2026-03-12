@@ -6,19 +6,40 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from uscitech_academy.models import *
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import * 
 from .serializers import *
 from uscitech_academy.models import Student
 
 from rest_framework import status 
 
+import json
+
+import requests
+from datetime import date
+
+def get_current_academic_year(user):
+    user_current_academic_year = UserSelectedAcademicYear.objects.filter(user = user).first()
+    if user_current_academic_year :
+        return user_current_academic_year.academic_year.id
+    else :
+        default_academic_year = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first() 
+        if default_academic_year :
+            UserSelectedAcademicYear.objects.create(
+                id = f'{user.id}',
+                user = user,
+                academic_year = default_academic_year.academic_year
+            )
+            return default_academic_year.academic_year.id
+    return None
+
+def get_academic_year(user):
+    return AcademicYear.objects.filter(id=get_current_academic_year(user)).first()
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def stages_resumes(request):
-    stages = Stage.objects.all().exclude(student = None).exclude(student__user = None)
-    students = Student.objects.all().exclude(user = None)
-    
+
     user: User = request.user
     if user == None :
         return Response({
@@ -28,16 +49,34 @@ def stages_resumes(request):
             "affected": 0,
             "error":"No user exist"
         })
+
+    academic_year = get_academic_year(user)
+
+    stages = Stage.objects.filter(
+        academicyear=academic_year
+    ).exclude(student = None).exclude(student__user = None)
+    students = Student.objects.filter(
+        academicyear=academic_year
+    ).exclude(user = None)
+
     # print(user.pemissions)
     if user.is_superuser : 
-        stages = Stage.objects.all().exclude(student = None).exclude(student__user = None)
+        stages = Stage.objects.filter(
+            academicyear=academic_year
+        ).exclude(student = None).exclude(student__user = None)
     elif not user.is_superuser and user.has_perm('isp_stage.isp_departement_officier'):
         dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=user.id)
         if dept_off.exists() :
-            stages = Stage.objects.filter(student__promotion__grade__id=dept_off[0].dept.id)
+            stages = Stage.objects.filter(
+                academicyear=academic_year,
+                student__promotion__grade__id=dept_off[0].dept.id
+            )
             students = students.filter(promotion__grade__id=dept_off[0].dept.id)
     elif not user.is_superuser and not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master'):
-        stages = Stage.objects.filter(stagemaster__employee__user__id = user.id)
+        stages = Stage.objects.filter(
+            academicyear=academic_year,
+            stagemaster__employee__user__id = user.id
+        )
         students = students.filter(id__in = [stage.student.id for stage in stages])
     else :
         return Response({
@@ -60,26 +99,31 @@ def stages_resumes(request):
 @permission_classes([IsAuthenticated])
 def admin_reports(request):
 
+    user: User = request.user 
+    academic_year = get_academic_year(user)
+
     # 1. Rapport sur les Stages
-    stages = Stage.objects.all()
+    stages = Stage.objects.filter(
+        academicyear=academic_year
+    )
 
     department_reports = []
     
     grade_classes = GradeClasse.objects.all()
     
     for grade in grade_classes:
-        students_in_grade = Student.objects.filter(promotion__grade=grade)
+        students_in_grade = Student.objects.filter(promotion__grade=grade, academicyear=academic_year)
         
         impregnation_count = Stage.objects.filter(
-            student__in=students_in_grade, stage='impregnation'
+            student__in=students_in_grade, stage='impregnation', academicyear=academic_year
         ).count()
         
         pedagogique_count = Stage.objects.filter(
-            student__in=students_in_grade, stage='pedagogique'
+            student__in=students_in_grade, stage='pedagogique', academicyear=academic_year
         ).count()
         
         entreprise_count = Stage.objects.filter(
-            student__in=students_in_grade, stage='entreprise'
+            student__in=students_in_grade, stage='entreprise', academicyear=academic_year
         ).count()
         
         department_reports.append({
@@ -99,7 +143,7 @@ def admin_reports(request):
         
         promotion_data = []
         for promotion in promotions:
-            student_count = Student.objects.filter(promotion=promotion).count()
+            student_count = Student.objects.filter(promotion=promotion, academicyear=academic_year).count()
             promotion_data.append({
                 "promotion": promotion.libelle,
                 "student_count": student_count
@@ -112,14 +156,14 @@ def admin_reports(request):
     grade_classes = GradeClasse.objects.all()
     
     for grade in grade_classes:
-        students_in_grade = Student.objects.filter(promotion__grade=grade)
+        students_in_grade = Student.objects.filter(promotion__grade=grade, academicyear=academic_year)
         
         projets_tutores_count = ProjetTutore.objects.filter(
             Q(head__in=students_in_grade) | Q(member__in=students_in_grade)
         ).distinct().count()
         
         memoires_count = StudentMemoire.objects.filter(
-            student__in=students_in_grade
+            student__in=students_in_grade, academicyear=academic_year
         ).count()
         
         departments_projets_memoires.append({
@@ -187,6 +231,7 @@ def admin_reports(request):
 @permission_classes([IsAuthenticated])
 def department_resumes_for_director(request, employee):
     user: User = request.user
+    academic_year = get_academic_year(user)
     dept_officier = None
     director = None
     if user.has_perm('isp_stage.isp_departement_officier') :
@@ -210,3 +255,68 @@ def department_resumes_for_director(request, employee):
             return Response("No director informations found for this employee", 404)
         return Response("You are not Department chief", 404)
     return Response("You don't have right of  Department chief", 404)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def sync_isp_paiements(request):
+
+    """
+    Synchronisation des paiements depuis l'API externe.
+    Si "date" est envoyé en POST, utilise cette date, sinon la date du jour.
+    """
+
+    # récupère la date envoyée, sinon date du jour
+    datepai = request.data.get("date")
+    if not datepai:
+        datepai = date.today().strftime("%Y-%m-%d")
+
+    url = f"https://progestion-app.net/app/codes/api/v1/apistage.php?datepai='{datepai}'"
+
+    try:
+        response = requests.get(url, timeout=30)
+        data = json.loads(response.content.decode("utf-8-sig"))
+    except Exception as e:
+        print(e)
+        return Response({
+            "status": "error",
+            "message": str(e)
+        }, status=500)
+
+    print(data)
+
+    if data.get("status") != "success":
+        return Response({
+            "status": "error",
+            "message": "API error"
+        }, status=400)
+
+    saved = 0
+
+    for item in data.get("data", []):
+
+        student, created = IspStudent.objects.get_or_create(
+            matricule=item["matricule"],
+            defaults={
+                "nom": item["nom"],
+                "postnom": item["postnom"],
+                "prenom": item["prenom"],
+                "codpromo": item["codpromo"],
+                "codsec": item["codsec"],
+                "vacation": item["vacation"],
+            }
+        )
+
+        IspPaiement.objects.get_or_create(
+            student=student,
+            datepai=item["datepai"],
+            montant=item["montant"]
+        )
+
+        saved += 1
+
+    return Response({
+        "status": "success",
+        "date": datepai,
+        "records_saved": saved
+    })
