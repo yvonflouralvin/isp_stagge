@@ -21,6 +21,10 @@ router.register(r'directeur-travaux', DirecteurTravauxViewSet)
 router.register(r'projets-tutores-soumissions', ProjetTutoreSubmissionViewSet)
 router.register(r'students-memoires-soumissions', StudentMemoireSubmissionViewSet)
 router.register(r'isp_config', IspConfigViewSet)
+router.register(r'isp-dept-mapping', IspPaiementDepartementViewSet)
+router.register(r'isp-paiements', IspPaiementViewSet)
+
+
 
 
 
@@ -33,6 +37,5 @@ urlpatterns = [
     path('resumes', views.stages_resumes, name="staff-resumes"),
     path('admin-resumes', views.admin_reports, name='admin-resumes'),
     path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
-    path("sync-isp-paiements/", views.sync_isp_paiements),
-    path("isp-paiements/", IspPaiementViewSet.as_view({"get": "list"})),
+    path("sync-isp-paiements/", views.sync_isp_paiements)
 ]

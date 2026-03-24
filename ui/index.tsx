@@ -6,10 +6,11 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import IspStageDashboardWidget from './src/pages/IspStageDashboardWidget';
 import { Student } from '/addons/uscitech_academy/ui/src/types';
-import Reports from './src/pages/reports/Reports'; 
+import Reports from './src/pages/reports/Reports';
 import DirectorReportView from './src/pages/reports/director/DirectorReportView';
 import AcademicYearPage from './src/pages/academicyear/AcademicYearPage';
 import PaymentsPage from './src/pages/paiements/PaymentsPage'
+import DeptMappingPage from './src/pages/ispdeptmapping/DeptMappingPage';
 
 
 const config: AppConfig = {
@@ -111,6 +112,11 @@ const config: AppConfig = {
                 link: "/apps/isp_stage/students"
             },
             {
+                label: "Paiements Stages",
+                permissions: ["isp_departement_officier"],
+                link: "/apps/isp_stage/stage-payments"
+            },
+            {
                 label: "Directeurs",
                 // link: "/apps/isp_stage/directeur-travaux/projet-tutore/",
                 permissions: ["isp_departement_officier"],
@@ -126,23 +132,33 @@ const config: AppConfig = {
                 ]
             },
             {
-                label:"Rapports",
-                link:"/apps/isp_stage/reports",
+                label: "Rapports",
+                link: "/apps/isp_stage/reports",
                 is_superuser: true,
                 permissions: ['isp_departement_officier']
             },
             {
-                label:"Paiements",
-                link:"/apps/isp_stage/payments",
+                label: "Isp Paiements",
+                // link: "/apps/isp_stage/directeur-travaux/projet-tutore/",
                 is_superuser: true,
-                permissions: ['isp_departement_officier']
+                permissions: [],
+                subItems: [
+                    {
+                        label: "Paiements",
+                        link: "/apps/isp_stage/payments",
+                    },
+                    {
+                        label: "Dpt. Mapping",
+                        link: "/apps/isp_stage/dept-mapping",
+                    }
+                ]
             }
         ]
 
         menus.push(
             {
-                label:"Année Academique",
-                link:"/apps/isp_stage/academic-years", 
+                label: "Année Academique",
+                link: "/apps/isp_stage/academic-years",
                 permissions: [
                     'isp_departement_officier'
                 ]
@@ -153,40 +169,46 @@ const config: AppConfig = {
     },
     page: async (props: PageProps) => {
         const _props = props;
-        if(_props.params.app.length === 3 && _props.params.app[2] === "academic-years") return {
-                dashboardLayouting: true,
-                render: ()=>{
-                    return <AcademicYearPage {..._props}/>
-            }
-        }
-        if(_props.params.app.length === 3 && _props.params.app[2] === "payments") return {
-                dashboardLayouting: true,
-                render: ()=>{
-                    return <PaymentsPage {..._props}/>
-            }
-        }
-        if(_props.params.app.length === 3 && _props.params.app[2] === "reports") return {
+        if (_props.params.app.length === 3 && _props.params.app[2] === "academic-years") return {
             dashboardLayouting: true,
-            render: ()=>{
-                return <Reports {..._props}/>
+            render: () => {
+                return <AcademicYearPage {..._props} />
             }
         }
-        if(_props.params.app.length === 5 && _props.params.app[2] === "reports" && _props.params.app[3] === "director") return {
+        if (_props.params.app.length === 3 && (_props.params.app[2] === "payments" || _props.params.app[2] === "stage-payments")) return {
             dashboardLayouting: true,
-            render: ()=>{
-                return <DirectorReportView {..._props}/>
+            render: () => {
+                return <PaymentsPage {..._props} />
             }
         }
-        if(_props.params.app.length === 6 && _props.params.app[2] === "reports" && _props.params.app[3] === "director" && _props.params.app[5] === "print") return {
+        if (_props.params.app.length === 3 && _props.params.app[2] === "dept-mapping") return {
+            dashboardLayouting: true,
+            render: () => {
+                return <DeptMappingPage {..._props} />
+            }
+        }
+        if (_props.params.app.length === 3 && _props.params.app[2] === "reports") return {
+            dashboardLayouting: true,
+            render: () => {
+                return <Reports {..._props} />
+            }
+        }
+        if (_props.params.app.length === 5 && _props.params.app[2] === "reports" && _props.params.app[3] === "director") return {
+            dashboardLayouting: true,
+            render: () => {
+                return <DirectorReportView {..._props} />
+            }
+        }
+        if (_props.params.app.length === 6 && _props.params.app[2] === "reports" && _props.params.app[3] === "director" && _props.params.app[5] === "print") return {
             dashboardLayouting: false,
-            render: ()=>{
-                return <DirectorReportView for='print' {..._props}/>
+            render: () => {
+                return <DirectorReportView for='print' {..._props} />
             }
         }
         /**
          * Quand c'est un etudiant qui veut consulter le stage pedagogique
          */
-        else if (_props.params.app.length >= 3 && ( _props.params.app[2] === "pedagogique" || _props.params.app[2] === "entreprise") && _props.user.permissions.find(perm => perm === "isp_user_student"))
+        else if (_props.params.app.length >= 3 && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "entreprise") && _props.user.permissions.find(perm => perm === "isp_user_student"))
             return {
                 dashboardLayouting: true,
                 render: async () => {
@@ -216,11 +238,11 @@ const config: AppConfig = {
                     return await pages.StageListPage(_props);
                 }
             }
-        else if (_props.params.app.length === 6 && _props.params.app[5] === "printing"  && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations" || _props.params.app[3] === "fiche-centralisatrice") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation" || _props.params.app[2] === "entreprise"))
+        else if (_props.params.app.length === 6 && _props.params.app[5] === "printing" && (_props.params.app[3] === "list" || _props.params.app[3] === "cotations" || _props.params.app[3] === "fiche-centralisatrice") && (_props.params.app[2] === "pedagogique" || _props.params.app[2] === "impregnation" || _props.params.app[2] === "entreprise"))
             return {
                 dashboardLayouting: false,
                 render: async () => {
-                    return await pages.StageListPrintingPage({..._props});
+                    return await pages.StageListPrintingPage({ ..._props });
                 }
             }
         /**
@@ -282,7 +304,7 @@ const config: AppConfig = {
                     return await pages.StudentProjetTurote(_props);
                 }
             }
-        else if (_props.params.app.length === 5   && _props.params.app[3] === "printing"  && _props.params.app[4] === "rest" && _props.params.app[2] === "projets-tutores")
+        else if (_props.params.app.length === 5 && _props.params.app[3] === "printing" && _props.params.app[4] === "rest" && _props.params.app[2] === "projets-tutores")
             return {
                 dashboardLayouting: false,
                 render: async () => {
@@ -296,7 +318,7 @@ const config: AppConfig = {
                     return await pages.StudentMemoireListPage(_props);
                 }
             }
-        else if (_props.params.app.length === 5   && _props.params.app[3] === "printing"  && _props.params.app[4] === "rest" && _props.params.app[2] === "students-memoires")
+        else if (_props.params.app.length === 5 && _props.params.app[3] === "printing" && _props.params.app[4] === "rest" && _props.params.app[2] === "students-memoires")
             return {
                 dashboardLayouting: false,
                 render: async () => {
@@ -328,14 +350,14 @@ const config: AppConfig = {
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StudentFormPage({..._props, for:"detail"})
+                    return pages.StudentFormPage({ ..._props, for: "detail" })
                 }
             }
         else if (_props.params.app.length === 4 && _props.params.app[2] === "students" && _props.params.app[3] === "create")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.StudentFormPage({..._props, for:"create"})
+                    return pages.StudentFormPage({ ..._props, for: "create" })
                 }
             }
 
@@ -343,14 +365,14 @@ const config: AppConfig = {
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.DirecteurTravauxPageSSR({..._props})
+                    return pages.DirecteurTravauxPageSSR({ ..._props })
                 }
             }
         else if (_props.params.app.length === 5 && _props.params.app[2] === "directeur-travaux")
             return {
                 dashboardLayouting: true,
                 render: () => {
-                    return pages.DirecteurTravauxFormSSR({..._props})
+                    return pages.DirecteurTravauxFormSSR({ ..._props })
                 }
             }
         else
@@ -360,7 +382,7 @@ const config: AppConfig = {
                     return await pages.NoActiveFeatures(_props)
                 }
             }
-        
+
 
     },
 

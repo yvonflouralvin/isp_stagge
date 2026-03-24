@@ -10,6 +10,15 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from collections import defaultdict
 
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Image, Spacer
+from reportlab.lib.units import cm
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+
 
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import  Permission
@@ -179,6 +188,7 @@ class StageViewSet(viewsets.ModelViewSet):
     def get_department_for_stages(self, request):
         user = request.user
         queryset = GradeClasse.objects.all()
+        current_academic_year = get_current_academic_year(user)
         
         if user.is_superuser == True :
             pass
@@ -193,7 +203,7 @@ class StageViewSet(viewsets.ModelViewSet):
             # Filtrer les stages où l'utilisateur est un StageMaster
             stage_master = StageMaster.objects.filter(employee__user=user).first()
             if stage_master:
-                stages = Stage.objects.filter(stagemaster=stage_master)
+                stages = Stage.objects.filter(stagemaster=stage_master, academicyear=current_academic_year)
                 stage_type = request.GET.get('stage', None)
                 if stage_type != None :
                     stages =  stages.filter(stage=stage_type)
@@ -205,7 +215,7 @@ class StageViewSet(viewsets.ModelViewSet):
                 
         # Ajouter le nombre de stages à la réponse
         for grade in serialized_data:
-            stages = Stage.objects.filter(student__promotion__grade__id = grade['id'])
+            stages = Stage.objects.filter(student__promotion__grade__id = grade['id'], academicyear=current_academic_year)
             if (not user.has_perm('isp_stage.isp_departement_officier') and user.has_perm('isp_stage.isp_user_stage_master')) :
                 if stage_master:
                     stages = stages.filter(stagemaster=stage_master)
@@ -414,13 +424,61 @@ class StudentForStageAPIView(APIView):
 
     def post(self, request):
 
+        isppaiment = IspPaiement.objects.get(id=request.data.get("student_id"))
+        matricule = isppaiment.student.matricule
+        academic_year = get_academic_year(request.user)
+        user_student, created_user = User.objects.get_or_create(
+            username=matricule,
+            defaults={
+                'name': isppaiment.student.nom,
+                'first_name': isppaiment.student.prenom,
+                'last_name': isppaiment.student.postnom,
+                'phone': isppaiment.student.matricule,
+                'sexe': 'm',  # Valeur par défaut, peut être ajustée si disponible,
+                "password" : make_password(os.environ.get("DEFAULT_PASS", "1234")),
+                "is_active" : True,
+                "email" : matricule
+            }
+        )
+        
         stage = Stage.objects.filter(facture=request.data.get("facture"))
         if stage.exists():
             return Response({"message": "Le numéro de facture existe déjà."}, status=400)
+
+        try:
+            permission = Permission.objects.get(codename="isp_user_student")
+            user_student.user_permissions.add(permission)
+        except: 
+            pass
+        try:
+            permission = Permission.objects.get(codename="academy_is_student")
+            user_student.user_permissions.add(permission)
+        except: 
+            pass
+        dept_off = None
+        promotion = None
+        dept_off = DeptRechercheOfficier.objects.filter(employee__user__id=request.user.id)
+        if dept_off.exists():
+            dept_off = dept_off.first()
+            promotion = Promotion.objects.filter(grade__id = dept_off.dept.id).first()
+        # student, created = Student.objects.get_or_create(matricule=matricule, defaults={
+        #     "matricule": matricule, 
+        #     "academicyear": academic_year,
+        #     "user": user_student
+        # })
+
+        student, student_created = Student.objects.get_or_create(
+            user=user_student,
+            defaults={
+                "promotion": promotion
+            },
+            academicyear = academic_year
+        )
+        student.promotion = promotion
+        student.academicyear = academic_year
+        student.save()
         
-        student = Student.objects.filter(id=request.data.get("student_id")).first()
-        
-        academic_year = get_academic_year(request.user)
+        #student = Student.objects.filter(id=request.data.get("student_id")).first()
 
         stg = Stage()
         stg.stage = request.data.get("stage")
@@ -2184,9 +2242,7 @@ class IspConfigViewSet(viewsets.ModelViewSet):
                     },
                     status=status.HTTP_201_CREATED
                 )
-
         else :
-
             if value is None:
                 return Response(
                     {"detail": "config_value est requis"},
@@ -2256,4 +2312,193 @@ class IspPaiementViewSet(viewsets.ModelViewSet):
         return Response({
             "total_sum": total_sum,
             "results": serializer.data
+        })
+
+    @action(detail=False, methods=["get"], url_path="print")
+    def print_pdf(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Total
+        total_sum = queryset.aggregate(total=Sum("montant"))["total"] or 0
+
+        # Création du PDF
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="paiements.pdf"'
+
+        doc = SimpleDocTemplate(response, pagesize=A4)
+        elements = []
+
+        styles = getSampleStyleSheet()
+
+        center_style = ParagraphStyle(
+            name="Center",
+            parent=styles["Normal"],
+            alignment=TA_CENTER
+        )
+
+        center_bold = ParagraphStyle(
+            name="CenterBold",
+            parent=styles["Normal"],
+            alignment=TA_CENTER,
+            fontName="Helvetica-Bold"
+        )
+
+        center_title = ParagraphStyle(
+            name="CenterTitle",
+            parent=styles["Title"],
+            alignment=TA_CENTER
+        )
+        
+        # =========================
+        # HEADER INSTITUTIONNEL
+        # =========================
+        elements.append(Paragraph("Republique Democratique du Congo", center_style))
+        elements.append(Paragraph("Ministere de l'Enseignement Superieur et Universitaire", center_style))
+
+        elements.append(Spacer(1, 1))
+
+        elements.append(Paragraph("Institut Superieur Pedagogique de la Gombe", center_title))
+        elements.append(Paragraph("ISP/GOMBE", center_bold))
+
+        elements.append(Spacer(1, 1))
+
+        elements.append(Paragraph("SECRETARIAT GENERAL DE LA RECHERCHE", center_bold))
+        elements.append(Paragraph("CENTRE DE PERCEPTION DES FRAIS D'ETUDES", center_bold))
+
+        elements.append(Spacer(1, 1))
+
+        
+
+        # LOGO (à adapter avec ton chemin réel)
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            logo_path = os.path.join(current_dir, "isp_logo.png")  # adapte le nom
+
+            if os.path.exists(logo_path):
+                logo = Image(logo_path, width=1.5*cm, height=1.5*cm)
+                logo.hAlign = "CENTER"
+                elements.append(logo)
+        except:
+            pass  # évite crash si logo absent
+
+        elements.append(Paragraph("B.P. 3580", styles["Normal"]))
+        elements.append(Paragraph("<b>KINSHASA/GOMBE</b>", styles["Normal"]))
+
+        elements.append(Spacer(1, 1))
+
+        # =========================
+        # TITRE DU DOCUMENT
+        # =========================
+        elements.append(Paragraph(
+            "<b>LISTE DES ETUDIANTS AYANT PAYE LES FRAIS DE STAGE</b>",
+            styles["Heading2"]
+        ))
+        # =========================
+        # INFOS DYNAMIQUES
+        # =========================
+        promotion = request.query_params.get("student__codpromo", "TOUTES")
+        vacation = request.query_params.get("student__vacation", "TOUTES")
+
+        elements.append(Paragraph(f"<b>ANNEE ACADEMIQUE :</b> 2025-2026", styles["Normal"]))
+        elements.append(Paragraph(f"<b>PROMOTION :</b> {promotion} ({vacation})", styles["Normal"]))
+
+        elements.append(Spacer(1, 1))
+
+        # Tableau (avec numérotation)
+        data = [["#", "Nom", "Postnom", "Prenom"]]
+
+        for index, paiement in enumerate(queryset, start=1):
+            data.append([
+                index,
+                paiement.student.nom,
+                paiement.student.postnom,
+                paiement.student.prenom,
+            ])
+        
+        table = Table(data)
+        # Largeurs fixes (A4 ≈ 21cm - marges ≈ 18cm utile)
+        col_widths = [
+            2*cm,   # #
+            5*cm,   # Nom
+            5*cm,   # Postnom
+            6*cm,   # Prenom
+        ]
+
+        table = Table(data, colWidths=col_widths, repeatRows=1)
+        table.setStyle(TableStyle([
+            # Header
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+
+            # Corps
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("ALIGN", (0, 1), (0, -1), "CENTER"),  # numérotation centrée
+            ("ALIGN", (1, 1), (-1, -1), "LEFT"),
+
+            # Padding uniforme
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+
+            # Bordures complètes
+            ("GRID", (0, 0), (-1, -1), 1, colors.black),
+
+            # Alternance des lignes (optionnel mais pro)
+            #("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+        ]))
+
+        elements.append(table)
+
+        doc.build(elements)
+
+        return response
+
+
+
+class IspPaiementDepartementViewSet(viewsets.ModelViewSet):
+    """
+        Ce ViewSet est utilisé pour mapper les departements venant du systeme de l'ISP.
+    """
+    queryset = IspPaiementDepartement.objects.all()
+    serializer_class = IspPaiementDepartementSerializer
+    pagination_class = Paginator
+
+    filter_backends = [filters.SearchFilter, DjangoFilterBackend]
+    search_fields = [
+        "libelle",
+    ]
+
+    filterset_fields = [
+        "promotion",
+        "academicyear",
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = IspPaiementDepartement.objects.all().select_related("promotion", "academicyear")
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Vérifie si on veut désactiver la pagination
+        no_pagination = request.query_params.get("no_pagination", "false").lower() == "true"
+
+        if not no_pagination:
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response({
+                    "results": serializer.data
+                })
+
+        # Sans pagination
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "results": {
+                "results": serializer.data
+            }
         })

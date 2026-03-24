@@ -12,19 +12,66 @@ export default function PaymentsLists(){
     const [pageSize, setPageSize] = useState(10)
     const [count, setCount] = useState(0)
     const [loading, setLoading] = useState(false)
+    const [ispPaiementDpts, setIspPaiementDpts] = useState([])
+    const [selectedIspPaiementDpt, setSelectedIspPaiementDpt] = useState<any>(null)
+    const [selectedVacation, setSelectedVacation] = useState<any>(null)
     
     const showMe = async ()=> {
         setLoading(true)
-        const result = await api(cookies).get(`/isp_stage/isp-paiements/?page=${page}&page_size=${pageSize}`);
+        var url = `/isp_stage/isp-paiements/?page=${page}&page_size=${pageSize}`
+        if(selectedIspPaiementDpt != "all" && selectedIspPaiementDpt != null) url = url + `&student__codpromo=${selectedIspPaiementDpt}`
+        if(selectedVacation != "all" && selectedVacation != null) url = url + `&student__vacation=${selectedVacation}`
+        const result = await api(cookies).get(url);
         setPayments(result.data.results.results)
         setTotalSum(result.data.results.total_sum)
         setCount(result.data.count)
         setLoading(false)
     }
 
+    const handlePrint = async () => {
+        try {
+            let url = `/isp_stage/isp-paiements/print/?`
+
+            if (selectedIspPaiementDpt !== "all" && selectedIspPaiementDpt != null) {
+                url += `student__codpromo=${selectedIspPaiementDpt}&`
+            }
+
+            if (selectedVacation !== "all" && selectedVacation != null) {
+                url += `student__vacation=${selectedVacation}&`
+            }
+
+            const response = await api(cookies).get(url, {
+                responseType: "blob", // IMPORTANT pour PDF
+            })
+
+            // Créer un blob et déclencher le téléchargement
+            const blob = new Blob([response.data], { type: "application/pdf" })
+            const downloadUrl = window.URL.createObjectURL(blob)
+
+            const link = document.createElement("a")
+            link.href = downloadUrl
+            link.download = "paiements.pdf"
+            document.body.appendChild(link)
+            link.click()
+
+            // Clean
+            link.remove()
+            window.URL.revokeObjectURL(downloadUrl)
+
+        } catch (error) {
+            console.error("Erreur impression :", error)
+        }
+    }
+
+    const showIspPaiementDpts = async ()=> {
+        const result = await api(cookies).get(`/isp_stage/isp-dept-mapping/?no_pagination=true`);
+        setIspPaiementDpts(result.data.results.results)
+    }
+
     useEffect(() => {
         showMe()
-    }, [page])
+        showIspPaiementDpts()
+    }, [page, selectedIspPaiementDpt, selectedVacation])
 
     // Pagination
     const totalPages = Math.ceil(count / pageSize)
@@ -44,6 +91,28 @@ export default function PaymentsLists(){
         {loading ? (
             <p>Loading...</p>
         ) : (
+            // Ajouter un filtre pour le codepromo
+            <>
+           <div className="flex items-center px-[10px] py-[4px] border border-gray-300 rounded">
+                <p className="flex-1">Filtrer les resultats</p>
+                 <select value={selectedIspPaiementDpt} className='border rounded px-2 py-1 mb-2' onChange={(e) => setSelectedIspPaiementDpt(e.target.value)}>
+                <option value="all">Toutes les promotions</option>
+                {ispPaiementDpts.map((p: any) => (
+                    <option key={p.id} value={p.libelle}>{p.libelle}</option>
+                ))}
+            </select>
+            <select value={selectedVacation} className='border rounded px-2 py-1 mb-2' onChange={(e) => setSelectedVacation(e.target.value)}>
+                <option value="all">Toutes les vacations</option>
+                <option value="Jour">Jour</option>
+                <option value="Soir">Soir</option>
+            </select>
+            <button
+                onClick={handlePrint}
+                className="bg-blue-600 text-white px-4 py-0 rounded hover:bg-blue-700"
+            >
+                Imprimer PDF
+            </button>
+           </div>
             <table className="min-w-full border border-gray-300">
             <thead className="bg-gray-100">
                 <tr>
@@ -70,6 +139,7 @@ export default function PaymentsLists(){
                 ))}
             </tbody>
             </table>
+            </>
         )}
 
         {/* Pagination */}

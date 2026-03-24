@@ -276,3 +276,28 @@ class IspPaiementSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["academicyear", "created_at"]
 
+
+class IspPaiementDepartementSerializer(serializers.ModelSerializer):
+    """
+        Ce serializer est utilisé pour mapper les departements venant du systeme de l'ISP.
+    """
+    promotion = PromotionSerializer(read_only=True)
+    promotion_id = serializers.PrimaryKeyRelatedField(
+        queryset = Promotion.objects.all(), source="promotion", required=False, allow_null=True, write_only=True
+    )
+    academicyear = AcademicYearSerializer(read_only=True)
+    academicyear_id = serializers.PrimaryKeyRelatedField(
+        queryset = AcademicYear.objects.all(), source="academicyear", required=False, allow_null=True, write_only=True
+    )
+    class Meta:
+        model = IspPaiementDepartement
+        fields = [
+            "id",
+            "libelle",
+            "promotion",
+            "promotion_id",
+            "academicyear",
+            "academicyear_id",
+            "created_at"
+        ]
+        read_only_fields = ["academicyear", "created_at"]

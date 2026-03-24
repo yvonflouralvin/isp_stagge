@@ -2,7 +2,7 @@ from django.db import models
 from slugify import slugify
 import uuid
 from core.models import User
-from uscitech_academy.models import Student, GradeClasse, Teacher, AcademicYear
+from uscitech_academy.models import Student, GradeClasse, Teacher, AcademicYear, Promotion
 from hr.models import Employee
 from core.models import CoreBaseModel
 
@@ -213,3 +213,18 @@ class IspPaiement(models.Model):
 
     class Meta:
         unique_together = ("student", "datepai", "montant", "academicyear")
+
+
+class IspPaiementDepartement(models.Model):
+    """
+        Ce modele stoque les departements venant du systeme de l'ISP pour pouvoir le mapper et faire de filtre dans les listes
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
+    libelle = models.CharField(max_length=250, null=True, blank=True)
+    promotion = models.ForeignKey(Promotion, on_delete=models.CASCADE, null=True, blank=True)
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.libelle} - {self.academicyear.libelle} - {self.promotion.libelle}"

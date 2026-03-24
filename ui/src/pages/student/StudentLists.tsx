@@ -28,11 +28,15 @@ export default function StudentLists(props: Props) {
                 <p className='text-gray-500 font-light m-0 text-[13px]'>{props.stats.count} enregistrement{props.stats.count > 1 ? "s" : ""}</p>
             </div>
             <div className="flex gap-[5px] items-center">
-                <Link href="/apps/isp_stage/students/create" className='duration-300 flex items-center gap-[2px] text-[13px] text-white font-bold cursor-pointer rounded py-[5px] px-[15px] bg-primary/80 hover:bg-primary'>
+                {
+                    props.user.is_superuser === true && <>
+                    <Link href="/apps/isp_stage/students/create" className='duration-300 flex items-center gap-[2px] text-[13px] text-white font-bold cursor-pointer rounded py-[5px] px-[15px] bg-primary/80 hover:bg-primary'>
                     <PlusIcon size={"12px"} color='white' />
                     <p>Nouveau</p>
                 </Link>
                 <StudentUploadLists {...props} />
+                    </>
+                }
             </div>
         </div>
         <Accordion>

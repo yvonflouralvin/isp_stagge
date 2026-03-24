@@ -93,7 +93,10 @@ export default function AddStage(props: Props) {
                             <p className='text-gray-400 text-[13px]'>Numéro de Facture</p>
                             <input type="text" className='duration-300 border-o focus:border-primary border-b w-full border-inherent outline-none text-[13px]' placeholder="" id="facture" name="facture" required />
                         </div>
-                        <SearchSelected extraparams={`&stage_type=${props.stage}`} onChange={(e: Student) => setSelectedStudent(e.id)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name} `)} index='id' url='/isp_stage/teacher-for-memoire-projet/without_stage/' />
+                        {/* <SearchSelected extraparams={`&stage_type=${props.stage}`} onChange={(e: Student) => setSelectedStudent(e.id)} label='Etudiant' render={(e: Student) => (`${e.user?.name} ${e.user?.last_name} ${e.user?.first_name} `)} index='id' url='/isp_stage/teacher-for-memoire-projet/without_stage/' /> */}
+                        <SearchSelected processResult={((e:any)=>{
+                            return e.results.results
+                        })} onChange={(e: Student) => setSelectedStudent(e.id)} label='Etudiant' render={(e: any) => (`${e.student?.nom} ${e.student?.postnom} ${e.student?.prenom}`)} index='id' url='/isp_stage/isp-paiements/' />
                     </div>
                 </ModalBody>
                 <ModalFooter>

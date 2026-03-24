@@ -312,6 +312,10 @@ def sync_isp_paiements(request):
             datepai=item["datepai"],
             montant=item["montant"]
         )
+        
+        IspPaiementDepartement.objects.get_or_create(
+            libelle=item["codpromo"]
+        )
 
         saved += 1
 
