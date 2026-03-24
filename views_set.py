@@ -518,33 +518,18 @@ class StudentForStageAPIView(APIView):
 
         if stage == "pedagogique":
             # Get students with entreptise stage but no pedagogique stage
-<<<<<<< HEAD
             pedagogique_students = Stage.objects.filter(academicyear = academicyear, stage="pedagogique").values_list('student_id', flat=True)
             entreprise_students = Stage.objects.filter(academicyear = academicyear, stage="entreprise").values_list('student_id', flat=True)
             missing_pedagogique = set(entreprise_students) - set(pedagogique_students)
 
-=======
-            pedagogique_students = Stage.objects.filter(stage="pedagogique").values_list('student_id', flat=True)
-            entreprise_students = Stage.objects.filter(stage="entreprise").values_list('student_id', flat=True)
-            missing_pedagogique = set(entreprise_students) - set(pedagogique_students)
-
-            print(missing_pedagogique)
-            print("missing pedagogique")
-
->>>>>>> 664b263 (commit la production)
             # Create missing pedagogique stages
             for student_id in missing_pedagogique:
                 student = Student.objects.get(id=student_id)
                 _stage = Stage.objects.create(
                     stage="pedagogique",
-<<<<<<< HEAD
                     student=student,
                     academicyear = academicyear
                 )   
-=======
-                    student=student
-                )
->>>>>>> 664b263 (commit la production)
                 _stage.save()
 
         user: User = request.user
