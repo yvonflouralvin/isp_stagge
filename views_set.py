@@ -2502,3 +2502,58 @@ class IspPaiementDepartementViewSet(viewsets.ModelViewSet):
                 "results": serializer.data
             }
         })
+
+class MemoireDepotViewSet(viewsets.ModelViewSet):
+    """
+    Consultation des dépôts de mémoire soumis via la page publique.
+    - Administrateur (superuser) : voit tous les dépôts, tous départements confondus.
+    - Chef de département (DeptRechercheOfficier) : voit uniquement les dépôts de
+      son/ses département(s).
+    - Autres utilisateurs : aucun résultat.
+    La création se fait via la page publique (voir views.public_memoire_depot) ;
+    ici on autorise surtout la consultation, la mise à jour du statut et la suppression.
+    """
+    queryset = MemoireDepot.objects.all()
+    serializer_class = MemoireDepotSerializer
+    pagination_class = Paginator
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return MemoireDepot.objects.none()
+
+        queryset = MemoireDepot.objects.select_related('section', 'department').all()
+
+        if user.is_superuser:
+            pass
+        else:
+            depts = DeptRechercheOfficier.objects.filter(
+                employee__user__id=user.id
+            ).values_list('dept__id', flat=True)
+            if not depts:
+                return MemoireDepot.objects.none()
+            queryset = queryset.filter(department__id__in=list(depts))
+
+        # Filtres optionnels
+        department_id = self.request.query_params.get('department')
+        if department_id:
+            queryset = queryset.filter(department__id=department_id)
+        section_id = self.request.query_params.get('section')
+        if section_id:
+            queryset = queryset.filter(section__id=section_id)
+        statut = self.request.query_params.get('status')
+        if statut:
+            queryset = queryset.filter(status=statut)
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(full_name__icontains=search) |
+                Q(phone__icontains=search) |
+                Q(subject__icontains=search)
+            )
+        return queryset

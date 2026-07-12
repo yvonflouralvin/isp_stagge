@@ -9,6 +9,7 @@ import ProjetTutoresPage from "./ProjetTutoresPage";
 import StudentProjetTurote from "./StudentProjetTurote";
 import ProjetTutoresFormPage from "./ProjetTutoresFormPage";
 import StudentMemoireListPage from "./StudentMemoireListPage";
+import DepotMemoireListPage from "./DepotMemoireListPage";
 import StudentMemoirePage from "./StudentMemoirePage";
 import StudentMemoireDetailPage from "./StudentMemoireDetailPage";
 import DepartmentOfficierPageSSR from "./dept_officiers/DepartmentOfficierPageSSR";
@@ -36,6 +37,7 @@ export default {
     StudentProjetTurote: (props: PageProps) => StudentProjetTurote(props),
 
     StudentMemoireListPage: (props: PageProps) => StudentMemoireListPage(props),
+    DepotMemoireListPage: (props: PageProps) => DepotMemoireListPage(props),
     StudentMemoireDetailPage : (props: PageProps) => StudentMemoireDetailPage(props),
     StudentMemoirePage: (props: PageProps) => StudentMemoirePage(props),
 

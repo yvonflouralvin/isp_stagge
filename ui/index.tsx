@@ -84,6 +84,10 @@ const config: AppConfig = {
                     {
                         label: "Memoires AS (L2)",
                         link: "/apps/isp_stage/students-memoires",
+                    },
+                    {
+                        label: "Dépôts de mémoire",
+                        link: "/apps/isp_stage/depots-memoires",
                     }
                 ]
             },
@@ -169,6 +173,12 @@ const config: AppConfig = {
     },
     page: async (props: PageProps) => {
         const _props = props;
+        if (_props.params.app.length === 3 && _props.params.app[2] === "depots-memoires") return {
+            dashboardLayouting: true,
+            render: async () => {
+                return await pages.DepotMemoireListPage(_props)
+            }
+        }
         if (_props.params.app.length === 3 && _props.params.app[2] === "academic-years") return {
             dashboardLayouting: true,
             render: () => {

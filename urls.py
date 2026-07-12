@@ -23,6 +23,7 @@ router.register(r'students-memoires-soumissions', StudentMemoireSubmissionViewSe
 router.register(r'isp_config', IspConfigViewSet)
 router.register(r'isp-dept-mapping', IspPaiementDepartementViewSet)
 router.register(r'isp-paiements', IspPaiementViewSet)
+router.register(r'memoire-depots', MemoireDepotViewSet)
 
 
 
@@ -37,5 +38,10 @@ urlpatterns = [
     path('resumes', views.stages_resumes, name="staff-resumes"),
     path('admin-resumes', views.admin_reports, name='admin-resumes'),
     path('department-resumes-for-director/<employee>', views.department_resumes_for_director, name='department-resumes-for-director'),
-    path("sync-isp-paiements/", views.sync_isp_paiements)
+    path("sync-isp-paiements/", views.sync_isp_paiements),
+
+    # Dépôt public de mémoire (sans authentification)
+    path('public/sections', views.public_sections, name='public-sections'),
+    path('public/departments', views.public_departments, name='public-departments'),
+    path('public/memoire-depot', views.public_memoire_depot, name='public-memoire-depot'),
 ]

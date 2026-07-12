@@ -231,6 +231,51 @@ class StudentMemoireSubmissionDetailSerializer(serializers.ModelSerializer):
             'created_at'
         ]
 
+class MemoireDepotSerializer(serializers.ModelSerializer):
+    """
+    Sérialisation d'un dépôt de mémoire.
+    - En lecture : expose la section, le département et l'URL absolue du fichier.
+    - En écriture (public) : accepte section_id, department_id et le fichier.
+    """
+    section = GradeSectionSerializer(read_only=True)
+    department = GradeClasseSerializer(read_only=True)
+    section_id = serializers.PrimaryKeyRelatedField(
+        queryset=GradeSection.objects.all(), source="section", required=True, allow_null=False, write_only=True
+    )
+    department_id = serializers.PrimaryKeyRelatedField(
+        queryset=GradeClasse.objects.all(), source="department", required=True, allow_null=False, write_only=True
+    )
+    file_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = MemoireDepot
+        fields = [
+            'id', 'section', 'section_id', 'department', 'department_id',
+            'full_name', 'phone', 'subject', 'file', 'file_url', 'status',
+            'created_at',
+        ]
+        extra_kwargs = {
+            'file': {'write_only': True},
+            'status': {'required': False},
+        }
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        request = self.context.get('request')
+        url = obj.file.url
+        return request.build_absolute_uri(url) if request else url
+
+    def validate_department_id(self, value):
+        """Le département choisi doit appartenir à la section choisie."""
+        section = self.initial_data.get('section_id')
+        if section and str(value.grade_id) != str(section):
+            raise serializers.ValidationError(
+                "Le département sélectionné n'appartient pas à la section choisie."
+            )
+        return value
+
+
 class IspConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = IspConfig

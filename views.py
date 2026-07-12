@@ -324,3 +324,56 @@ def sync_isp_paiements(request):
         "date": datepai,
         "records_saved": saved
     })
+
+
+def get_default_academic_year():
+    """Année académique par défaut (sans utilisateur), pour les dépôts publics."""
+    default = UserSelectedAcademicYear.objects.filter(id="default_academic_year").first()
+    return default.academic_year if default else None
+
+
+# ---------------------------------------------------------------------------
+# Dépôt public de mémoire (page sans authentification)
+# ---------------------------------------------------------------------------
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_sections(request):
+    """Liste des sections — utilisée pour peupler le formulaire public."""
+    sections = GradeSection.objects.all().order_by('libelle')
+    return Response(GradeSectionSerializer(sections, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def public_departments(request):
+    """
+    Liste des départements (classes). Filtrable par section via ?section=<id>.
+    Utilisée pour peupler le formulaire public après le choix de la section.
+    """
+    departments = GradeClasse.objects.all().order_by('libelle')
+    section_id = request.query_params.get('section')
+    if section_id:
+        departments = departments.filter(grade__id=section_id)
+    return Response(GradeClasseSerializer(departments, many=True).data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def public_memoire_depot(request):
+    """
+    Réception d'un dépôt de mémoire depuis la page publique.
+    Attend un envoi multipart : section_id, department_id, full_name, phone,
+    subject (optionnel) et file (le PDF).
+    """
+    serializer = MemoireDepotSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    serializer.save(academicyear=get_default_academic_year(), status='nouveau')
+    return Response(
+        {
+            "status": "success",
+            "message": "Votre mémoire a bien été déposé.",
+            "id": serializer.data.get('id'),
+        },
+        status=status.HTTP_201_CREATED,
+    )

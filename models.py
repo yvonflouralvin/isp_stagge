@@ -2,7 +2,7 @@ from django.db import models
 from slugify import slugify
 import uuid
 from core.models import User
-from uscitech_academy.models import Student, GradeClasse, Teacher, AcademicYear, Promotion
+from uscitech_academy.models import Student, GradeSection, GradeClasse, Teacher, AcademicYear, Promotion
 from hr.models import Employee
 from core.models import CoreBaseModel
 
@@ -159,6 +159,38 @@ class DepartmentSettings(CoreBaseModel):
     max_teacher_externe_memoire = models.IntegerField(default=1, blank=True) # Nombre de memoire du département
     max_tutore_project_member_group = models.IntegerField(default=1, blank=True)
     academicyear = models.ForeignKey(AcademicYear, on_delete=models.CASCADE, null=True, blank=True)
+
+class MemoireDepot(CoreBaseModel):
+    """
+    Dépôt public d'un mémoire par un étudiant, via une page sans authentification.
+    L'étudiant choisit sa section et son département, renseigne son identité et
+    joint le PDF de son mémoire. Le dépôt est ensuite consultable par le chef du
+    département concerné et, globalement, par l'administrateur.
+    """
+
+    STATUS_CHOICES = [
+        ('nouveau', 'Nouveau'),
+        ('consulte', 'Consulté'),
+        ('valide', 'Validé'),
+        ('rejete', 'Rejeté'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    section = models.ForeignKey(GradeSection, on_delete=models.CASCADE, related_name="memoire_depots")
+    department = models.ForeignKey(GradeClasse, on_delete=models.CASCADE, related_name="memoire_depots")
+    full_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=30)
+    subject = models.TextField(null=True, blank=True)
+    file = models.FileField(upload_to="memoires_depots/")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='nouveau')
+    academicyear = models.ForeignKey(AcademicYear, on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} - {self.department.libelle}"
+
 
 class IspStudent(models.Model):
 
