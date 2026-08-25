@@ -26,7 +26,7 @@ from django.contrib.auth.models import  Permission
 from django.db.models import Q, Count
 
 from rest_framework.exceptions import MethodNotAllowed
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from core.utils import Paginator, get_db_name
 import pandas as pd
@@ -2557,3 +2557,227 @@ class MemoireDepotViewSet(viewsets.ModelViewSet):
                 Q(subject__icontains=search)
             )
         return queryset
+
+    # ------------------------------------------------------------------
+    # Filtres & exports
+    # ------------------------------------------------------------------
+    def _allowed_department_ids(self):
+        """
+        Départements visibles par l'utilisateur courant.
+        Retourne None pour un superuser (aucune restriction).
+        """
+        user = self.request.user
+        if user.is_superuser:
+            return None
+        return list(
+            DeptRechercheOfficier.objects.filter(
+                employee__user__id=user.id
+            ).values_list('dept__id', flat=True)
+        )
+
+    def _filters_labels(self):
+        """Libellés des filtres actifs, pour l'entête des documents exportés."""
+        section_id = self.request.query_params.get('section')
+        department_id = self.request.query_params.get('department')
+        statut = self.request.query_params.get('status')
+
+        # Les identifiants viennent de l'URL : un UUID invalide ne doit pas casser l'export.
+        try:
+            section = GradeSection.objects.filter(id=section_id).first() if section_id else None
+        except (ValueError, ValidationError):
+            section = None
+        try:
+            department = GradeClasse.objects.filter(id=department_id).first() if department_id else None
+        except (ValueError, ValidationError):
+            department = None
+
+        return {
+            'section': section.libelle if section else 'TOUTES',
+            'department': department.libelle if department else 'TOUS',
+            'status': dict(MemoireDepot.STATUS_CHOICES).get(statut, 'TOUS') if statut else 'TOUS',
+        }
+
+    @action(detail=False, methods=['get'], url_path='filters')
+    def filters_options(self, request):
+        """
+        Sections et départements proposés dans les filtres de la liste.
+        Restreints au périmètre de l'utilisateur (chef de département = ses
+        départements uniquement, superuser = tout).
+        """
+        allowed = self._allowed_department_ids()
+
+        departments = GradeClasse.objects.select_related('grade').all()
+        if allowed is not None:
+            departments = departments.filter(id__in=allowed)
+        departments = departments.order_by('libelle')
+
+        sections = GradeSection.objects.filter(
+            id__in=list(departments.values_list('grade__id', flat=True))
+        ).order_by('libelle')
+
+        return Response({
+            'sections': GradeSectionSerializer(sections, many=True).data,
+            'departments': GradeClasseSerializer(departments, many=True).data,
+            'statuses': [
+                {'value': value, 'label': label}
+                for value, label in MemoireDepot.STATUS_CHOICES
+            ],
+        })
+
+    @action(detail=False, methods=['get'], url_path='export-excel')
+    def export_excel(self, request):
+        """
+        Export Excel de la liste des dépôts, en appliquant les mêmes filtres
+        que la liste (section, department, status, search).
+        """
+        from openpyxl.styles import Font, Alignment
+        from openpyxl.utils import get_column_letter
+
+        queryset = self.get_queryset()
+        statuses = dict(MemoireDepot.STATUS_CHOICES)
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Depots de memoire"
+
+        headers = [
+            "N°", "Étudiant", "Téléphone", "Section", "Département",
+            "Sujet", "Statut", "Date de dépôt",
+        ]
+        sheet.append(headers)
+
+        for index, depot in enumerate(queryset, start=1):
+            sheet.append([
+                index,
+                depot.full_name,
+                depot.phone,
+                depot.section.libelle if depot.section else "",
+                depot.department.libelle if depot.department else "",
+                depot.subject or "",
+                statuses.get(depot.status, depot.status),
+                depot.created_at.strftime("%d/%m/%Y %H:%M") if depot.created_at else "",
+            ])
+
+        for cell in sheet[1]:
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center")
+
+        for column_index, width in enumerate([6, 32, 18, 26, 26, 55, 14, 20], start=1):
+            sheet.column_dimensions[get_column_letter(column_index)].width = width
+
+        sheet.freeze_panes = "A2"
+
+        stream = BytesIO()
+        workbook.save(stream)
+        stream.seek(0)
+
+        response = HttpResponse(
+            stream.read(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="depots-memoires.xlsx"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='print')
+    def print_pdf(self, request):
+        """
+        Impression PDF de la liste des dépôts, en appliquant les mêmes filtres
+        que la liste (section, department, status, search).
+        """
+        import os
+        from reportlab.lib.pagesizes import landscape
+
+        queryset = self.get_queryset()
+        labels = self._filters_labels()
+        statuses = dict(MemoireDepot.STATUS_CHOICES)
+
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="depots-memoires.pdf"'
+
+        doc = SimpleDocTemplate(response, pagesize=landscape(A4))
+        elements = []
+
+        styles = getSampleStyleSheet()
+        center_style = ParagraphStyle(name="DepotCenter", parent=styles["Normal"], alignment=TA_CENTER)
+        center_bold = ParagraphStyle(
+            name="DepotCenterBold", parent=styles["Normal"],
+            alignment=TA_CENTER, fontName="Helvetica-Bold",
+        )
+        center_title = ParagraphStyle(name="DepotCenterTitle", parent=styles["Title"], alignment=TA_CENTER)
+        cell_style = ParagraphStyle(name="DepotCell", parent=styles["Normal"], fontSize=8, leading=10)
+
+        # Entête institutionnel
+        elements.append(Paragraph("Republique Democratique du Congo", center_style))
+        elements.append(Paragraph("Ministere de l'Enseignement Superieur et Universitaire", center_style))
+        elements.append(Spacer(1, 1))
+        elements.append(Paragraph("Institut Superieur Pedagogique de la Gombe", center_title))
+        elements.append(Paragraph("ISP/GOMBE", center_bold))
+        elements.append(Spacer(1, 1))
+        elements.append(Paragraph("SECRETARIAT GENERAL DE LA RECHERCHE", center_bold))
+        elements.append(Spacer(1, 1))
+
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            logo_path = os.path.join(current_dir, "isp_logo.png")
+            if os.path.exists(logo_path):
+                logo = Image(logo_path, width=1.5 * cm, height=1.5 * cm)
+                logo.hAlign = "CENTER"
+                elements.append(logo)
+        except Exception:
+            pass
+
+        elements.append(Paragraph("<b>LISTE DES MEMOIRES DEPOSES</b>", center_bold))
+        elements.append(Spacer(1, 6))
+
+        elements.append(Paragraph(f"<b>SECTION :</b> {labels['section']}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>DEPARTEMENT :</b> {labels['department']}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>STATUT :</b> {labels['status']}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>TOTAL :</b> {queryset.count()} dépôt(s)", styles["Normal"]))
+        elements.append(Spacer(1, 8))
+
+        data = [[
+            Paragraph("<b>#</b>", cell_style),
+            Paragraph("<b>Étudiant</b>", cell_style),
+            Paragraph("<b>Téléphone</b>", cell_style),
+            Paragraph("<b>Section</b>", cell_style),
+            Paragraph("<b>Département</b>", cell_style),
+            Paragraph("<b>Sujet</b>", cell_style),
+            Paragraph("<b>Statut</b>", cell_style),
+            Paragraph("<b>Date</b>", cell_style),
+        ]]
+
+        for index, depot in enumerate(queryset, start=1):
+            data.append([
+                Paragraph(str(index), cell_style),
+                Paragraph(depot.full_name or "", cell_style),
+                Paragraph(depot.phone or "", cell_style),
+                Paragraph(depot.section.libelle if depot.section else "", cell_style),
+                Paragraph(depot.department.libelle if depot.department else "", cell_style),
+                Paragraph(depot.subject or "", cell_style),
+                Paragraph(statuses.get(depot.status, depot.status), cell_style),
+                Paragraph(
+                    depot.created_at.strftime("%d/%m/%Y") if depot.created_at else "",
+                    cell_style,
+                ),
+            ])
+
+        # Largeurs fixes (A4 paysage ≈ 29,7cm - marges ≈ 27cm utile)
+        col_widths = [1 * cm, 5 * cm, 3 * cm, 4 * cm, 4 * cm, 7 * cm, 2.5 * cm, 2.5 * cm]
+
+        table = Table(data, colWidths=col_widths, repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+        ]))
+
+        elements.append(table)
+        doc.build(elements)
+
+        return response
